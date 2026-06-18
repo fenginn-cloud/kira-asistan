@@ -1,5 +1,5 @@
 /* Kira Asistan — Service Worker (offline shell + push-ready) */
-const CACHE = 'kira-asistan-v1';
+const CACHE = 'kira-asistan-v2';
 const APP_SHELL = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -26,10 +26,14 @@ self.addEventListener('fetch', (event) => {
   // Never cache cross-origin (e.g. Supabase API) — always go to network.
   if (url.origin !== self.location.origin) return;
 
-  // App navigations: network-first, fall back to cached shell when offline.
+  // App navigations: always fetch the freshest index.html (bypass HTTP cache),
+  // fall back to the cached shell only when offline. This guarantees users get
+  // new deployments without a hard refresh.
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req).catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
+      fetch(req.url, { cache: 'no-store' }).catch(() =>
+        caches.match('/index.html').then((r) => r || caches.match('/'))
+      )
     );
     return;
   }

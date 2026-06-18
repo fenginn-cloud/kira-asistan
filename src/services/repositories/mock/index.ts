@@ -95,7 +95,7 @@ export const mockRepositories: Repositories = {
 
   users: {
     list: () => delay(structuredClone(users)),
-    create: (input) => {
+    create: ({ password: _password, ...input }) => {
       const user: AppUser = {
         ...input,
         id: uid('u'),

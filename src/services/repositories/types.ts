@@ -35,9 +35,14 @@ export interface PaymentRepository {
   listTransactionsByContract(contractId: string): Promise<PaymentTransaction[]>;
 }
 
+export interface CreateUserInput extends Omit<AppUser, 'id' | 'createdAt'> {
+  /** Initial password for the new user's auth account. */
+  password: string;
+}
+
 export interface UserRepository {
   list(): Promise<AppUser[]>;
-  create(input: Omit<AppUser, 'id' | 'createdAt'>): Promise<AppUser>;
+  create(input: CreateUserInput): Promise<AppUser>;
   update(id: string, patch: Partial<AppUser>): Promise<AppUser>;
 }
 

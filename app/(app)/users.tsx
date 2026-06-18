@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { useUsers, useCreateUser, useUpdateUser } from '@/features/users/hooks';
 import { useAuthStore } from '@/store/authStore';
+import { errorMessage } from '@/lib/utils/error';
 import { formatDateTime } from '@/lib/utils/format';
 import { palette } from '@/lib/theme/colors';
 import type { AppUser, UserRole } from '@/types';
@@ -26,10 +27,17 @@ interface Draft {
   id: string | null;
   fullName: string;
   email: string;
+  password: string;
   role: UserRole;
 }
 
-const emptyDraft: Draft = { id: null, fullName: '', email: '', role: 'personnel' };
+const emptyDraft: Draft = {
+  id: null,
+  fullName: '',
+  email: '',
+  password: '',
+  role: 'personnel',
+};
 
 export default function UsersScreen() {
   const router = useRouter();
@@ -47,7 +55,11 @@ export default function UsersScreen() {
     : ['admin', 'personnel'];
 
   const save = () => {
-    if (!draft || !draft.fullName.trim() || !draft.email.trim()) return;
+    if (!draft) return;
+    if (!draft.fullName.trim() || !draft.email.trim()) {
+      toast.error('Ad soyad ve e-posta zorunludur.');
+      return;
+    }
     if (draft.id) {
       updateUser.mutate(
         { id: draft.id, patch: { fullName: draft.fullName, role: draft.role } },
@@ -56,13 +68,19 @@ export default function UsersScreen() {
             toast.success('Kullanıcı güncellendi');
             setDraft(null);
           },
+          onError: (e) => toast.error(errorMessage(e, 'Kullanıcı güncellenemedi')),
         }
       );
     } else {
+      if (draft.password.trim().length < 6) {
+        toast.error('Şifre en az 6 karakter olmalı.');
+        return;
+      }
       createUser.mutate(
         {
           companyId: currentUser?.companyId ?? 'co_1',
           email: draft.email,
+          password: draft.password,
           fullName: draft.fullName,
           role: draft.role,
           isActive: true,
@@ -75,6 +93,7 @@ export default function UsersScreen() {
             toast.success('Kullanıcı oluşturuldu');
             setDraft(null);
           },
+          onError: (e) => toast.error(errorMessage(e, 'Kullanıcı oluşturulamadı')),
         }
       );
     }
@@ -115,12 +134,21 @@ export default function UsersScreen() {
               user={u}
               isSelf={u.id === currentUser?.id}
               onEdit={() =>
-                setDraft({ id: u.id, fullName: u.fullName, email: u.email, role: u.role })
+                setDraft({
+                  id: u.id,
+                  fullName: u.fullName,
+                  email: u.email,
+                  password: '',
+                  role: u.role,
+                })
               }
               onToggleActive={(value) =>
                 updateUser.mutate(
                   { id: u.id, patch: { isActive: value } },
-                  { onSuccess: () => toast.success(value ? 'Aktife alındı' : 'Pasife alındı') }
+                  {
+                    onSuccess: () => toast.success(value ? 'Aktife alındı' : 'Pasife alındı'),
+                    onError: (e) => toast.error(errorMessage(e, 'Güncellenemedi')),
+                  }
                 )
               }
             />
@@ -155,6 +183,15 @@ export default function UsersScreen() {
                   autoCapitalize="none"
                   keyboardType="email-address"
                 />
+                {!draft.id ? (
+                  <Input
+                    label="Geçici Şifre (en az 6 karakter)"
+                    value={draft.password}
+                    onChangeText={(v) => setDraft({ ...draft, password: v })}
+                    secureTextEntry
+                    placeholder="••••••••"
+                  />
+                ) : null}
                 <Text className="text-sm font-medium text-muted">Rol</Text>
                 <View className="flex-row flex-wrap gap-2">
                   {roleOptions.map((r) => {

@@ -140,15 +140,44 @@ export const supabaseRepositories: Repositories = {
       return (data ?? []).map(toUser);
     },
     async create(input) {
-      // Note: creating an auth user requires admin privileges (Edge Function).
-      // Here we insert the profile row; pair with an invite flow in production.
-      const { data, error } = await db()
-        .from('profiles')
-        .insert(fromUser(input))
-        .select('*')
-        .single();
-      if (error) throw error;
-      return toUser(data);
+      // Creating an auth user needs the service role, so this goes through the
+      // `create-user` Edge Function (which verifies the caller is admin).
+      const { data, error } = await db().functions.invoke('create-user', {
+        body: {
+          email: input.email,
+          password: input.password,
+          fullName: input.fullName,
+          role: input.role,
+        },
+      });
+      if (error) {
+        // Edge Functions return error details in the response body.
+        let message = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const parsed = await ctx.json();
+            if (parsed?.error) message = parsed.error;
+          }
+        } catch {
+          // keep the original message
+        }
+        throw new Error(message);
+      }
+      if (data?.error) throw new Error(data.error);
+
+      return toUser({
+        id: data.id,
+        company_id: data.companyId,
+        email: data.email,
+        full_name: data.fullName,
+        role: data.role,
+        is_active: true,
+        phone: null,
+        avatar_url: null,
+        last_login_at: null,
+        created_at: new Date().toISOString(),
+      });
     },
     async update(id, patch) {
       const { data, error } = await db()

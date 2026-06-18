@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { repositories } from '@/services';
 import { queryKeys } from '@/lib/query';
+import type { CreateUserInput } from '@/services/repositories/types';
 import type { AppUser } from '@/types';
 
 export function useUsers() {
@@ -13,8 +14,7 @@ export function useUsers() {
 export function useCreateUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: Omit<AppUser, 'id' | 'createdAt'>) =>
-      repositories.users.create(input),
+    mutationFn: (input: CreateUserInput) => repositories.users.create(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.users }),
   });
 }
