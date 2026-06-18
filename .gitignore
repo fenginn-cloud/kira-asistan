@@ -46,3 +46,10 @@ yarn-error.*
 
 # logs
 *.log
+
+# Local data-import helpers (contain personal data — never commit)
+parse-excel.js
+generate-import-sql.js
+contracts.json
+serve-dist.js
+supabase/import-*.sql

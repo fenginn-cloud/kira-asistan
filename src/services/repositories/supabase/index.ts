@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
 import type { Repositories } from '../types';
-import type { Contract } from '@/types';
+import type { Contract, Payment } from '@/types';
+import { derivePaymentStatus } from '@/lib/utils/payments';
 import {
   contractColumns,
   fromCompany,
@@ -17,6 +18,11 @@ import {
 function db() {
   if (!supabase) throw new Error('Supabase yapılandırılmamış');
   return supabase;
+}
+
+/** Stored status can lag; recompute it live from amounts + due date. */
+function normalizeStatus(p: Payment): Payment {
+  return { ...p, status: derivePaymentStatus(p) };
 }
 
 async function currentCompanyId(): Promise<string> {
@@ -84,12 +90,12 @@ export const supabaseRepositories: Repositories = {
         .eq('contract_id', contractId)
         .order('period_month', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map(toPayment);
+      return (data ?? []).map(toPayment).map(normalizeStatus);
     },
     async listAll() {
       const { data, error } = await db().from('payments').select('*');
       if (error) throw error;
-      return (data ?? []).map(toPayment);
+      return (data ?? []).map(toPayment).map(normalizeStatus);
     },
     async addTransaction(input) {
       const { error: txError } = await db().from('payment_transactions').insert({
@@ -108,7 +114,7 @@ export const supabaseRepositories: Repositories = {
         .eq('id', input.paymentId)
         .single();
       if (error) throw error;
-      return toPayment(data);
+      return normalizeStatus(toPayment(data));
     },
     async listTransactions(paymentId) {
       const { data, error } = await db()

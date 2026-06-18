@@ -9,17 +9,19 @@ import { useAllPayments } from '@/features/payments/hooks';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { useScrollToTop } from '@/lib/scrollToTop';
-import type { Contract } from '@/types';
+import { openPaymentFor } from '@/features/notifications/reminders';
+import { daysUntilDue } from '@/lib/utils/payments';
+import type { Contract, Payment } from '@/types';
 
-type Filter = 'all' | 'active' | 'overdue' | 'upcoming' | 'paid' | 'passive';
+type Filter = 'all' | 'active' | 'passive' | 'overdue' | 'upcoming' | 'paid';
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'Tümü' },
   { key: 'active', label: 'Aktif' },
+  { key: 'passive', label: 'Pasif' },
   { key: 'overdue', label: 'Gecikenler' },
   { key: 'upcoming', label: 'Yaklaşanlar' },
   { key: 'paid', label: 'Ödenenler' },
-  { key: 'passive', label: 'Pasif' },
 ];
 
 export default function ContractsScreen() {
@@ -31,12 +33,11 @@ export default function ContractsScreen() {
   const [filter, setFilter] = useState<Filter>('all');
 
   const filtered = useMemo(() => {
-    const statusByContract = new Map<string, Set<string>>();
+    const byContract = new Map<string, Payment[]>();
     for (const p of payments) {
-      if (!statusByContract.has(p.contractId)) {
-        statusByContract.set(p.contractId, new Set());
-      }
-      statusByContract.get(p.contractId)!.add(p.status);
+      const arr = byContract.get(p.contractId);
+      if (arr) arr.push(p);
+      else byContract.set(p.contractId, [p]);
     }
 
     const q = query.trim().toLowerCase();
@@ -48,18 +49,25 @@ export default function ContractsScreen() {
         c.tenantPhone.toLowerCase().includes(q);
       if (!matchesQuery) return false;
 
-      const statuses = statusByContract.get(c.id) ?? new Set();
+      const cp = byContract.get(c.id) ?? [];
+      const statuses = new Set(cp.map((p) => p.status)); // live-normalized
+      const open = openPaymentFor(cp);
+      const daysUntil = open ? daysUntilDue(open) : null;
+
       switch (filter) {
         case 'active':
           return c.status === 'active';
         case 'passive':
           return c.status === 'passive';
         case 'overdue':
+          // Ödeme günü geçmiş + ödenmemiş
           return statuses.has('overdue');
         case 'upcoming':
-          return statuses.has('pending');
+          // Ödeme gününe 1–7 gün kalan
+          return daysUntil !== null && daysUntil >= 1 && daysUntil <= 7;
         case 'paid':
-          return statuses.has('paid') && !statuses.has('overdue');
+          // İlgili dönem için ödeme alınmış
+          return statuses.has('paid');
         default:
           return true;
       }

@@ -55,6 +55,7 @@ import { buildMessage } from '@/lib/utils/message';
 import { callPhone } from '@/lib/utils/contact';
 import { errorMessage } from '@/lib/utils/error';
 import { formatCurrency, formatShortDate } from '@/lib/utils/format';
+import { derivePaymentStatus } from '@/lib/utils/payments';
 import { palette } from '@/lib/theme/colors';
 import type { Payment } from '@/types';
 
@@ -385,7 +386,7 @@ export default function ContractDetailScreen() {
         message={
           outstanding
             ? buildMessage(
-                outstanding.status === 'overdue' ? 'overdue' : 'upcoming',
+                derivePaymentStatus(outstanding) === 'overdue' ? 'overdue' : 'upcoming',
                 contract,
                 outstanding
               )

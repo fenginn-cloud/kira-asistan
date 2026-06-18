@@ -1,6 +1,8 @@
-import { ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   BellRing,
   CalendarClock,
@@ -17,14 +19,31 @@ import { ReminderCard } from '@/features/notifications/components/ReminderCard';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
+import { queryKeys } from '@/lib/query';
 import { formatCurrency } from '@/lib/utils/format';
+import { palette } from '@/lib/theme/colors';
 import type { OpenItem } from '@/features/notifications/reminders';
 
 export default function HomeScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const scrollRef = useScrollToTop<ScrollView>('index');
+  const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
   const { isLoading, today, upcoming, overdue, summary } = useNotificationCenter();
+
+  // Pull-to-refresh: refetch contracts + payments (Supabase or mock).
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        qc.refetchQueries({ queryKey: queryKeys.contracts }),
+        qc.refetchQueries({ queryKey: queryKeys.paymentsAll }),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const goToContract = (id: string) => router.push(`/(app)/contracts/${id}`);
   const hasUpcoming =
@@ -45,6 +64,14 @@ export default function HomeScreen() {
         ref={scrollRef}
         contentContainerClassName="px-5 pb-10"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={palette.primary}
+            colors={[palette.primary]}
+          />
+        }
       >
         <View className="pt-2">
           <Text className="text-sm text-muted">Hoş geldin,</Text>
