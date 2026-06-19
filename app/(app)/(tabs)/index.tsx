@@ -91,7 +91,7 @@ export default function HomeScreen() {
             <View className="mb-1 mt-6 flex-row items-center gap-2">
               <BellRing size={18} color="#2563EB" />
               <Text className="text-lg font-bold text-[#0B1220]">
-                Bugün Bildirim Gönderilecekler
+                Bugün İşlem Gerektirenler
               </Text>
             </View>
             {today.length === 0 ? (

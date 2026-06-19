@@ -1,62 +1,44 @@
-import { useEffect } from 'react';
-import * as Notifications from 'expo-notifications';
-import { useRouter } from 'expo-router';
+import { useEffect, useMemo } from 'react';
 import { useContracts } from '@/features/contracts/hooks';
 import { useAllPayments } from '@/features/payments/hooks';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
-import {
-  NOTIFICATIONS_SUPPORTED,
-  configureNotificationHandler,
-  ensureAndroidChannel,
-  getPermissionStatus,
-  scheduleAllReminders,
-} from './notificationService';
+import { computeTodayReminders } from './reminders';
+import { configure, getPermission, showDueReminders } from './device';
 
 /**
- * App-level notification manager. Mounted once (in the authed layout):
- *  - configures the handler + Android channel
- *  - reschedules all reminders whenever contracts, payments or prefs change
- *  - routes notification taps to the related contract
+ * App-level notification manager (mounted once in the authed layout):
+ *  - configures the notification handler
+ *  - whenever data/preferences change AND permission is granted, shows device
+ *    notifications for today's due reminders (de-duped so none repeat).
+ *
+ * This is the "check on app open" model (spec #9): every time the app opens or
+ * data refreshes, due reminders fire as real OS/browser notifications.
  */
 export function useNotificationScheduler(): void {
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const prefs = useSettingsStore((s) => s.notifications);
   const { data: contracts = [] } = useContracts();
   const { data: payments = [] } = useAllPayments();
 
-  // One-time setup.
+  const todayReminders = useMemo(
+    () => computeTodayReminders({ contracts, payments, prefs }),
+    [contracts, payments, prefs]
+  );
+
   useEffect(() => {
-    configureNotificationHandler();
-    ensureAndroidChannel();
+    configure();
   }, []);
 
-  // Route taps to the contract detail.
   useEffect(() => {
-    if (!NOTIFICATIONS_SUPPORTED) return;
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as
-        | { contractId?: string }
-        | undefined;
-      if (data?.contractId) {
-        router.push(`/(app)/contracts/${data.contractId}`);
-      }
-    });
-    return () => sub.remove();
-  }, [router]);
-
-  // Reschedule whenever the inputs change (only if permission is granted).
-  useEffect(() => {
-    if (!user || !NOTIFICATIONS_SUPPORTED) return;
+    if (!user || todayReminders.length === 0) return;
     let cancelled = false;
     (async () => {
-      const status = await getPermissionStatus();
-      if (cancelled || status !== 'granted') return;
-      await scheduleAllReminders(contracts, payments, prefs);
+      if ((await getPermission()) !== 'granted') return;
+      if (!cancelled) await showDueReminders(todayReminders);
     })();
     return () => {
       cancelled = true;
     };
-  }, [user, contracts, payments, prefs]);
+  }, [user, todayReminders]);
 }

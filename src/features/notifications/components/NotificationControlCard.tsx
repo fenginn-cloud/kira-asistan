@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
-import { BellRing, Send } from 'lucide-react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import { BellOff, BellRing, Send } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
@@ -8,15 +8,15 @@ import { useContracts } from '@/features/contracts/hooks';
 import { useAllPayments } from '@/features/payments/hooks';
 import { useSettingsStore } from '@/store/settingsStore';
 import { palette } from '@/lib/theme/colors';
+import { computeTodayReminders } from '../reminders';
 import {
-  NOTIFICATIONS_SUPPORTED,
-  getPermissionStatus,
-  getScheduledCount,
-  requestPermissions,
-  scheduleAllReminders,
-  sendTestNotification,
-  type PermissionStatus,
-} from '../notificationService';
+  getPermission,
+  notificationsSupported,
+  requestPermission,
+  sendTest,
+  showDueReminders,
+  type NotifPermission,
+} from '../device';
 
 export function NotificationControlCard() {
   const toast = useToast();
@@ -24,44 +24,49 @@ export function NotificationControlCard() {
   const { data: contracts = [] } = useContracts();
   const { data: payments = [] } = useAllPayments();
 
-  const [status, setStatus] = useState<PermissionStatus>('undetermined');
-  const [scheduled, setScheduled] = useState<number>(0);
+  const [status, setStatus] = useState<NotifPermission>('default');
 
-  const refresh = async () => {
-    setStatus(await getPermissionStatus());
-    setScheduled(await getScheduledCount());
-  };
+  const todayReminders = useMemo(
+    () => computeTodayReminders({ contracts, payments, prefs }),
+    [contracts, payments, prefs]
+  );
 
   useEffect(() => {
-    refresh();
+    getPermission().then(setStatus);
   }, []);
 
   const handleEnable = async () => {
-    const granted = await requestPermissions();
-    if (granted) {
-      const count = await scheduleAllReminders(contracts, payments, prefs);
-      toast.success(`Bildirimler açıldı · ${count} hatırlatma planlandı`);
-    } else {
-      toast.error('Bildirim izni verilmedi');
+    const result = await requestPermission();
+    setStatus(result);
+    if (result === 'granted') {
+      const count = await showDueReminders(todayReminders);
+      toast.success(
+        count > 0
+          ? `Bildirimler açıldı · ${count} hatırlatma gönderildi`
+          : 'Bildirimler açıldı'
+      );
+    } else if (result === 'denied') {
+      toast.error('Bildirim izni reddedildi');
     }
-    refresh();
   };
 
   const handleTest = async () => {
-    await sendTestNotification();
-    toast.show('Test bildirimi 2 saniye içinde gelecek', 'info');
+    await sendTest();
+    toast.show('Test bildirimi gönderildi', 'info');
   };
 
-  if (!NOTIFICATIONS_SUPPORTED) {
+  // Device / browser does not support notifications (e.g. iOS Safari tab).
+  if (!notificationsSupported() || status === 'unsupported') {
     return (
       <Card>
         <View className="flex-row items-center gap-3">
-          <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
-            <BellRing size={20} color={palette.primary} />
+          <View className="h-11 w-11 items-center justify-center rounded-2xl bg-warning-soft">
+            <BellOff size={20} color={palette.warning} />
           </View>
           <Text className="flex-1 text-sm text-muted">
-            Bildirimler yalnızca cihazda (iOS/Android) çalışır. Telefonda Expo Go ile
-            test edebilirsiniz.
+            Bu tarayıcı bildirim desteklemiyor. iPhone'da bildirim için uygulamayı
+            önce <Text className="font-semibold text-[#0B1220]">"Ana Ekrana Ekle"</Text> ile
+            kurun, sonra açın.
           </Text>
         </View>
       </Card>
@@ -69,6 +74,7 @@ export function NotificationControlCard() {
   }
 
   const granted = status === 'granted';
+  const denied = status === 'denied';
 
   return (
     <Card>
@@ -86,19 +92,24 @@ export function NotificationControlCard() {
           </Text>
           <Text className="text-sm text-muted">
             {granted
-              ? `${scheduled} hatırlatma planlandı`
-              : 'Kira günlerini kaçırmamak için izin verin'}
+              ? 'Kira günleri için otomatik hatırlatma alıyorsunuz.'
+              : denied
+                ? 'İzin reddedildi. Tarayıcı/ayarlardan izni açın.'
+                : 'Kira günlerini kaçırmamak için bildirimleri açın.'}
           </Text>
         </View>
       </View>
 
       <View className="mt-3 gap-2 border-t border-border/60 pt-3">
         {!granted ? (
-          <Button label="Bildirimlere İzin Ver" icon={BellRing} onPress={handleEnable} />
+          <Button label="Bildirimleri Aktifleştir" icon={BellRing} onPress={handleEnable} />
         ) : null}
         <Pressable
           onPress={handleTest}
-          className="flex-row items-center justify-center gap-2 rounded-2xl bg-primary-50 py-3 active:opacity-80"
+          disabled={!granted}
+          className={`flex-row items-center justify-center gap-2 rounded-2xl bg-primary-50 py-3 active:opacity-80 ${
+            granted ? '' : 'opacity-50'
+          }`}
         >
           <Send size={16} color={palette.primary} />
           <Text className="text-sm font-semibold text-primary-700">
