@@ -61,18 +61,24 @@ export async function sendTest(): Promise<void> {
   });
 }
 
+/** Re-nudge the same reminder at most once per this window (ms). */
+const REPEAT_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours
+
 /**
- * Show device notifications for today's due reminders, once each (de-duped
- * permanently by reminder id, so the same reminder is never repeated).
- * Returns how many new notifications were shown.
+ * Show device notifications for today's due reminders. A reminder is repeated
+ * every 2 hours (until the payment is added and it leaves the due set) so the
+ * user keeps getting nudged to open the app and record the payment.
+ * Returns how many notifications were shown this run.
  */
 export async function showDueReminders(reminders: ReminderWithRefs[]): Promise<number> {
   if ((await getPermission()) !== 'granted') return 0;
   let shown = 0;
+  const now = Date.now();
   for (const r of reminders) {
     const key = `kira-notif:${r.id}`;
     try {
-      if (localStorage.getItem(key)) continue;
+      const last = localStorage.getItem(key);
+      if (last && now - Number(last) < REPEAT_WINDOW_MS) continue; // shown within 2h
     } catch {
       /* storage unavailable */
     }
@@ -82,7 +88,7 @@ export async function showDueReminders(reminders: ReminderWithRefs[]): Promise<n
       url: `/contracts/${r.contractId}`,
     });
     try {
-      localStorage.setItem(key, String(Date.now()));
+      localStorage.setItem(key, String(now));
     } catch {
       /* ignore */
     }

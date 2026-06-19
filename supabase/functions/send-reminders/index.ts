@@ -21,6 +21,9 @@ const TRIGGER_OFFSET: Record<string, number> = {
   overdue_7: -7,
 };
 
+// Repeat the same reminder at most once per this window (2 hours).
+const REPEAT_WINDOW_MS = 2 * 60 * 60 * 1000;
+
 const fmt = (n: number) =>
   new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(n) + ' ₺';
 
@@ -130,15 +133,16 @@ Deno.serve(async (req) => {
       const userSubs = subsByUser.get(user.id) ?? [];
       if (userSubs.length === 0) continue;
 
-      // De-dup: only proceed if this (user, reminder) is newly logged.
-      const { data: logged } = await admin
+      // Repeat every 2 hours until resolved: skip only if sent within the window.
+      const { data: existing } = await admin
         .from('notification_log')
-        .upsert(
-          { user_id: user.id, reminder_key: reminderKey },
-          { onConflict: 'user_id,reminder_key', ignoreDuplicates: true }
-        )
-        .select();
-      if (!logged || logged.length === 0) continue;
+        .select('sent_at')
+        .eq('user_id', user.id)
+        .eq('reminder_key', reminderKey)
+        .maybeSingle();
+      if (existing && Date.now() - Date.parse(existing.sent_at) < REPEAT_WINDOW_MS) {
+        continue;
+      }
 
       const { title, body } = buildMessage(trigger, c, pay, days);
       const payload = JSON.stringify({ title, body, data: { url: `/contracts/${c.id}` } });
@@ -156,6 +160,12 @@ Deno.serve(async (req) => {
           }
         }
       }
+
+      // Record this send so the next one waits for the 2-hour window.
+      await admin.from('notification_log').upsert(
+        { user_id: user.id, reminder_key: reminderKey, sent_at: new Date().toISOString() },
+        { onConflict: 'user_id,reminder_key' }
+      );
     }
   }
 
