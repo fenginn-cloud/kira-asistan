@@ -33,6 +33,8 @@ export interface PaymentRepository {
   }): Promise<Payment>;
   listTransactions(paymentId: string): Promise<PaymentTransaction[]>;
   listTransactionsByContract(contractId: string): Promise<PaymentTransaction[]>;
+  /** Create any missing payment rows for the contract's recent months. */
+  ensureRecentPayments(contract: Contract): Promise<void>;
 }
 
 export interface CreateUserInput extends Omit<AppUser, 'id' | 'createdAt'> {

@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase/client';
 import type { Repositories } from '../types';
 import type { Contract, Payment } from '@/types';
 import { derivePaymentStatus } from '@/lib/utils/payments';
+import { recentPaymentPeriods } from '@/lib/utils/paymentPeriods';
 import {
   contractColumns,
   fromCompany,
@@ -133,6 +134,21 @@ export const supabaseRepositories: Repositories = {
         .order('paid_at', { ascending: false });
       if (error) throw error;
       return (data ?? []).map(toTransaction);
+    },
+    async ensureRecentPayments(contract) {
+      const rows = recentPaymentPeriods(contract).map((s) => ({
+        contract_id: s.contractId,
+        period_month: s.periodMonth,
+        due_date: s.dueDate,
+        amount_due: s.amountDue,
+        amount_paid: 0,
+        status: 'pending',
+      }));
+      if (rows.length === 0) return;
+      const { error } = await db()
+        .from('payments')
+        .upsert(rows, { onConflict: 'contract_id,period_month', ignoreDuplicates: true });
+      if (error) throw error;
     },
   },
 

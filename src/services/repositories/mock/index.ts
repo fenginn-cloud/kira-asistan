@@ -13,6 +13,7 @@ import type {
   PaymentTransaction,
 } from '@/types';
 import { derivePaymentStatus } from '@/lib/utils/payments';
+import { recentPaymentPeriods } from '@/lib/utils/paymentPeriods';
 import type { Repositories } from '../types';
 
 // In-memory stores (cloned so we can mutate without touching the seed data).
@@ -90,6 +91,30 @@ export const mockRepositories: Repositories = {
           .filter((t) => ids.has(t.paymentId))
           .sort((a, b) => b.paidAt.localeCompare(a.paidAt))
       );
+    },
+    ensureRecentPayments: (contract) => {
+      for (const s of recentPaymentPeriods(contract)) {
+        const exists = payments.some(
+          (p) => p.contractId === s.contractId && p.periodMonth === s.periodMonth
+        );
+        if (!exists) {
+          payments = [
+            ...payments,
+            {
+              id: uid('p'),
+              contractId: s.contractId,
+              periodMonth: s.periodMonth,
+              dueDate: s.dueDate,
+              amountDue: s.amountDue,
+              amountPaid: 0,
+              status: 'pending',
+              paidAt: null,
+              note: null,
+            },
+          ];
+        }
+      }
+      return delay(undefined);
     },
   },
 

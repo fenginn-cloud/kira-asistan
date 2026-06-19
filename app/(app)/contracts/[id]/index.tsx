@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -43,6 +43,7 @@ import {
   usePaymentsByContract,
   useAddTransaction,
   useContractTransactions,
+  useEnsureRecentPayments,
 } from '@/features/payments/hooks';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -56,6 +57,7 @@ import { callPhone } from '@/lib/utils/contact';
 import { errorMessage } from '@/lib/utils/error';
 import { formatCurrency, formatShortDate } from '@/lib/utils/format';
 import { derivePaymentStatus } from '@/lib/utils/payments';
+import { recentPeriodCutoff } from '@/lib/utils/paymentPeriods';
 import { palette } from '@/lib/theme/colors';
 import type { Payment } from '@/types';
 
@@ -72,6 +74,25 @@ export default function ContractDetailScreen() {
   const addTransaction = useAddTransaction(id);
   const updateContract = useUpdateContract();
   const deleteContract = useDeleteContract();
+  const ensureRecent = useEnsureRecentPayments(id);
+
+  // Backfill the last 3 months of payment records once the contract loads, so
+  // past months with no record show up as overdue/pending (never silently paid).
+  const ensuredFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (contract && contract.status === 'active' && ensuredFor.current !== contract.id) {
+      ensuredFor.current = contract.id;
+      ensureRecent.mutate(contract);
+    }
+  }, [contract, ensureRecent]);
+
+  // Show only the recent window (current + last 2 months), newest first.
+  const recentPayments = useMemo(() => {
+    const cutoff = recentPeriodCutoff();
+    return payments
+      .filter((p) => p.periodMonth >= cutoff)
+      .sort((a, b) => b.periodMonth.localeCompare(a.periodMonth));
+  }, [payments]);
 
   const [messageOpen, setMessageOpen] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
@@ -351,13 +372,13 @@ export default function ContractDetailScreen() {
           )}
         </Card>
 
-        {/* Payments */}
+        {/* Payments — current + last 2 months */}
         <SectionHeader title="Ödeme Geçmişi" />
-        {payments.length === 0 ? (
+        {recentPayments.length === 0 ? (
           <EmptyState icon={FileText} title="Ödeme kaydı yok" />
         ) : (
           <View className="gap-3">
-            {payments.map((p) => (
+            {recentPayments.map((p) => (
               <PaymentItem
                 key={p.id}
                 payment={p}

@@ -18,6 +18,18 @@ export function useAllPayments() {
   });
 }
 
+export function useEnsureRecentPayments(contractId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (contract: import('@/types').Contract) =>
+      repositories.payments.ensureRecentPayments(contract),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contractId) });
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
+    },
+  });
+}
+
 export function useContractTransactions(contractId: string) {
   return useQuery({
     queryKey: ['transactions', 'contract', contractId],
