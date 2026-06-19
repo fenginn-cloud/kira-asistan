@@ -9,20 +9,19 @@ function location(contract: Contract): string {
     .join(' ');
 }
 
-/** Reminder sent before the rent due date (distinct from the overdue one). */
+/** Reminder sent to the TENANT before the rent due date. */
 export function buildUpcomingMessage(contract: Contract, payment: Payment): string {
-  return `Merhaba ${contract.ownerName},
+  return `Merhaba ${contract.tenantName},
 
-${location(contract)} için kira ödeme günü yaklaşmaktadır.
+${location(contract)} için kira ödeme gününüz yaklaşmaktadır.
 
-Kiracı: ${contract.tenantName}
 Kira Tutarı: ${formatCurrency(contract.rentAmount + contract.duesAmount)}
-Ödeme Günü: ${formatShortDate(payment.dueDate)}
+Son Ödeme Tarihi: ${formatShortDate(payment.dueDate)}
 
 Bilginize sunarız.`;
 }
 
-/** Reminder sent once rent is overdue — overdue days are computed live. */
+/** Reminder sent to the TENANT once rent is overdue — days computed live. */
 export function buildOverdueMessage(
   contract: Contract,
   payment: Payment,
@@ -32,16 +31,15 @@ export function buildOverdueMessage(
     differenceInCalendarDays(today, parseISO(payment.dueDate)),
     0
   );
-  return `Merhaba ${contract.ownerName},
+  return `Merhaba ${contract.tenantName},
 
-${location(contract)} için kira ödemesi gecikmiştir.
+${location(contract)} için kira ödemeniz gecikmiştir.
 
-Kiracı: ${contract.tenantName}
 Kira Tutarı: ${formatCurrency(contract.rentAmount + contract.duesAmount)}
 Geciken Tutar: ${formatCurrency(remainingDebt(payment))}
 Gecikme Süresi: ${overdueDays} gün
 
-Bilginize sunarız.`;
+Ödemenizi en kısa sürede yapmanızı rica ederiz.`;
 }
 
 export function buildMessage(
