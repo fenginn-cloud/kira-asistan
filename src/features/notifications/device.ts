@@ -62,6 +62,9 @@ export async function sendTest(): Promise<void> {
   await present('Kira Asistan', 'Bildirimler başarıyla çalışıyor ✅', { url: '/' });
 }
 
+/** Web Push is web-only; native uses Expo's own push channel (future). */
+export async function ensurePushSubscription(): Promise<void> {}
+
 export async function showDueReminders(reminders: ReminderWithRefs[]): Promise<number> {
   if ((await getPermission()) !== 'granted') return 0;
   let shown = 0;

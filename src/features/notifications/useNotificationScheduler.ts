@@ -4,7 +4,12 @@ import { useAllPayments } from '@/features/payments/hooks';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useAuthStore } from '@/store/authStore';
 import { computeTodayReminders } from './reminders';
-import { configure, getPermission, showDueReminders } from './device';
+import {
+  configure,
+  ensurePushSubscription,
+  getPermission,
+  showDueReminders,
+} from './device';
 
 /**
  * App-level notification manager (mounted once in the authed layout):
@@ -35,6 +40,8 @@ export function useNotificationScheduler(): void {
     let cancelled = false;
     (async () => {
       if ((await getPermission()) !== 'granted') return;
+      if (cancelled) return;
+      await ensurePushSubscription();
       if (!cancelled) await showDueReminders(todayReminders);
     })();
     return () => {

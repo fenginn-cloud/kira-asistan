@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { palette } from '@/lib/theme/colors';
 import { computeTodayReminders } from '../reminders';
 import {
+  ensurePushSubscription,
   getPermission,
   notificationsSupported,
   requestPermission,
@@ -39,6 +40,7 @@ export function NotificationControlCard() {
     const result = await requestPermission();
     setStatus(result);
     if (result === 'granted') {
+      await ensurePushSubscription();
       const count = await showDueReminders(todayReminders);
       toast.success(
         count > 0
