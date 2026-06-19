@@ -89,10 +89,20 @@ Deno.serve(async (req) => {
     ]);
 
   const ids = (contracts ?? []).map((c) => c.id);
+  const fallback = ['00000000-0000-0000-0000-000000000000'];
   const { data: payments } = await admin
     .from('payments')
-    .select('contract_id, period_month, due_date, amount_due, amount_paid')
-    .in('contract_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
+    .select('id, contract_id, period_month, due_date, amount_due, amount_paid')
+    .in('contract_id', ids.length ? ids : fallback);
+
+  // Payments that already received a transaction today → user acted, pause nudges.
+  const paymentIds = (payments ?? []).map((p) => p.id);
+  const { data: txToday } = await admin
+    .from('payment_transactions')
+    .select('payment_id')
+    .gte('paid_at', today)
+    .in('payment_id', paymentIds.length ? paymentIds : fallback);
+  const paidTodayPaymentIds = new Set((txToday ?? []).map((t) => t.payment_id));
 
   // open (unpaid) payment per contract, earliest due first
   const openByContract = new Map<string, any>();
@@ -119,6 +129,7 @@ Deno.serve(async (req) => {
   for (const c of contracts ?? []) {
     const pay = openByContract.get(c.id);
     if (!pay) continue;
+    if (paidTodayPaymentIds.has(pay.id)) continue; // a payment was added today
     const days = daysBetween(today, pay.due_date);
     const trigger = Object.keys(TRIGGER_OFFSET).find((t) => TRIGGER_OFFSET[t] === days);
     if (!trigger) continue;
