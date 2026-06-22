@@ -2,20 +2,26 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { FileSearch, Plus, Search } from 'lucide-react-native';
+import { ArrowDownUp, FileSearch, Plus, Search } from 'lucide-react-native';
 import { ContractCard } from '@/features/contracts/components/ContractCard';
 import { useContracts } from '@/features/contracts/hooks';
 import { useAllPayments } from '@/features/payments/hooks';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
+import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
 import { useScrollToTop } from '@/lib/scrollToTop';
+import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { openPaymentFor } from '@/features/notifications/reminders';
 import { daysUntilDue } from '@/lib/utils/payments';
+import {
+  SORT_LABELS,
+  useContractsViewStore,
+  type SortKey,
+  type StatusFilter,
+} from '@/store/contractsViewStore';
 import type { Contract, Payment } from '@/types';
 
-type Filter = 'all' | 'active' | 'passive' | 'overdue' | 'upcoming' | 'paid';
-
-const FILTERS: { key: Filter; label: string }[] = [
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'all', label: 'Tümü' },
   { key: 'active', label: 'Aktif' },
   { key: 'passive', label: 'Pasif' },
@@ -24,13 +30,56 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'paid', label: 'Ödenenler' },
 ];
 
+const SORT_ORDER: SortKey[] = [
+  'date_desc',
+  'date_asc',
+  'name_asc',
+  'name_desc',
+  'rent_desc',
+  'rent_asc',
+];
+
+function contractName(c: Contract): string {
+  return [c.propertyName, c.block, c.unit].filter(Boolean).join(' ');
+}
+
+function sortContracts(list: Contract[], sort: SortKey): Contract[] {
+  const arr = [...list];
+  switch (sort) {
+    case 'date_asc':
+      return arr.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    case 'name_asc':
+      return arr.sort((a, b) => contractName(a).localeCompare(contractName(b), 'tr'));
+    case 'name_desc':
+      return arr.sort((a, b) => contractName(b).localeCompare(contractName(a), 'tr'));
+    case 'rent_desc':
+      return arr.sort((a, b) => b.rentAmount - a.rentAmount);
+    case 'rent_asc':
+      return arr.sort((a, b) => a.rentAmount - b.rentAmount);
+    case 'date_desc':
+    default:
+      return arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+}
+
 export default function ContractsScreen() {
   const router = useRouter();
+  const colors = useThemeColors();
   const listRef = useScrollToTop<FlatList>('contracts');
   const { data: contracts = [], isLoading } = useContracts();
   const { data: payments = [] } = useAllPayments();
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<Filter>('all');
+  const [sortOpen, setSortOpen] = useState(false);
+
+  const { status, property, sort, setStatus, setProperty, setSort } =
+    useContractsViewStore();
+
+  // Auto-generated property options from existing contracts.
+  const propertyOptions = useMemo(() => {
+    const names = [...new Set(contracts.map((c) => c.propertyName.trim()).filter(Boolean))];
+    names.sort((a, b) => a.localeCompare(b, 'tr'));
+    return ['all', ...names];
+  }, [contracts]);
 
   const filtered = useMemo(() => {
     const byContract = new Map<string, Payment[]>();
@@ -41,38 +90,49 @@ export default function ContractsScreen() {
     }
 
     const q = query.trim().toLowerCase();
-    return contracts.filter((c) => {
-      const matchesQuery =
-        !q ||
-        c.propertyName.toLowerCase().includes(q) ||
-        c.tenantName.toLowerCase().includes(q) ||
-        c.tenantPhone.toLowerCase().includes(q);
-      if (!matchesQuery) return false;
+    const result = contracts.filter((c) => {
+      // Search
+      if (
+        q &&
+        !c.propertyName.toLowerCase().includes(q) &&
+        !c.tenantName.toLowerCase().includes(q) &&
+        !c.tenantPhone.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+      // Property filter
+      if (property !== 'all' && c.propertyName !== property) return false;
 
+      // Status filter
       const cp = byContract.get(c.id) ?? [];
-      const statuses = new Set(cp.map((p) => p.status)); // live-normalized
+      const statuses = new Set(cp.map((p) => p.status));
       const open = openPaymentFor(cp);
       const daysUntil = open ? daysUntilDue(open) : null;
-
-      switch (filter) {
+      switch (status) {
         case 'active':
           return c.status === 'active';
         case 'passive':
           return c.status === 'passive';
         case 'overdue':
-          // Ödeme günü geçmiş + ödenmemiş
           return statuses.has('overdue');
         case 'upcoming':
-          // Ödeme gününe 1–7 gün kalan
           return daysUntil !== null && daysUntil >= 1 && daysUntil <= 7;
         case 'paid':
-          // İlgili dönem için ödeme alınmış
           return statuses.has('paid');
         default:
           return true;
       }
     });
-  }, [contracts, payments, query, filter]);
+
+    return sortContracts(result, sort);
+  }, [contracts, payments, query, status, property, sort]);
+
+  const sortItems: ActionSheetItem[] = SORT_ORDER.map((key) => ({
+    label: SORT_LABELS[key] + (sort === key ? '  ✓' : ''),
+    onPress: () => setSort(key),
+  }));
+
+  const summary = `${property === 'all' ? 'Tüm mülkler' : property} · ${SORT_LABELS[sort]}`;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -89,44 +149,82 @@ export default function ContractsScreen() {
 
         {/* Search */}
         <View className="mt-4 flex-row items-center gap-2 rounded-2xl border border-border bg-surface px-4">
-          <Search size={18} color="#6B7280" />
+          <Search size={18} color={colors.textMuted} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Mülk, kiracı veya telefon ara"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textMuted}
             className="h-12 flex-1 text-base text-foreground"
           />
         </View>
 
-        {/* Filters */}
+        {/* Status filters */}
         <FlatList
           horizontal
-          data={FILTERS}
+          data={STATUS_FILTERS}
           keyExtractor={(f) => f.key}
           showsHorizontalScrollIndicator={false}
           className="mt-3"
           contentContainerStyle={{ gap: 8 }}
           renderItem={({ item }) => {
-            const active = filter === item.key;
+            const active = status === item.key;
             return (
               <Pressable
-                onPress={() => setFilter(item.key)}
+                onPress={() => setStatus(item.key)}
                 className={`rounded-full px-4 py-2 ${
                   active ? 'bg-primary' : 'bg-surface border border-border'
                 }`}
               >
-                <Text
-                  className={`text-sm font-semibold ${
-                    active ? 'text-white' : 'text-muted'
-                  }`}
-                >
+                <Text className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}>
                   {item.label}
                 </Text>
               </Pressable>
             );
           }}
         />
+
+        {/* Property filters (auto-generated) */}
+        {propertyOptions.length > 2 ? (
+          <FlatList
+            horizontal
+            data={propertyOptions}
+            keyExtractor={(p) => p}
+            showsHorizontalScrollIndicator={false}
+            className="mt-2"
+            contentContainerStyle={{ gap: 8 }}
+            renderItem={({ item }) => {
+              const active = property === item;
+              const label = item === 'all' ? 'Tüm Mülkler' : item;
+              return (
+                <Pressable
+                  onPress={() => setProperty(item)}
+                  className={`rounded-full px-4 py-2 ${
+                    active ? 'bg-primary-700' : 'bg-surface border border-border'
+                  }`}
+                >
+                  <Text className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            }}
+          />
+        ) : null}
+
+        {/* Summary + sort */}
+        <View className="mt-3 flex-row items-center justify-between">
+          <Text className="flex-1 pr-3 text-xs text-muted" numberOfLines={1}>
+            {summary}
+          </Text>
+          <Pressable
+            onPress={() => setSortOpen(true)}
+            className="flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-2 active:opacity-80"
+          >
+            <ArrowDownUp size={15} color={colors.text} />
+            <Text className="text-sm font-semibold text-foreground">Sırala</Text>
+          </Pressable>
+        </View>
       </View>
 
       {isLoading ? (
@@ -157,6 +255,13 @@ export default function ContractsScreen() {
           )}
         />
       )}
+
+      <ActionSheet
+        visible={sortOpen}
+        title="Sırala"
+        items={sortItems}
+        onClose={() => setSortOpen(false)}
+      />
     </SafeAreaView>
   );
 }
