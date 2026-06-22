@@ -23,7 +23,7 @@ export default function StatsScreen() {
         contentContainerClassName="px-5 pb-10"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="pt-2 text-2xl font-bold text-[#0B1220]">İstatistikler</Text>
+        <Text className="pt-2 text-2xl font-bold text-foreground">İstatistikler</Text>
 
         {s.isLoading ? (
           <View className="mt-5 gap-3">

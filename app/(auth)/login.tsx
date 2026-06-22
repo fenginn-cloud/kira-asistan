@@ -49,7 +49,7 @@ export default function LoginScreen() {
             <View className="h-20 w-20 items-center justify-center rounded-3xl bg-primary">
               <Building2 size={36} color="#FFFFFF" />
             </View>
-            <Text className="mt-5 text-3xl font-bold text-[#0B1220]">
+            <Text className="mt-5 text-3xl font-bold text-foreground">
               Kira Asistan
             </Text>
             <Text className="mt-1 text-base text-muted">
@@ -90,7 +90,7 @@ export default function LoginScreen() {
                 >
                   {rememberMe ? <Check size={14} color="#FFFFFF" /> : null}
                 </View>
-                <Text className="text-sm text-[#0B1220]">Beni Hatırla</Text>
+                <Text className="text-sm text-foreground">Beni Hatırla</Text>
               </Pressable>
 
               <Link href="/(auth)/forgot-password" asChild>

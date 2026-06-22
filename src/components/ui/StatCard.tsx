@@ -24,7 +24,7 @@ export function StatCard({ label, value, icon: Icon, tone = 'primary' }: StatCar
       <View className={`h-10 w-10 items-center justify-center rounded-2xl ${t.bg}`}>
         <Icon size={20} color={t.icon} />
       </View>
-      <Text className="mt-3 text-2xl font-bold text-[#0B1220]" numberOfLines={1}>
+      <Text className="mt-3 text-2xl font-bold text-foreground" numberOfLines={1}>
         {value}
       </Text>
       <Text className="mt-0.5 text-xs text-muted" numberOfLines={2}>

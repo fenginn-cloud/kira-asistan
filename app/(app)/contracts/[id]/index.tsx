@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { fgColor } from '@/lib/theme/useThemeColors';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -231,7 +232,7 @@ export default function ContractDetailScreen() {
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 pt-2">
         <Pressable onPress={() => router.back()} className="h-10 w-10 justify-center">
-          <ArrowLeft size={24} color="#0B1220" />
+          <ArrowLeft size={24} color={fgColor()} />
         </Pressable>
         <View className="flex-row items-center gap-2">
           <ContractBadge status={contract.status} />
@@ -239,7 +240,7 @@ export default function ContractDetailScreen() {
             onPress={() => setActionsOpen(true)}
             className="h-10 w-10 items-center justify-center rounded-full bg-surface"
           >
-            <MoreHorizontal size={22} color="#0B1220" />
+            <MoreHorizontal size={22} color={fgColor()} />
           </Pressable>
         </View>
       </View>
@@ -249,7 +250,7 @@ export default function ContractDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="mt-2">
-          <Text className="text-2xl font-bold text-[#0B1220]">
+          <Text className="text-2xl font-bold text-foreground">
             {contract.propertyName}
           </Text>
           <Text className="text-base text-muted">
@@ -335,7 +336,7 @@ export default function ContractDetailScreen() {
               <FileText size={20} color={palette.primary} />
             </View>
             <View className="flex-1">
-              <Text className="text-base font-semibold text-[#0B1220]">
+              <Text className="text-base font-semibold text-foreground">
                 {contract.documentUrl ? 'Sözleşme.pdf' : 'PDF Yükle'}
               </Text>
               <Text className="text-sm text-muted">

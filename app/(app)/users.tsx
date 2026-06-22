@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fgColor } from '@/lib/theme/useThemeColors';
 import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -104,9 +105,9 @@ export default function UsersScreen() {
       <View className="flex-row items-center justify-between px-5 pt-2">
         <View className="flex-row items-center gap-2">
           <Pressable onPress={() => router.back()} className="h-10 w-10 justify-center">
-            <ArrowLeft size={24} color="#0B1220" />
+            <ArrowLeft size={24} color={fgColor()} />
           </Pressable>
-          <Text className="text-2xl font-bold text-[#0B1220]">Kullanıcılar</Text>
+          <Text className="text-2xl font-bold text-foreground">Kullanıcılar</Text>
         </View>
         <Pressable
           onPress={() => setDraft(emptyDraft)}
@@ -161,7 +162,7 @@ export default function UsersScreen() {
         <View className="flex-1 justify-end bg-black/40">
           <View className="rounded-t-3xl bg-surface p-5 pb-10">
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-[#0B1220]">
+              <Text className="text-lg font-bold text-foreground">
                 {draft?.id ? 'Kullanıcıyı Düzenle' : 'Kullanıcı Ekle'}
               </Text>
               <Pressable onPress={() => setDraft(null)} className="h-8 w-8 items-center justify-center">
@@ -242,7 +243,7 @@ function UserRow({
         <View className="flex-row items-center gap-3">
           <Avatar name={user.fullName} />
           <View className="flex-1">
-            <Text className="text-base font-semibold text-[#0B1220]">
+            <Text className="text-base font-semibold text-foreground">
               {user.fullName}
               {isSelf ? ' (Siz)' : ''}
             </Text>

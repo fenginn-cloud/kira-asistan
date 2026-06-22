@@ -1,4 +1,5 @@
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { fgColor } from '@/lib/theme/useThemeColors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
@@ -18,9 +19,9 @@ export default function NewContractScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
         <View className="flex-row items-center justify-between px-5 pt-2">
-          <Text className="text-2xl font-bold text-[#0B1220]">Yeni Sözleşme</Text>
+          <Text className="text-2xl font-bold text-foreground">Yeni Sözleşme</Text>
           <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center">
-            <X size={24} color="#0B1220" />
+            <X size={24} color={fgColor()} />
           </Pressable>
         </View>
 

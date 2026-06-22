@@ -131,7 +131,7 @@ export function AddTransactionModal({
       >
         <View className="max-h-[88%] rounded-t-3xl bg-surface p-5 pb-8">
           <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-lg font-bold text-[#0B1220]">Ödeme Ekle</Text>
+            <Text className="text-lg font-bold text-foreground">Ödeme Ekle</Text>
             <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center">
               <X size={22} color="#6B7280" />
             </Pressable>
@@ -193,7 +193,7 @@ export function AddTransactionModal({
                 <Text className="text-sm font-medium text-muted">Dekont (opsiyonel)</Text>
                 {receipt ? (
                   <View className="flex-row items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
-                    <Text className="flex-1 text-sm text-[#0B1220]" numberOfLines={1}>
+                    <Text className="flex-1 text-sm text-foreground" numberOfLines={1}>
                       {receipt.name}
                     </Text>
                     <Pressable onPress={() => setReceipt(null)} hitSlop={8}>

@@ -24,7 +24,7 @@ export function TransactionItem({ tx }: { tx: PaymentTransaction }) {
     <Card>
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-base font-semibold text-[#0B1220]">
+          <Text className="text-base font-semibold text-foreground">
             {formatCurrency(tx.amount)}
           </Text>
           <Text className="mt-0.5 text-xs text-muted">

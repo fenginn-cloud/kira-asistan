@@ -32,14 +32,14 @@ export function MessageModal({ visible, message, phone, onClose }: Props) {
       <View className="flex-1 justify-end bg-black/40">
         <View className="rounded-t-3xl bg-surface p-5 pb-10">
           <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-lg font-bold text-[#0B1220]">Hatırlatma Mesajı</Text>
+            <Text className="text-lg font-bold text-foreground">Hatırlatma Mesajı</Text>
             <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center">
               <X size={22} color="#6B7280" />
             </Pressable>
           </View>
 
           <View className="rounded-2xl border border-border bg-background p-4">
-            <Text className="text-base leading-6 text-[#0B1220]">{message}</Text>
+            <Text className="text-base leading-6 text-foreground">{message}</Text>
           </View>
 
           <View className="mt-4 flex-row gap-3">

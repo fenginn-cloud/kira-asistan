@@ -39,7 +39,7 @@ export function ConfirmModal({
           >
             <AlertTriangle size={26} color={destructive ? palette.danger : palette.primary} />
           </View>
-          <Text className="mt-4 text-center text-lg font-bold text-[#0B1220]">{title}</Text>
+          <Text className="mt-4 text-center text-lg font-bold text-foreground">{title}</Text>
           {message ? (
             <Text className="mt-2 text-center text-sm text-muted">{message}</Text>
           ) : null}

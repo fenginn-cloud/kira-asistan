@@ -70,7 +70,7 @@ export function DateField({
           error ? 'border-danger' : 'border-border'
         }`}
       >
-        <Text className={`text-base ${selected ? 'text-[#0B1220]' : 'text-[#9CA3AF]'}`}>
+        <Text className={`text-base ${selected ? 'text-foreground' : 'text-[#9CA3AF]'}`}>
           {display}
         </Text>
         <View className="flex-row items-center gap-3">
@@ -105,7 +105,7 @@ export function DateField({
                 <Pressable onPress={() => setShow(false)} hitSlop={8}>
                   <Text className="text-base text-muted">Vazgeç</Text>
                 </Pressable>
-                <Text className="text-base font-bold text-[#0B1220]">Tarih Seç</Text>
+                <Text className="text-base font-bold text-foreground">Tarih Seç</Text>
                 <Pressable onPress={confirmIOS} hitSlop={8}>
                   <Text className="text-base font-semibold text-primary-700">Tamam</Text>
                 </Pressable>

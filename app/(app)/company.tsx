@@ -1,3 +1,4 @@
+import { fgColor } from '@/lib/theme/useThemeColors';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -38,9 +39,9 @@ export default function CompanyScreen() {
       >
         <View className="flex-row items-center gap-2 px-5 pt-2">
           <Pressable onPress={() => router.back()} className="h-10 w-10 justify-center">
-            <ArrowLeft size={24} color="#0B1220" />
+            <ArrowLeft size={24} color={fgColor()} />
           </Pressable>
-          <Text className="text-2xl font-bold text-[#0B1220]">Şirket Ayarları</Text>
+          <Text className="text-2xl font-bold text-foreground">Şirket Ayarları</Text>
         </View>
 
         <ScrollView

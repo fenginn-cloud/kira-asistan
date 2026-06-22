@@ -8,7 +8,7 @@ interface SectionHeaderProps {
 export function SectionHeader({ title, action }: SectionHeaderProps) {
   return (
     <View className="mb-3 mt-6 flex-row items-center justify-between">
-      <Text className="text-lg font-bold text-[#0B1220]">{title}</Text>
+      <Text className="text-lg font-bold text-foreground">{title}</Text>
       {action}
     </View>
   );

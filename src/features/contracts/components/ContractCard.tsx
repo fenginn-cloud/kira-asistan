@@ -20,7 +20,7 @@ export function ContractCard({ contract, onPress }: ContractCardProps) {
             <Building2 size={20} color="#2563EB" />
           </View>
           <View className="flex-1">
-            <Text className="text-base font-semibold text-[#0B1220]" numberOfLines={1}>
+            <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
               {contract.propertyName}
             </Text>
             <Text className="text-sm text-muted" numberOfLines={1}>

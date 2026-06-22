@@ -75,7 +75,7 @@ export default function HomeScreen() {
       >
         <View className="pt-2">
           <Text className="text-sm text-muted">Hoş geldin,</Text>
-          <Text className="text-2xl font-bold text-[#0B1220]">
+          <Text className="text-2xl font-bold text-foreground">
             {user?.fullName ?? 'Kullanıcı'}
           </Text>
         </View>
@@ -90,7 +90,7 @@ export default function HomeScreen() {
             {/* 1 — Today's reminders (the heart of the app) */}
             <View className="mb-1 mt-6 flex-row items-center gap-2">
               <BellRing size={18} color="#2563EB" />
-              <Text className="text-lg font-bold text-[#0B1220]">
+              <Text className="text-lg font-bold text-foreground">
                 Bugün İşlem Gerektirenler
               </Text>
             </View>

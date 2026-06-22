@@ -65,7 +65,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               className={`mt-2 w-full flex-row items-center gap-3 rounded-2xl ${c.bg} px-4 py-3 shadow-sm shadow-black/10`}
             >
               <Icon size={20} color={c.color} />
-              <Text className="flex-1 text-sm font-medium text-[#0B1220]">
+              <Text className="flex-1 text-sm font-medium text-foreground">
                 {toast.message}
               </Text>
             </Animated.View>

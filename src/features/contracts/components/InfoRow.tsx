@@ -14,7 +14,7 @@ export function InfoRow({ label, value, last = false }: InfoRowProps) {
       }`}
     >
       <Text className="text-sm text-muted">{label}</Text>
-      <Text className="max-w-[60%] text-right text-sm font-semibold text-[#0B1220]">
+      <Text className="max-w-[60%] text-right text-sm font-semibold text-foreground">
         {value}
       </Text>
     </View>

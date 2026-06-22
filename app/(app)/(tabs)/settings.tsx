@@ -53,7 +53,7 @@ export default function SettingsScreen() {
         contentContainerClassName="px-5 pb-10"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="pt-2 text-2xl font-bold text-[#0B1220]">Ayarlar</Text>
+        <Text className="pt-2 text-2xl font-bold text-foreground">Ayarlar</Text>
 
         {/* Profile */}
         <Pressable className="mt-5" onPress={() => router.push('/(app)/profile')}>
@@ -61,7 +61,7 @@ export default function SettingsScreen() {
             <View className="flex-row items-center gap-3">
               <Avatar name={user?.fullName ?? 'K'} />
               <View className="flex-1">
-                <Text className="text-base font-semibold text-[#0B1220]">
+                <Text className="text-base font-semibold text-foreground">
                   {user?.fullName}
                 </Text>
                 <Text className="text-sm text-muted">{user?.email}</Text>
@@ -88,7 +88,7 @@ export default function SettingsScreen() {
                   <Building size={20} color={palette.primary} />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-base font-semibold text-[#0B1220]">
+                  <Text className="text-base font-semibold text-foreground">
                     {company?.name ?? 'Şirket Ayarları'}
                   </Text>
                   <Text className="text-sm text-muted">Şirket bilgileri, logo, para birimi</Text>
@@ -108,7 +108,7 @@ export default function SettingsScreen() {
                   <Users size={20} color={palette.primary} />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-base font-semibold text-[#0B1220]">
+                  <Text className="text-base font-semibold text-foreground">
                     Kullanıcı Yönetimi
                   </Text>
                   <Text className="text-sm text-muted">
@@ -140,7 +140,7 @@ export default function SettingsScreen() {
                 idx > 0 ? 'border-t border-border/60' : ''
               }`}
             >
-              <Text className="text-base text-[#0B1220]">{row.label}</Text>
+              <Text className="text-base text-foreground">{row.label}</Text>
               <Switch
                 value={notifications[row.key]}
                 onValueChange={() => toggleNotification(row.key)}

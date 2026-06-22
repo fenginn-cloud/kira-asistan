@@ -13,7 +13,7 @@ export function EmptyState({ icon: Icon, title, description }: EmptyStateProps) 
       <View className="h-16 w-16 items-center justify-center rounded-full bg-primary-50">
         <Icon size={28} color="#2563EB" />
       </View>
-      <Text className="mt-4 text-base font-semibold text-[#0B1220]">{title}</Text>
+      <Text className="mt-4 text-base font-semibold text-foreground">{title}</Text>
       {description ? (
         <Text className="mt-1 px-8 text-center text-sm text-muted">
           {description}

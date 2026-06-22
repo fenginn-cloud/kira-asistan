@@ -78,7 +78,7 @@ export default function ContractsScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="px-5 pt-2">
         <View className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-[#0B1220]">Sözleşmeler</Text>
+          <Text className="text-2xl font-bold text-foreground">Sözleşmeler</Text>
           <Pressable
             onPress={() => router.push('/(app)/contracts/new')}
             className="h-11 w-11 items-center justify-center rounded-2xl bg-primary active:opacity-80"
@@ -95,7 +95,7 @@ export default function ContractsScreen() {
             onChangeText={setQuery}
             placeholder="Mülk, kiracı veya telefon ara"
             placeholderTextColor="#9CA3AF"
-            className="h-12 flex-1 text-base text-[#0B1220]"
+            className="h-12 flex-1 text-base text-foreground"
           />
         </View>
 

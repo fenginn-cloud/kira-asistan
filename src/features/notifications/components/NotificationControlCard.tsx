@@ -67,7 +67,7 @@ export function NotificationControlCard() {
           </View>
           <Text className="flex-1 text-sm text-muted">
             Bu tarayıcı bildirim desteklemiyor. iPhone'da bildirim için uygulamayı
-            önce <Text className="font-semibold text-[#0B1220]">"Ana Ekrana Ekle"</Text> ile
+            önce <Text className="font-semibold text-foreground">"Ana Ekrana Ekle"</Text> ile
             kurun, sonra açın.
           </Text>
         </View>
@@ -89,7 +89,7 @@ export function NotificationControlCard() {
           <BellRing size={20} color={granted ? palette.success : palette.warning} />
         </View>
         <View className="flex-1">
-          <Text className="text-base font-semibold text-[#0B1220]">
+          <Text className="text-base font-semibold text-foreground">
             {granted ? 'Bildirimler açık' : 'Bildirimler kapalı'}
           </Text>
           <Text className="text-sm text-muted">

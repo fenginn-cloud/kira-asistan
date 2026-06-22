@@ -19,7 +19,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         ref={ref}
         placeholderTextColor="#9CA3AF"
         className={[
-          'h-14 rounded-2xl border bg-surface px-4 text-base text-[#0B1220]',
+          'h-14 rounded-2xl border bg-surface px-4 text-base text-foreground',
           error ? 'border-danger' : 'border-border',
           className,
         ].join(' ')}

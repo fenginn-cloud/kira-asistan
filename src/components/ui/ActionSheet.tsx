@@ -44,7 +44,7 @@ export function ActionSheet({ visible, title, items, onClose }: ActionSheetProps
                   {Icon ? <Icon size={20} color={color} /> : null}
                   <Text
                     className={`text-base font-medium ${
-                      item.destructive ? 'text-danger' : 'text-[#0B1220]'
+                      item.destructive ? 'text-danger' : 'text-foreground'
                     }`}
                   >
                     {item.label}

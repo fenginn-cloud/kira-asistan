@@ -16,7 +16,7 @@ export function PaymentItem({ payment, onPress }: PaymentItemProps) {
     <Card onPress={onPress}>
       <View className="flex-row items-center justify-between">
         <View>
-          <Text className="text-base font-semibold capitalize text-[#0B1220]">
+          <Text className="text-base font-semibold capitalize text-foreground">
             {formatMonth(payment.periodMonth)}
           </Text>
           <Text className="mt-0.5 text-xs text-muted">
@@ -29,7 +29,7 @@ export function PaymentItem({ payment, onPress }: PaymentItemProps) {
       <View className="mt-3 flex-row items-center justify-between border-t border-border/60 pt-3">
         <View>
           <Text className="text-xs text-muted">Tahsil edilen</Text>
-          <Text className="text-sm font-semibold text-[#0B1220]">
+          <Text className="text-sm font-semibold text-foreground">
             {formatCurrency(payment.amountPaid)} / {formatCurrency(payment.amountDue)}
           </Text>
         </View>

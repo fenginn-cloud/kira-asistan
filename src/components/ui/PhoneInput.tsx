@@ -54,7 +54,7 @@ export function PhoneInput({ label, value, onChange, error }: PhoneInputProps) {
           className="h-full flex-row items-center gap-1 border-r border-border px-3"
         >
           <Text className="text-base">{country.flag}</Text>
-          <Text className="text-base font-semibold text-[#0B1220]">{country.dial}</Text>
+          <Text className="text-base font-semibold text-foreground">{country.dial}</Text>
           <ChevronDown size={16} color="#6B7280" />
         </Pressable>
 
@@ -64,7 +64,7 @@ export function PhoneInput({ label, value, onChange, error }: PhoneInputProps) {
           keyboardType="phone-pad"
           placeholder={country.dial === '+90' ? '555 123 12 12' : '123 456 789'}
           placeholderTextColor="#9CA3AF"
-          className="ml-3 flex-1 text-base text-[#0B1220]"
+          className="ml-3 flex-1 text-base text-foreground"
         />
       </View>
 
@@ -74,7 +74,7 @@ export function PhoneInput({ label, value, onChange, error }: PhoneInputProps) {
         <View className="flex-1 justify-end bg-black/40">
           <View className="max-h-[70%] rounded-t-3xl bg-surface p-5 pb-8">
             <View className="mb-2 flex-row items-center justify-between">
-              <Text className="text-lg font-bold text-[#0B1220]">Ülke Kodu</Text>
+              <Text className="text-lg font-bold text-foreground">Ülke Kodu</Text>
               <Pressable onPress={() => setPickerOpen(false)} className="h-8 w-8 items-center justify-center">
                 <X size={22} color="#6B7280" />
               </Pressable>
@@ -91,7 +91,7 @@ export function PhoneInput({ label, value, onChange, error }: PhoneInputProps) {
                     }`}
                   >
                     <Text className="text-xl">{c.flag}</Text>
-                    <Text className="flex-1 text-base text-[#0B1220]">{c.name}</Text>
+                    <Text className="flex-1 text-base text-foreground">{c.name}</Text>
                     <Text className="text-base font-semibold text-muted">{c.dial}</Text>
                   </Pressable>
                 );

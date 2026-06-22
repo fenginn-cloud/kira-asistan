@@ -24,7 +24,7 @@ export function DashboardPaymentRow({ item, onPress }: Props) {
     <Card onPress={onPress} className="mb-2">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-base font-semibold text-[#0B1220]" numberOfLines={1}>
+          <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
             {contract.propertyName} {location}
           </Text>
           <Text className="text-sm text-muted" numberOfLines={1}>
@@ -34,7 +34,7 @@ export function DashboardPaymentRow({ item, onPress }: Props) {
             {label.text}
           </Text>
         </View>
-        <Text className="text-base font-bold text-[#0B1220]">
+        <Text className="text-base font-bold text-foreground">
           {formatCurrency(remainingDebt(payment))}
         </Text>
       </View>

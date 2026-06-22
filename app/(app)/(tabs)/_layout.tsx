@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { BarChart3, FileText, LayoutGrid, Settings } from 'lucide-react-native';
 import { palette } from '@/lib/theme/colors';
+import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { triggerScrollTop } from '@/lib/scrollToTop';
 
 /** Re-tapping the active tab scrolls that screen back to the top. */
@@ -11,18 +12,19 @@ const reTap = (route: string) => ({ navigation }: { navigation: { isFocused: () 
 });
 
 export default function TabsLayout() {
+  const colors = useThemeColors();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: palette.primary,
-        tabBarInactiveTintColor: palette.muted,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           height: 86,
           paddingTop: 8,
           paddingBottom: 28,
-          borderTopColor: palette.border,
-          backgroundColor: palette.white,
+          borderTopColor: colors.border,
+          backgroundColor: colors.surface,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}

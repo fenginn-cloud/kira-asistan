@@ -48,7 +48,7 @@ export function DonutChart({
           />
         </Svg>
         <View className="absolute inset-0 items-center justify-center">
-          <Text className="text-3xl font-bold text-[#0B1220]">
+          <Text className="text-3xl font-bold text-foreground">
             {Math.round(clamped)}%
           </Text>
           {label ? <Text className="text-xs text-muted">{label}</Text> : null}

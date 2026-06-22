@@ -232,7 +232,7 @@ function ToggleRow({
             border ? 'border-t border-border/60' : ''
           }`}
         >
-          <Text className="text-base text-[#0B1220]">{label}</Text>
+          <Text className="text-base text-foreground">{label}</Text>
           <Switch
             value={!!value}
             onValueChange={onChange}

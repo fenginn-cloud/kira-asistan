@@ -47,7 +47,7 @@ export function MoneyInput({
           keyboardType="number-pad"
           placeholder={placeholder}
           placeholderTextColor="#9CA3AF"
-          className="flex-1 text-base text-[#0B1220]"
+          className="flex-1 text-base text-foreground"
         />
         <Text className="ml-2 text-base font-semibold text-muted">₺</Text>
       </View>

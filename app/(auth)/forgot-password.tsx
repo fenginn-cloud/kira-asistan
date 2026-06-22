@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fgColor } from '@/lib/theme/useThemeColors';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,7 +17,7 @@ export default function ForgotPasswordScreen() {
     <SafeAreaView className="flex-1 bg-background">
       <View className="px-6 pt-2">
         <Pressable onPress={() => router.back()} className="h-10 w-10 justify-center">
-          <ArrowLeft size={24} color="#0B1220" />
+          <ArrowLeft size={24} color={fgColor()} />
         </Pressable>
       </View>
 
@@ -26,7 +27,7 @@ export default function ForgotPasswordScreen() {
             <View className="h-16 w-16 items-center justify-center rounded-full bg-success-soft">
               <MailCheck size={28} color="#16A34A" />
             </View>
-            <Text className="mt-4 text-xl font-bold text-[#0B1220]">
+            <Text className="mt-4 text-xl font-bold text-foreground">
               Bağlantı gönderildi
             </Text>
             <Text className="mt-2 text-center text-sm text-muted">
@@ -38,7 +39,7 @@ export default function ForgotPasswordScreen() {
           </View>
         ) : (
           <>
-            <Text className="text-2xl font-bold text-[#0B1220]">
+            <Text className="text-2xl font-bold text-foreground">
               Şifrenizi mi unuttunuz?
             </Text>
             <Text className="mt-2 text-base text-muted">

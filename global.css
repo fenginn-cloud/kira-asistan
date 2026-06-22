@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 242 244 247; /* #F2F4F7 */
+    --surface: 255 255 255; /* #FFFFFF */
+    --foreground: 11 18 32; /* #0B1220 */
+    --muted: 107 114 128; /* #6B7280 */
+    --border: 229 231 235; /* #E5E7EB */
+  }
+
+  .dark:root {
+    --background: 11 18 32; /* #0B1220 */
+    --surface: 22 29 46; /* #161D2E */
+    --foreground: 248 250 252; /* #F8FAFC */
+    --muted: 148 163 184; /* #94A3B8 */
+    --border: 35 43 62; /* #232B3E */
+  }
+}

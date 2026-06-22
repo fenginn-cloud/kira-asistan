@@ -60,7 +60,7 @@ export function ReminderCard({ id, contract, payment, daysUntil, kind }: Reminde
       <Pressable onPress={() => router.push(`/(app)/contracts/${contract.id}`)}>
         <View className="flex-row items-start justify-between">
           <View className="flex-1 pr-3">
-            <Text className="text-base font-bold text-[#0B1220]" numberOfLines={1}>
+            <Text className="text-base font-bold text-foreground" numberOfLines={1}>
               {contract.propertyName} {location}
             </Text>
             <Text className="mt-0.5 text-sm text-muted" numberOfLines={1}>
@@ -79,7 +79,7 @@ export function ReminderCard({ id, contract, payment, daysUntil, kind }: Reminde
           <Text className="text-xs text-muted">
             {kind === 'overdue' ? 'Güncel Borç' : 'Kira Tutarı'}
           </Text>
-          <Text className="text-base font-bold text-[#0B1220]">
+          <Text className="text-base font-bold text-foreground">
             {kind === 'overdue'
               ? formatCurrency(remainingDebt(payment))
               : formatCurrency(contract.rentAmount + contract.duesAmount)}
@@ -114,7 +114,7 @@ function ActionButton({
   tone?: 'default' | 'whatsapp' | 'done';
 }) {
   const styles = {
-    default: { bg: 'bg-background', color: palette.primary, text: 'text-[#0B1220]' },
+    default: { bg: 'bg-background', color: palette.primary, text: 'text-foreground' },
     whatsapp: { bg: 'bg-[#E7F8EF]', color: '#1FA855', text: 'text-[#1FA855]' },
     done: { bg: 'bg-success-soft', color: palette.success, text: 'text-success' },
   }[tone];

@@ -5,6 +5,7 @@ module.exports = {
     './src/**/*.{js,jsx,ts,tsx}',
   ],
   presets: [require('nativewind/preset')],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -25,11 +26,12 @@ module.exports = {
         success: { DEFAULT: '#16A34A', soft: '#DCFCE7' },
         warning: { DEFAULT: '#D97706', soft: '#FEF3C7' },
         danger: { DEFAULT: '#DC2626', soft: '#FEE2E2' },
-        // Surface / background tokens (light)
-        surface: '#FFFFFF',
-        background: '#F2F4F7',
-        muted: '#6B7280',
-        border: '#E5E7EB',
+        // Structural tokens — flip between light/dark via CSS variables.
+        surface: 'rgb(var(--surface) / <alpha-value>)',
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        muted: 'rgb(var(--muted) / <alpha-value>)',
+        border: 'rgb(var(--border) / <alpha-value>)',
       },
       borderRadius: {
         card: '20px',
