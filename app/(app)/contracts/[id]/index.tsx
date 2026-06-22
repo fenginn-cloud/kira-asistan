@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import {
   ArrowLeft,
+  CalendarX2,
   CheckCircle2,
   Eye,
   FileText,
@@ -64,6 +65,7 @@ import { formatCurrency, formatShortDate } from '@/lib/utils/format';
 import { derivePaymentStatus } from '@/lib/utils/payments';
 import { recentPeriodCutoff } from '@/lib/utils/paymentPeriods';
 import { generateLedgerRows, getContractBalance } from '@/lib/ledger/ledger';
+import { daysUntilEnd, expiryLabel } from '@/lib/utils/contractExpiry';
 import { palette } from '@/lib/theme/colors';
 import type { Payment, PaymentTransaction } from '@/types';
 
@@ -335,6 +337,31 @@ export default function ContractDetailScreen() {
             />
           </View>
         </View>
+
+        {/* Contract expiry banner (renewal / rent-increase reminder) */}
+        {(() => {
+          if (contract.status !== 'active') return null;
+          const d = daysUntilEnd(contract);
+          if (d === null || d > 60) return null;
+          const overdue = d < 0;
+          return (
+            <View
+              className={`mt-4 flex-row items-center gap-3 rounded-2xl p-3 ${
+                overdue || d <= 15 ? 'bg-warning-soft' : 'bg-primary-50'
+              }`}
+            >
+              <CalendarX2 size={20} color={palette.warning} />
+              <View className="flex-1">
+                <Text className="text-sm font-semibold text-foreground">
+                  Sözleşme {expiryLabel(d)}
+                </Text>
+                <Text className="text-xs text-muted">
+                  Yenileme veya kira artışı için uygun zaman.
+                </Text>
+              </View>
+            </View>
+          );
+        })()}
 
         {/* Cari hesap summary card (always visible) */}
         {balance ? (

@@ -11,7 +11,8 @@ export type StatusFilter =
   | 'paid_month'
   | 'partial_month'
   | 'unpaid_month'
-  | 'overdue';
+  | 'overdue'
+  | 'expiring';
 
 export type SortKey =
   | 'date_desc'

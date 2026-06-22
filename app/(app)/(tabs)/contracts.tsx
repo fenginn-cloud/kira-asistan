@@ -12,6 +12,7 @@ import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
+import { daysUntilEnd } from '@/lib/utils/contractExpiry';
 import {
   SORT_LABELS,
   useContractsViewStore,
@@ -30,6 +31,7 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'paid_month', label: 'Bu Ay Ödeyenler' },
   { key: 'partial_month', label: 'Bu Ay Eksik' },
   { key: 'unpaid_month', label: 'Bu Ay Ödemeyenler' },
+  { key: 'expiring', label: 'Bitişi Yaklaşan' },
 ];
 
 const SORT_ORDER: SortKey[] = [
@@ -147,6 +149,10 @@ export default function ContractsScreen() {
           return bal?.currentMonth.status === 'partial';
         case 'unpaid_month':
           return bal?.currentMonth.status === 'pending' || bal?.currentMonth.status === 'overdue';
+        case 'expiring': {
+          const d = daysUntilEnd(c);
+          return d !== null && d <= 30;
+        }
         default:
           return true;
       }

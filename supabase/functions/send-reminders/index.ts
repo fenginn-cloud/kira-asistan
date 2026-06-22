@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
       admin
         .from('contracts')
         .select(
-          'id, company_id, property_name, block, unit, rent_amount, dues_amount, status'
+          'id, company_id, property_name, block, unit, rent_amount, dues_amount, status, end_date'
         )
         .eq('status', 'active'),
       admin.from('profiles').select('id, company_id, is_active'),
@@ -180,7 +180,65 @@ Deno.serve(async (req) => {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, today, processed, sent }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  // --------------------------------------------------------------------------
+  // Contract-end reminders: notify the company when a lease ends in 30/15/7/1
+  // days (renewal / rent-increase opportunity). Sent ~once per trigger-day.
+  // --------------------------------------------------------------------------
+  const END_OFFSETS = [30, 15, 7, 1];
+  const END_WINDOW_MS = 20 * 60 * 60 * 1000; // ~once per day
+  let endProcessed = 0;
+  let endSent = 0;
+
+  for (const c of contracts ?? []) {
+    if (!c.end_date) continue;
+    const days = daysBetween(today, c.end_date);
+    if (!END_OFFSETS.includes(days)) continue;
+    endProcessed++;
+
+    const loc = [c.property_name, c.block, c.unit].filter(Boolean).join(' ');
+    const title = 'Sözleşme bitişi yaklaşıyor';
+    const body = `${loc} sözleşmesi ${days} gün içinde sona eriyor. Yenileme / kira artışı için uygun zaman.`;
+    const reminderKey = `${c.id}:end:${days}`;
+    const targets = usersByCompany.get(c.company_id) ?? [];
+
+    for (const user of targets) {
+      const userSubs = subsByUser.get(user.id) ?? [];
+      if (userSubs.length === 0) continue;
+
+      const { data: existing } = await admin
+        .from('notification_log')
+        .select('sent_at')
+        .eq('user_id', user.id)
+        .eq('reminder_key', reminderKey)
+        .maybeSingle();
+      if (existing && Date.now() - Date.parse(existing.sent_at) < END_WINDOW_MS) {
+        continue;
+      }
+
+      const payload = JSON.stringify({ title, body, data: { url: `/contracts/${c.id}` } });
+      for (const s of userSubs) {
+        try {
+          await webpush.sendNotification(
+            { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+            payload
+          );
+          endSent++;
+        } catch (e: any) {
+          if (e?.statusCode === 404 || e?.statusCode === 410) {
+            await admin.from('push_subscriptions').delete().eq('endpoint', s.endpoint);
+          }
+        }
+      }
+
+      await admin.from('notification_log').upsert(
+        { user_id: user.id, reminder_key: reminderKey, sent_at: new Date().toISOString() },
+        { onConflict: 'user_id,reminder_key' }
+      );
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ ok: true, today, processed, sent, endProcessed, endSent }),
+    { headers: { 'Content-Type': 'application/json' } }
+  );
 });

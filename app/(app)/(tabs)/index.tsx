@@ -15,6 +15,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { DashboardPaymentRow } from '@/features/dashboard/components/DashboardPaymentRow';
+import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
 import { ReminderCard } from '@/features/notifications/components/ReminderCard';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useContracts } from '@/features/contracts/hooks';
@@ -24,6 +25,7 @@ import { useScrollToTop } from '@/lib/scrollToTop';
 import { queryKeys } from '@/lib/query';
 import { formatCurrency } from '@/lib/utils/format';
 import { formatCurrencyTRY, getDashboardFinancialSummary } from '@/lib/ledger/ledger';
+import { expiringContracts } from '@/lib/utils/contractExpiry';
 import { palette } from '@/lib/theme/colors';
 import type { OpenItem } from '@/features/notifications/reminders';
 
@@ -37,6 +39,7 @@ export default function HomeScreen() {
   const { data: contracts = [] } = useContracts();
   const { data: payments = [] } = useAllPayments();
   const finance = getDashboardFinancialSummary(contracts, payments);
+  const expiring = expiringContracts(contracts);
 
   // Pull-to-refresh: refetch contracts + payments (Supabase or mock).
   const onRefresh = async () => {
@@ -146,6 +149,20 @@ export default function HomeScreen() {
             ) : (
               renderRows(overdue)
             )}
+
+            {/* 3.5 — Contracts ending soon (renewal / rent-increase opportunity) */}
+            {expiring.length > 0 ? (
+              <>
+                <SectionHeader title="Yaklaşan Sözleşme Bitişleri" />
+                {expiring.map((item) => (
+                  <ContractExpiryRow
+                    key={item.contract.id}
+                    item={item}
+                    onPress={() => goToContract(item.contract.id)}
+                  />
+                ))}
+              </>
+            ) : null}
 
             {/* 4 — Monthly + cari hesap summary */}
             <SectionHeader title="Aylık Özet" />
