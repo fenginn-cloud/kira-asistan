@@ -6,9 +6,12 @@ export type StatusFilter =
   | 'all'
   | 'active'
   | 'passive'
-  | 'overdue'
-  | 'upcoming'
-  | 'paid';
+  | 'debtor'
+  | 'creditor'
+  | 'paid_month'
+  | 'partial_month'
+  | 'unpaid_month'
+  | 'overdue';
 
 export type SortKey =
   | 'date_desc'
@@ -16,7 +19,10 @@ export type SortKey =
   | 'name_asc'
   | 'name_desc'
   | 'rent_desc'
-  | 'rent_asc';
+  | 'rent_asc'
+  | 'debt_desc'
+  | 'debt_asc'
+  | 'over_desc';
 
 interface ContractsViewState {
   status: StatusFilter;
@@ -53,4 +59,7 @@ export const SORT_LABELS: Record<SortKey, string> = {
   name_desc: 'Mülk Z → A',
   rent_desc: 'Kira Yüksek → Düşük',
   rent_asc: 'Kira Düşük → Yüksek',
+  debt_desc: 'Borç Yüksek → Düşük',
+  debt_asc: 'Borç Düşük → Yüksek',
+  over_desc: 'Fazla Ödeme Çok → Az',
 };

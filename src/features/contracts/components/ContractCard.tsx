@@ -1,16 +1,19 @@
 import { Text, View } from 'react-native';
 import { Building2, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
-import { ContractBadge } from '@/components/ui/StatusBadge';
+import { BalanceBadge, ContractBadge } from '@/components/ui/StatusBadge';
 import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrencyTRY, type ContractBalance } from '@/lib/ledger/ledger';
 import type { Contract } from '@/types';
 
 interface ContractCardProps {
   contract: Contract;
+  /** Cari hesap özeti — verilirse kartta bu ay + genel bakiye gösterilir. */
+  balance?: ContractBalance;
   onPress: () => void;
 }
 
-export function ContractCard({ contract, onPress }: ContractCardProps) {
+export function ContractCard({ contract, balance, onPress }: ContractCardProps) {
   const location = [contract.block, contract.unit].filter(Boolean).join(' / ');
   return (
     <Card onPress={onPress}>
@@ -29,7 +32,11 @@ export function ContractCard({ contract, onPress }: ContractCardProps) {
             </Text>
           </View>
         </View>
-        <ContractBadge status={contract.status} />
+        {balance ? (
+          <BalanceBadge status={balance.status} />
+        ) : (
+          <ContractBadge status={contract.status} />
+        )}
       </View>
 
       <View className="mt-4 flex-row items-center justify-between">
@@ -41,6 +48,41 @@ export function ContractCard({ contract, onPress }: ContractCardProps) {
           {formatCurrency(contract.rentAmount)}
         </Text>
       </View>
+
+      {balance ? (
+        <View className="mt-3 flex-row items-center justify-between border-t border-border/60 pt-3">
+          <View>
+            <Text className="text-[11px] text-muted">Bu ay ödenen</Text>
+            <Text className="text-sm font-semibold text-foreground">
+              {formatCurrencyTRY(balance.currentMonth.paid)}
+            </Text>
+          </View>
+          <View className="items-center">
+            <Text className="text-[11px] text-muted">Bu ay kalan</Text>
+            <Text
+              className={`text-sm font-semibold ${
+                balance.currentMonth.remaining > 0 ? 'text-danger' : 'text-success'
+              }`}
+            >
+              {formatCurrencyTRY(balance.currentMonth.remaining)}
+            </Text>
+          </View>
+          <View className="items-end">
+            <Text className="text-[11px] text-muted">Genel bakiye</Text>
+            <Text
+              className={`text-sm font-bold ${
+                balance.totalBalance < 0
+                  ? 'text-danger'
+                  : balance.totalBalance > 0
+                    ? 'text-success'
+                    : 'text-foreground'
+              }`}
+            >
+              {formatCurrencyTRY(balance.totalBalance)}
+            </Text>
+          </View>
+        </View>
+      ) : null}
     </Card>
   );
 }

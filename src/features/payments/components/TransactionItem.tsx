@@ -1,5 +1,5 @@
 import { Linking, Pressable, Text, View } from 'react-native';
-import { Eye, Receipt } from 'lucide-react-native';
+import { Eye, Receipt, Trash2 } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, formatShortDate } from '@/lib/utils/format';
@@ -7,7 +7,13 @@ import { getDocumentViewUrl } from '@/services/storage';
 import { PAYMENT_METHOD_LABEL, type PaymentTransaction } from '@/types';
 import { palette } from '@/lib/theme/colors';
 
-export function TransactionItem({ tx }: { tx: PaymentTransaction }) {
+export function TransactionItem({
+  tx,
+  onDelete,
+}: {
+  tx: PaymentTransaction;
+  onDelete?: () => void;
+}) {
   const toast = useToast();
 
   const viewReceipt = async () => {
@@ -38,17 +44,28 @@ export function TransactionItem({ tx }: { tx: PaymentTransaction }) {
           ) : null}
         </View>
 
-        {tx.receiptUrl ? (
-          <Pressable
-            onPress={viewReceipt}
-            className="flex-row items-center gap-1.5 rounded-2xl bg-primary-50 px-3 py-2 active:opacity-80"
-          >
-            <Eye size={15} color={palette.primary} />
-            <Text className="text-xs font-semibold text-primary-700">Dekont</Text>
-          </Pressable>
-        ) : (
-          <Receipt size={18} color={palette.border} />
-        )}
+        <View className="flex-row items-center gap-2">
+          {tx.receiptUrl ? (
+            <Pressable
+              onPress={viewReceipt}
+              className="flex-row items-center gap-1.5 rounded-2xl bg-primary-50 px-3 py-2 active:opacity-80"
+            >
+              <Eye size={15} color={palette.primary} />
+              <Text className="text-xs font-semibold text-primary-700">Dekont</Text>
+            </Pressable>
+          ) : (
+            <Receipt size={18} color={palette.border} />
+          )}
+          {onDelete ? (
+            <Pressable
+              onPress={onDelete}
+              hitSlop={8}
+              className="h-9 w-9 items-center justify-center rounded-2xl bg-danger-soft active:opacity-80"
+            >
+              <Trash2 size={16} color={palette.danger} />
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </Card>
   );

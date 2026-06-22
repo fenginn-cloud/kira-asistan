@@ -30,6 +30,18 @@ export function useEnsureRecentPayments(contractId: string) {
   });
 }
 
+export function useDeleteTransaction(contractId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repositories.payments.deleteTransaction(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contractId) });
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
+      qc.invalidateQueries({ queryKey: ['transactions', 'contract', contractId] });
+    },
+  });
+}
+
 export function useContractTransactions(contractId: string) {
   return useQuery({
     queryKey: ['transactions', 'contract', contractId],

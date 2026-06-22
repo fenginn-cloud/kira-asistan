@@ -11,8 +11,7 @@ import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
-import { openPaymentFor } from '@/features/notifications/reminders';
-import { daysUntilDue } from '@/lib/utils/payments';
+import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import {
   SORT_LABELS,
   useContractsViewStore,
@@ -26,8 +25,11 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'active', label: 'Aktif' },
   { key: 'passive', label: 'Pasif' },
   { key: 'overdue', label: 'Gecikenler' },
-  { key: 'upcoming', label: 'Yaklaşanlar' },
-  { key: 'paid', label: 'Ödenenler' },
+  { key: 'debtor', label: 'Borcu Olanlar' },
+  { key: 'creditor', label: 'Fazla Ödeyenler' },
+  { key: 'paid_month', label: 'Bu Ay Ödeyenler' },
+  { key: 'partial_month', label: 'Bu Ay Eksik' },
+  { key: 'unpaid_month', label: 'Bu Ay Ödemeyenler' },
 ];
 
 const SORT_ORDER: SortKey[] = [
@@ -37,14 +39,23 @@ const SORT_ORDER: SortKey[] = [
   'name_desc',
   'rent_desc',
   'rent_asc',
+  'debt_desc',
+  'debt_asc',
+  'over_desc',
 ];
 
 function contractName(c: Contract): string {
   return [c.propertyName, c.block, c.unit].filter(Boolean).join(' ');
 }
 
-function sortContracts(list: Contract[], sort: SortKey): Contract[] {
+function sortContracts(
+  list: Contract[],
+  sort: SortKey,
+  balances: Map<string, ContractBalance>
+): Contract[] {
   const arr = [...list];
+  const debt = (c: Contract) => balances.get(c.id)?.totalDebt ?? 0;
+  const credit = (c: Contract) => balances.get(c.id)?.totalCredit ?? 0;
   switch (sort) {
     case 'date_asc':
       return arr.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -56,6 +67,12 @@ function sortContracts(list: Contract[], sort: SortKey): Contract[] {
       return arr.sort((a, b) => b.rentAmount - a.rentAmount);
     case 'rent_asc':
       return arr.sort((a, b) => a.rentAmount - b.rentAmount);
+    case 'debt_desc':
+      return arr.sort((a, b) => debt(b) - debt(a));
+    case 'debt_asc':
+      return arr.sort((a, b) => debt(a) - debt(b));
+    case 'over_desc':
+      return arr.sort((a, b) => credit(b) - credit(a));
     case 'date_desc':
     default:
       return arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -81,14 +98,22 @@ export default function ContractsScreen() {
     return ['all', ...names];
   }, [contracts]);
 
-  const filtered = useMemo(() => {
+  // Per-contract cari hesap balances, computed once from all payments.
+  const balances = useMemo(() => {
     const byContract = new Map<string, Payment[]>();
     for (const p of payments) {
       const arr = byContract.get(p.contractId);
       if (arr) arr.push(p);
       else byContract.set(p.contractId, [p]);
     }
+    const map = new Map<string, ContractBalance>();
+    for (const c of contracts) {
+      map.set(c.id, getContractBalance(c, byContract.get(c.id) ?? []));
+    }
+    return map;
+  }, [contracts, payments]);
 
+  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const result = contracts.filter((c) => {
       // Search
@@ -103,36 +128,39 @@ export default function ContractsScreen() {
       // Property filter
       if (property !== 'all' && c.propertyName !== property) return false;
 
-      // Status filter
-      const cp = byContract.get(c.id) ?? [];
-      const statuses = new Set(cp.map((p) => p.status));
-      const open = openPaymentFor(cp);
-      const daysUntil = open ? daysUntilDue(open) : null;
+      // Status / cari hesap filter
+      const bal = balances.get(c.id);
       switch (status) {
         case 'active':
           return c.status === 'active';
         case 'passive':
           return c.status === 'passive';
         case 'overdue':
-          return statuses.has('overdue');
-        case 'upcoming':
-          return daysUntil !== null && daysUntil >= 1 && daysUntil <= 7;
-        case 'paid':
-          return statuses.has('paid');
+          return !!bal?.hasOverdue;
+        case 'debtor':
+          return (bal?.totalBalance ?? 0) < 0;
+        case 'creditor':
+          return (bal?.totalBalance ?? 0) > 0;
+        case 'paid_month':
+          return bal?.currentMonth.status === 'paid' || bal?.currentMonth.status === 'overpaid';
+        case 'partial_month':
+          return bal?.currentMonth.status === 'partial';
+        case 'unpaid_month':
+          return bal?.currentMonth.status === 'pending' || bal?.currentMonth.status === 'overdue';
         default:
           return true;
       }
     });
 
-    return sortContracts(result, sort);
-  }, [contracts, payments, query, status, property, sort]);
+    return sortContracts(result, sort, balances);
+  }, [contracts, balances, query, status, property, sort]);
 
   const sortItems: ActionSheetItem[] = SORT_ORDER.map((key) => ({
     label: SORT_LABELS[key] + (sort === key ? '  ✓' : ''),
     onPress: () => setSort(key),
   }));
 
-  const summary = `${property === 'all' ? 'Tüm mülkler' : property} · ${SORT_LABELS[sort]}`;
+  const summary = `${property === 'all' ? 'Tüm mülkler' : property} · ${filtered.length} sözleşme · ${SORT_LABELS[sort]}`;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -250,6 +278,7 @@ export default function ContractsScreen() {
           renderItem={({ item }) => (
             <ContractCard
               contract={item}
+              balance={balances.get(item.id)}
               onPress={() => router.push(`/(app)/contracts/${item.id}`)}
             />
           )}

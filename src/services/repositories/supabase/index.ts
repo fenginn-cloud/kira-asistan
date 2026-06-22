@@ -135,6 +135,14 @@ export const supabaseRepositories: Repositories = {
       if (error) throw error;
       return (data ?? []).map(toTransaction);
     },
+    async deleteTransaction(id) {
+      // The recalc_payment trigger updates the affected payment after delete.
+      const { error } = await db()
+        .from('payment_transactions')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
     async ensureRecentPayments(contract) {
       const rows = recentPaymentPeriods(contract).map((s) => ({
         contract_id: s.contractId,

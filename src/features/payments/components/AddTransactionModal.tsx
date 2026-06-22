@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -17,8 +17,9 @@ import { DateField } from '@/components/ui/DateField';
 import { MoneyInput } from '@/components/ui/MoneyInput';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
-import { formatCurrency, formatMonth } from '@/lib/utils/format';
+import { formatCurrency } from '@/lib/utils/format';
 import { remainingDebt } from '@/lib/utils/payments';
+import { formatMonthTR } from '@/lib/ledger/ledger';
 import { PAYMENT_METHOD_LABEL, type Payment, type PaymentMethod } from '@/types';
 import { palette } from '@/lib/theme/colors';
 
@@ -29,6 +30,7 @@ export interface ReceiptFile {
 }
 
 export interface AddTransactionInput {
+  paymentId: string;
   amount: number;
   paidAt: string;
   method: PaymentMethod;
@@ -38,7 +40,10 @@ export interface AddTransactionInput {
 
 interface Props {
   visible: boolean;
+  /** The initially-selected month. */
   payment: Payment | null;
+  /** All charge months the payment can be attached to. */
+  payments: Payment[];
   onClose: () => void;
   onSubmit: (input: AddTransactionInput) => void;
   isSubmitting?: boolean;
@@ -49,11 +54,13 @@ const METHODS = Object.keys(PAYMENT_METHOD_LABEL) as PaymentMethod[];
 export function AddTransactionModal({
   visible,
   payment,
+  payments,
   onClose,
   onSubmit,
   isSubmitting,
 }: Props) {
   const toast = useToast();
+  const [paymentId, setPaymentId] = useState<string>('');
   const [amount, setAmount] = useState(0);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [method, setMethod] = useState<PaymentMethod | null>(null);
@@ -61,10 +68,22 @@ export function AddTransactionModal({
   const [receipt, setReceipt] = useState<ReceiptFile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset + prefill the amount with the remaining debt whenever the sheet opens.
+  // Month options, newest first.
+  const months = useMemo(
+    () => [...payments].sort((a, b) => b.periodMonth.localeCompare(a.periodMonth)),
+    [payments]
+  );
+  const selected = useMemo(
+    () => months.find((m) => m.id === paymentId) ?? null,
+    [months, paymentId]
+  );
+
+  // Reset + prefill whenever the sheet opens.
   useEffect(() => {
-    if (visible && payment) {
-      setAmount(remainingDebt(payment));
+    if (visible) {
+      const initial = payment ?? months[0] ?? null;
+      setPaymentId(initial?.id ?? '');
+      setAmount(initial ? remainingDebt(initial) : 0);
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setMethod(null);
       setDescription('');
@@ -72,6 +91,12 @@ export function AddTransactionModal({
       setError(null);
     }
   }, [visible, payment?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Picking a different month refills the amount with that month's remaining.
+  const pickMonth = (p: Payment) => {
+    setPaymentId(p.id);
+    setAmount(remainingDebt(p));
+  };
 
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -106,6 +131,10 @@ export function AddTransactionModal({
 
   const handleSubmit = () => {
     setError(null);
+    if (!paymentId) {
+      setError('Lütfen ödemenin ait olduğu ayı seçin.');
+      return;
+    }
     if (!amount || amount <= 0) {
       setError('Geçerli bir tutar girin.');
       return;
@@ -115,6 +144,7 @@ export function AddTransactionModal({
       return;
     }
     onSubmit({
+      paymentId,
       amount,
       paidAt: date,
       method,
@@ -138,13 +168,52 @@ export function AddTransactionModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            {payment ? (
+            {/* Hangi aya ait — month selector */}
+            {months.length > 0 ? (
+              <View className="mb-4 gap-1.5">
+                <Text className="text-sm font-medium text-muted">Hangi Ay *</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 8 }}
+                >
+                  {months.map((m) => {
+                    const active = m.id === paymentId;
+                    const remaining = remainingDebt(m);
+                    return (
+                      <Pressable
+                        key={m.id}
+                        onPress={() => pickMonth(m)}
+                        className={`rounded-2xl px-4 py-2.5 ${
+                          active ? 'bg-primary' : 'bg-background'
+                        }`}
+                      >
+                        <Text
+                          className={`text-sm font-semibold capitalize ${
+                            active ? 'text-white' : 'text-muted'
+                          }`}
+                        >
+                          {formatMonthTR(m.periodMonth)}
+                        </Text>
+                        <Text
+                          className={`text-xs ${active ? 'text-white/80' : 'text-muted'}`}
+                        >
+                          {remaining > 0 ? `Kalan ${formatCurrency(remaining)}` : 'Ödendi'}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
+
+            {selected ? (
               <View className="mb-4 rounded-2xl bg-background p-3">
-                <Text className="text-sm text-muted">
-                  {formatMonth(payment.periodMonth)} dönemi
+                <Text className="text-sm text-muted capitalize">
+                  {formatMonthTR(selected.periodMonth)} dönemi
                 </Text>
                 <Text className="text-sm font-semibold text-danger">
-                  Kalan borç: {formatCurrency(remainingDebt(payment))}
+                  Kalan borç: {formatCurrency(remainingDebt(selected))}
                 </Text>
               </View>
             ) : null}
@@ -179,7 +248,7 @@ export function AddTransactionModal({
                 </View>
               </View>
 
-              <DateField label="Tarih" value={date} onChange={setDate} />
+              <DateField label="Ödeme Tarihi" value={date} onChange={setDate} />
 
               <Input
                 label="Açıklama (opsiyonel)"

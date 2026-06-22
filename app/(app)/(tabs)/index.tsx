@@ -17,10 +17,13 @@ import { CardSkeleton } from '@/components/ui/Skeleton';
 import { DashboardPaymentRow } from '@/features/dashboard/components/DashboardPaymentRow';
 import { ReminderCard } from '@/features/notifications/components/ReminderCard';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
+import { useContracts } from '@/features/contracts/hooks';
+import { useAllPayments } from '@/features/payments/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { queryKeys } from '@/lib/query';
 import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrencyTRY, getDashboardFinancialSummary } from '@/lib/ledger/ledger';
 import { palette } from '@/lib/theme/colors';
 import type { OpenItem } from '@/features/notifications/reminders';
 
@@ -30,7 +33,10 @@ export default function HomeScreen() {
   const scrollRef = useScrollToTop<ScrollView>('index');
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
-  const { isLoading, today, upcoming, overdue, summary } = useNotificationCenter();
+  const { isLoading, today, upcoming, overdue } = useNotificationCenter();
+  const { data: contracts = [] } = useContracts();
+  const { data: payments = [] } = useAllPayments();
+  const finance = getDashboardFinancialSummary(contracts, payments);
 
   // Pull-to-refresh: refetch contracts + payments (Supabase or mock).
   const onRefresh = async () => {
@@ -141,31 +147,68 @@ export default function HomeScreen() {
               renderRows(overdue)
             )}
 
-            {/* 4 — Monthly summary */}
+            {/* 4 — Monthly + cari hesap summary */}
             <SectionHeader title="Aylık Özet" />
             <View className="gap-3">
               <View className="flex-row gap-3">
                 <StatCard
-                  label="Toplam Tahsilat"
-                  value={formatCurrency(summary.collectedThisMonth)}
-                  icon={CheckCircle2}
-                  tone="success"
+                  label="Bu Ay Beklenen"
+                  value={formatCurrencyTRY(finance.expectedThisMonth)}
+                  icon={Wallet}
+                  tone="primary"
                 />
                 <StatCard
-                  label="Bekleyen Tahsilat"
-                  value={formatCurrency(summary.pendingCollections)}
-                  icon={Wallet}
-                  tone="warning"
+                  label="Bu Ay Tahsil Edilen"
+                  value={formatCurrencyTRY(finance.collectedThisMonth)}
+                  icon={CheckCircle2}
+                  tone="success"
                 />
               </View>
               <View className="flex-row gap-3">
                 <StatCard
-                  label="Geciken Tahsilat"
-                  value={formatCurrency(summary.overdueCollections)}
+                  label="Bu Ay Kalan"
+                  value={formatCurrencyTRY(finance.remainingThisMonth)}
+                  icon={TimerReset}
+                  tone="warning"
+                />
+                <StatCard
+                  label="Geciken Sözleşme"
+                  value={`${finance.overdueContracts}`}
                   icon={TimerReset}
                   tone="danger"
                 />
-                <View className="flex-1" />
+              </View>
+            </View>
+
+            <SectionHeader title="Cari Hesap" />
+            <View className="gap-3">
+              <View className="flex-row gap-3">
+                <StatCard
+                  label="Toplam Eksik Ödeme"
+                  value={formatCurrencyTRY(finance.totalShort)}
+                  icon={TimerReset}
+                  tone="danger"
+                />
+                <StatCard
+                  label="Toplam Fazla Ödeme"
+                  value={formatCurrencyTRY(finance.totalOver)}
+                  icon={CheckCircle2}
+                  tone="success"
+                />
+              </View>
+              <View className="flex-row gap-3">
+                <StatCard
+                  label="Net Bakiye"
+                  value={formatCurrencyTRY(finance.netBalance)}
+                  icon={Wallet}
+                  tone={finance.netBalance < 0 ? 'danger' : 'success'}
+                />
+                <StatCard
+                  label="Kısmi Ödeyen"
+                  value={`${finance.partialContracts}`}
+                  icon={Wallet}
+                  tone="warning"
+                />
               </View>
             </View>
           </>

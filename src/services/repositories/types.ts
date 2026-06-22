@@ -33,6 +33,8 @@ export interface PaymentRepository {
   }): Promise<Payment>;
   listTransactions(paymentId: string): Promise<PaymentTransaction[]>;
   listTransactionsByContract(contractId: string): Promise<PaymentTransaction[]>;
+  /** Delete a single collection; the ledger recomputes automatically. */
+  deleteTransaction(id: string): Promise<void>;
   /** Create any missing payment rows for the contract's recent months. */
   ensureRecentPayments(contract: Contract): Promise<void>;
 }

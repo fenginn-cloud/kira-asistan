@@ -15,6 +15,7 @@ import {
   Pencil,
   Phone,
   Plus,
+  RefreshCw,
   Trash2,
   Upload,
 } from 'lucide-react-native';
@@ -31,6 +32,8 @@ import { InfoRow } from '@/features/contracts/components/InfoRow';
 import { MessageModal } from '@/features/contracts/components/MessageModal';
 import { PaymentItem } from '@/features/payments/components/PaymentItem';
 import { TransactionItem } from '@/features/payments/components/TransactionItem';
+import { LedgerRowCard } from '@/features/payments/components/LedgerRowCard';
+import { ContractBalanceCard } from '@/features/payments/components/ContractBalanceCard';
 import {
   AddTransactionModal,
   type AddTransactionInput,
@@ -44,6 +47,7 @@ import {
   usePaymentsByContract,
   useAddTransaction,
   useContractTransactions,
+  useDeleteTransaction,
   useEnsureRecentPayments,
 } from '@/features/payments/hooks';
 import { useAuthStore } from '@/store/authStore';
@@ -59,8 +63,17 @@ import { errorMessage } from '@/lib/utils/error';
 import { formatCurrency, formatShortDate } from '@/lib/utils/format';
 import { derivePaymentStatus } from '@/lib/utils/payments';
 import { recentPeriodCutoff } from '@/lib/utils/paymentPeriods';
+import { generateLedgerRows, getContractBalance } from '@/lib/ledger/ledger';
 import { palette } from '@/lib/theme/colors';
-import type { Payment } from '@/types';
+import type { Payment, PaymentTransaction } from '@/types';
+
+type Tab = 'genel' | 'odemeler' | 'cari';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'genel', label: 'Genel' },
+  { key: 'odemeler', label: 'Ödemeler' },
+  { key: 'cari', label: 'Cari Hesap' },
+];
 
 export default function ContractDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -73,12 +86,13 @@ export default function ContractDetailScreen() {
   const { data: payments = [] } = usePaymentsByContract(id);
   const { data: transactions = [] } = useContractTransactions(id);
   const addTransaction = useAddTransaction(id);
+  const deleteTransaction = useDeleteTransaction(id);
   const updateContract = useUpdateContract();
   const deleteContract = useDeleteContract();
   const ensureRecent = useEnsureRecentPayments(id);
 
-  // Backfill the last 3 months of payment records once the contract loads, so
-  // past months with no record show up as overdue/pending (never silently paid).
+  // Backfill recent + upcoming charge months once the contract loads, so past
+  // months with no record show up as overdue/pending (never silently paid).
   const ensuredFor = useRef<string | null>(null);
   useEffect(() => {
     if (contract && contract.status === 'active' && ensuredFor.current !== contract.id) {
@@ -87,7 +101,16 @@ export default function ContractDetailScreen() {
     }
   }, [contract, ensureRecent]);
 
-  // Show only the recent window (current + last 2 months), newest first.
+  const [tab, setTab] = useState<Tab>('genel');
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [activePayment, setActivePayment] = useState<Payment | null>(null);
+  const [paymentSheetOpen, setPaymentSheetOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [txToDelete, setTxToDelete] = useState<PaymentTransaction | null>(null);
+  const [savingPayment, setSavingPayment] = useState(false);
+
+  // Show only the recent window (last 3 + current + next 1), newest first.
   const recentPayments = useMemo(() => {
     const cutoff = recentPeriodCutoff();
     return payments
@@ -95,15 +118,16 @@ export default function ContractDetailScreen() {
       .sort((a, b) => b.periodMonth.localeCompare(a.periodMonth));
   }, [payments]);
 
-  const [messageOpen, setMessageOpen] = useState(false);
-  const [activePayment, setActivePayment] = useState<Payment | null>(null);
-  const [actionsOpen, setActionsOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [savingPayment, setSavingPayment] = useState(false);
+  // Cari hesap: full ledger (chronological) + derived balance summary.
+  const ledgerRows = useMemo(() => generateLedgerRows(payments), [payments]);
+  const balance = useMemo(
+    () => (contract ? getContractBalance(contract, payments) : null),
+    [contract, payments]
+  );
 
-  // The most relevant unpaid period drives the reminder message.
+  // The most relevant unpaid period drives the reminder message + default month.
   const outstanding = useMemo(
-    () => payments.find((p) => p.status === 'overdue' || p.status === 'partial') ?? payments[0],
+    () => payments.find((p) => derivePaymentStatus(p) === 'overdue' || derivePaymentStatus(p) === 'partial') ?? payments[0],
     [payments]
   );
 
@@ -128,11 +152,23 @@ export default function ContractDetailScreen() {
 
   const location = [contract.block, contract.unit].filter(Boolean).join(' / ');
 
+  const openPaymentSheet = (p: Payment | null) => {
+    setActivePayment(p);
+    setPaymentSheetOpen(true);
+  };
+
   const setStatus = (status: 'active' | 'passive', label: string) => {
     updateContract.mutate(
       { id: contract.id, patch: { status } },
       { onSuccess: () => toast.success(label) }
     );
+  };
+
+  const refreshLedger = () => {
+    ensureRecent.mutate(contract, {
+      onSuccess: () => toast.success('Cari hesap güncellendi'),
+      onError: (e) => toast.error(errorMessage(e, 'Güncellenemedi')),
+    });
   };
 
   const handlePickDocument = async () => {
@@ -183,7 +219,6 @@ export default function ContractDetailScreen() {
   };
 
   const handleAddPayment = async (input: AddTransactionInput) => {
-    if (!activePayment) return;
     setSavingPayment(true);
     try {
       let receiptUrl: string | null = null;
@@ -196,13 +231,14 @@ export default function ContractDetailScreen() {
         });
       }
       await addTransaction.mutateAsync({
-        paymentId: activePayment.id,
+        paymentId: input.paymentId,
         amount: input.amount,
         paidAt: input.paidAt,
         method: input.method,
         description: input.description,
         receiptUrl,
       });
+      setPaymentSheetOpen(false);
       setActivePayment(null);
       toast.success('Ödeme kaydedildi');
     } catch (e) {
@@ -211,6 +247,17 @@ export default function ContractDetailScreen() {
     } finally {
       setSavingPayment(false);
     }
+  };
+
+  const handleDeleteTransaction = () => {
+    if (!txToDelete) return;
+    deleteTransaction.mutate(txToDelete.id, {
+      onSuccess: () => {
+        setTxToDelete(null);
+        toast.success('Ödeme silindi');
+      },
+      onError: (e) => toast.error(errorMessage(e, 'Ödeme silinemedi')),
+    });
   };
 
   const actionItems: ActionSheetItem[] = [
@@ -284,120 +331,190 @@ export default function ContractDetailScreen() {
               label="Ödeme"
               icon={Plus}
               size="md"
-              onPress={() => setActivePayment(outstanding ?? null)}
+              onPress={() => openPaymentSheet(outstanding ?? null)}
             />
           </View>
         </View>
 
-        {/* Tenant */}
-        <SectionHeader title="Kiracı" />
-        <Card>
-          <InfoRow label="Ad Soyad" value={contract.tenantName} />
-          <InfoRow label="Telefon" value={contract.tenantPhone} />
-          <InfoRow
-            label="TC Kimlik"
-            value={contract.tenantNationalId ?? '—'}
-            last
-          />
-        </Card>
-
-        {/* Owner */}
-        <SectionHeader title="Mülk Sahibi" />
-        <Card>
-          <InfoRow label="Ad Soyad" value={contract.ownerName} />
-          <InfoRow label="Telefon" value={contract.ownerPhone} last />
-        </Card>
-
-        {/* Financials */}
-        <SectionHeader title="Finansal" />
-        <Card>
-          <InfoRow label="Kira Bedeli" value={formatCurrency(contract.rentAmount)} />
-          <InfoRow label="Aidat" value={formatCurrency(contract.duesAmount)} />
-          <InfoRow label="Depozito" value={formatCurrency(contract.depositAmount)} last />
-        </Card>
-
-        {/* Contract terms */}
-        <SectionHeader title="Sözleşme" />
-        <Card>
-          <InfoRow label="Başlangıç" value={formatShortDate(contract.startDate)} />
-          <InfoRow
-            label="Bitiş"
-            value={contract.endDate ? formatShortDate(contract.endDate) : '—'}
-          />
-          <InfoRow label="Ödeme Günü" value={`Her ayın ${contract.paymentDay}.`} />
-          <InfoRow label="Notlar" value={contract.notes ?? '—'} last />
-        </Card>
-
-        {/* Document */}
-        <SectionHeader title="Sözleşme Dosyası" />
-        <Card>
-          <View className="flex-row items-center gap-3">
-            <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
-              <FileText size={20} color={palette.primary} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-semibold text-foreground">
-                {contract.documentUrl ? 'Sözleşme.pdf' : 'PDF Yükle'}
-              </Text>
-              <Text className="text-sm text-muted">
-                {contract.documentUrl ? 'Görüntüle veya kaldır' : 'Henüz dosya yok'}
-              </Text>
-            </View>
+        {/* Cari hesap summary card (always visible) */}
+        {balance ? (
+          <View className="mt-5">
+            <ContractBalanceCard balance={balance} />
           </View>
+        ) : null}
 
-          {contract.documentUrl ? (
-            <View className="mt-3 flex-row gap-2 border-t border-border/60 pt-3">
+        {/* Tabs */}
+        <View className="mt-5 flex-row rounded-2xl bg-surface p-1">
+          {TABS.map((t) => {
+            const active = tab === t.key;
+            return (
               <Pressable
-                onPress={handleViewDocument}
-                className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-2.5 active:opacity-80"
+                key={t.key}
+                onPress={() => setTab(t.key)}
+                className={`flex-1 items-center rounded-xl py-2.5 ${
+                  active ? 'bg-primary' : ''
+                }`}
               >
-                <Eye size={16} color={palette.primary} />
-                <Text className="text-xs font-semibold text-primary-700">Görüntüle</Text>
+                <Text
+                  className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}
+                >
+                  {t.label}
+                </Text>
               </Pressable>
-              <Pressable
-                onPress={handleRemoveDocument}
-                className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-danger-soft py-2.5 active:opacity-80"
-              >
-                <Trash2 size={16} color={palette.danger} />
-                <Text className="text-xs font-semibold text-danger">Kaldır</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable
-              onPress={handlePickDocument}
-              className="mt-3 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-2.5 active:opacity-80"
-            >
-              <Upload size={16} color={palette.primary} />
-              <Text className="text-xs font-semibold text-primary-700">PDF Seç ve Yükle</Text>
-            </Pressable>
-          )}
-        </Card>
+            );
+          })}
+        </View>
 
-        {/* Payments — current + last 2 months */}
-        <SectionHeader title="Ödeme Geçmişi" />
-        {recentPayments.length === 0 ? (
-          <EmptyState icon={FileText} title="Ödeme kaydı yok" />
-        ) : (
-          <View className="gap-3">
-            {recentPayments.map((p) => (
-              <PaymentItem
-                key={p.id}
-                payment={p}
-                onPress={() => setActivePayment(p)}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* Collected transactions (with receipts) */}
-        {transactions.length > 0 ? (
+        {/* --- GENEL --- */}
+        {tab === 'genel' ? (
           <>
-            <SectionHeader title="Tahsilatlar" />
-            <View className="gap-3">
-              {transactions.map((tx) => (
-                <TransactionItem key={tx.id} tx={tx} />
-              ))}
+            <SectionHeader title="Kiracı" />
+            <Card>
+              <InfoRow label="Ad Soyad" value={contract.tenantName} />
+              <InfoRow label="Telefon" value={contract.tenantPhone} />
+              <InfoRow label="TC Kimlik" value={contract.tenantNationalId ?? '—'} last />
+            </Card>
+
+            <SectionHeader title="Mülk Sahibi" />
+            <Card>
+              <InfoRow label="Ad Soyad" value={contract.ownerName} />
+              <InfoRow label="Telefon" value={contract.ownerPhone} last />
+            </Card>
+
+            <SectionHeader title="Finansal" />
+            <Card>
+              <InfoRow label="Kira Bedeli" value={formatCurrency(contract.rentAmount)} />
+              <InfoRow label="Aidat" value={formatCurrency(contract.duesAmount)} />
+              <InfoRow label="Depozito" value={formatCurrency(contract.depositAmount)} last />
+            </Card>
+
+            <SectionHeader title="Sözleşme" />
+            <Card>
+              <InfoRow label="Başlangıç" value={formatShortDate(contract.startDate)} />
+              <InfoRow
+                label="Bitiş"
+                value={contract.endDate ? formatShortDate(contract.endDate) : '—'}
+              />
+              <InfoRow label="Ödeme Günü" value={`Her ayın ${contract.paymentDay}.`} />
+              <InfoRow label="Notlar" value={contract.notes ?? '—'} last />
+            </Card>
+
+            <SectionHeader title="Sözleşme Dosyası" />
+            <Card>
+              <View className="flex-row items-center gap-3">
+                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                  <FileText size={20} color={palette.primary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground">
+                    {contract.documentUrl ? 'Sözleşme.pdf' : 'PDF Yükle'}
+                  </Text>
+                  <Text className="text-sm text-muted">
+                    {contract.documentUrl ? 'Görüntüle veya kaldır' : 'Henüz dosya yok'}
+                  </Text>
+                </View>
+              </View>
+
+              {contract.documentUrl ? (
+                <View className="mt-3 flex-row gap-2 border-t border-border/60 pt-3">
+                  <Pressable
+                    onPress={handleViewDocument}
+                    className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-2.5 active:opacity-80"
+                  >
+                    <Eye size={16} color={palette.primary} />
+                    <Text className="text-xs font-semibold text-primary-700">Görüntüle</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleRemoveDocument}
+                    className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-danger-soft py-2.5 active:opacity-80"
+                  >
+                    <Trash2 size={16} color={palette.danger} />
+                    <Text className="text-xs font-semibold text-danger">Kaldır</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={handlePickDocument}
+                  className="mt-3 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-2.5 active:opacity-80"
+                >
+                  <Upload size={16} color={palette.primary} />
+                  <Text className="text-xs font-semibold text-primary-700">PDF Seç ve Yükle</Text>
+                </Pressable>
+              )}
+            </Card>
+          </>
+        ) : null}
+
+        {/* --- ÖDEMELER --- */}
+        {tab === 'odemeler' ? (
+          <>
+            <SectionHeader title="Ödeme Geçmişi" />
+            {recentPayments.length === 0 ? (
+              <EmptyState icon={FileText} title="Ödeme kaydı yok" />
+            ) : (
+              <View className="gap-3">
+                {recentPayments.map((p) => (
+                  <PaymentItem key={p.id} payment={p} onPress={() => openPaymentSheet(p)} />
+                ))}
+              </View>
+            )}
+
+            {transactions.length > 0 ? (
+              <>
+                <SectionHeader title="Tahsilatlar" />
+                <View className="gap-3">
+                  {transactions.map((tx) => (
+                    <TransactionItem
+                      key={tx.id}
+                      tx={tx}
+                      onDelete={() => setTxToDelete(tx)}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : null}
+          </>
+        ) : null}
+
+        {/* --- CARI HESAP --- */}
+        {tab === 'cari' ? (
+          <>
+            <View className="mt-5 flex-row items-center justify-between">
+              <Text className="text-base font-bold text-foreground">Cari Hesap Defteri</Text>
+              <Pressable
+                onPress={refreshLedger}
+                disabled={ensureRecent.isPending}
+                className="flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-2 active:opacity-80"
+              >
+                <RefreshCw size={14} color={palette.primary} />
+                <Text className="text-xs font-semibold text-primary-700">
+                  {ensureRecent.isPending ? 'Yenileniyor…' : 'Yenile'}
+                </Text>
+              </Pressable>
             </View>
+
+            {ledgerRows.length === 0 ? (
+              <View className="mt-3">
+                <EmptyState
+                  icon={FileText}
+                  title="Cari hesap boş"
+                  description="Eksik ayları oluşturmak için Yenile'ye dokunun."
+                />
+              </View>
+            ) : (
+              <View className="mt-3 gap-3">
+                {[...ledgerRows].reverse().map((row) => (
+                  <LedgerRowCard
+                    key={row.paymentId}
+                    row={row}
+                    onPress={() => {
+                      const p = payments.find((pp) => pp.id === row.paymentId);
+                      if (p) openPaymentSheet(p);
+                    }}
+                  />
+                ))}
+              </View>
+            )}
           </>
         ) : null}
       </ScrollView>
@@ -418,10 +535,14 @@ export default function ContractDetailScreen() {
         onClose={() => setMessageOpen(false)}
       />
       <AddTransactionModal
-        visible={activePayment !== null}
+        visible={paymentSheetOpen}
         payment={activePayment}
+        payments={payments}
         isSubmitting={savingPayment}
-        onClose={() => setActivePayment(null)}
+        onClose={() => {
+          setPaymentSheetOpen(false);
+          setActivePayment(null);
+        }}
         onSubmit={handleAddPayment}
       />
 
@@ -448,6 +569,16 @@ export default function ContractDetailScreen() {
             },
           })
         }
+      />
+      <ConfirmModal
+        visible={txToDelete !== null}
+        title="Ödemeyi sil"
+        message="Bu tahsilatı silmek istediğinize emin misiniz? Cari hesap otomatik güncellenecek."
+        confirmLabel="Sil"
+        destructive
+        loading={deleteTransaction.isPending}
+        onCancel={() => setTxToDelete(null)}
+        onConfirm={handleDeleteTransaction}
       />
     </SafeAreaView>
   );

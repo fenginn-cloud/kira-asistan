@@ -82,6 +82,18 @@ export const mockRepositories: Repositories = {
     },
     listTransactions: (paymentId) =>
       delay(transactions.filter((t) => t.paymentId === paymentId)),
+    deleteTransaction: (id) => {
+      const tx = transactions.find((t) => t.id === id);
+      transactions = transactions.filter((t) => t.id !== id);
+      if (tx) {
+        payments = payments.map((p) =>
+          p.id === tx.paymentId
+            ? { ...p, amountPaid: Math.max(p.amountPaid - tx.amount, 0) }
+            : p
+        );
+      }
+      return delay(undefined);
+    },
     listTransactionsByContract: (contractId) => {
       const ids = new Set(
         payments.filter((p) => p.contractId === contractId).map((p) => p.id)
