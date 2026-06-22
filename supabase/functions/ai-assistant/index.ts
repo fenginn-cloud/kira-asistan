@@ -310,7 +310,17 @@ Deno.serve(async (req) => {
     if (!aiResp.ok) {
       const errText = await aiResp.text();
       console.error('OpenAI error:', aiResp.status, errText);
-      return json({ error: 'AI servisine ulaşılamadı' }, 502);
+      let detail = '';
+      try {
+        const j = JSON.parse(errText);
+        detail = j?.error?.message || j?.error?.code || '';
+      } catch {
+        detail = errText.slice(0, 200);
+      }
+      return json(
+        { error: `AI servisine ulaşılamadı (${aiResp.status}${detail ? ': ' + detail : ''})` },
+        502
+      );
     }
 
     const aiData = await aiResp.json();
