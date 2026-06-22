@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BarChart3, FileText, LayoutGrid, Settings } from 'lucide-react-native';
+import { BarChart3, FileText, LayoutGrid, Settings, Sparkles } from 'lucide-react-native';
 import { palette } from '@/lib/theme/colors';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { triggerScrollTop } from '@/lib/scrollToTop';
@@ -51,6 +51,13 @@ export default function TabsLayout() {
         options={{
           title: 'İstatistik',
           tabBarIcon: ({ color, size }) => <BarChart3 size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="ai"
+        options={{
+          title: 'AI Asistan',
+          tabBarIcon: ({ color, size }) => <Sparkles size={size} color={color} />,
         }}
       />
       <Tabs.Screen
