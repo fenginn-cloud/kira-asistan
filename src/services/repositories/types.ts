@@ -5,6 +5,7 @@ import type {
   Payment,
   PaymentMethod,
   PaymentTransaction,
+  TenantClaim,
 } from '@/types';
 
 /**
@@ -18,6 +19,8 @@ export interface ContractRepository {
   create(input: Omit<Contract, 'id' | 'createdAt'>): Promise<Contract>;
   update(id: string, patch: Partial<Contract>): Promise<Contract>;
   remove(id: string): Promise<void>;
+  /** Tenant-link token. Returns null if unavailable (e.g. migration not yet applied). */
+  getPublicToken(id: string): Promise<string | null>;
 }
 
 export interface PaymentRepository {
@@ -55,9 +58,18 @@ export interface CompanyRepository {
   update(patch: Partial<Company>): Promise<Company>;
 }
 
+export interface ClaimsRepository {
+  /** Tenant-reported payments awaiting owner approval (newest first). */
+  listPending(): Promise<TenantClaim[]>;
+  /** Approve: record the payment into the ledger + mark the claim approved. */
+  approve(claim: TenantClaim, contract: Contract): Promise<void>;
+  reject(id: string): Promise<void>;
+}
+
 export interface Repositories {
   contracts: ContractRepository;
   payments: PaymentRepository;
   users: UserRepository;
   company: CompanyRepository;
+  claims: ClaimsRepository;
 }

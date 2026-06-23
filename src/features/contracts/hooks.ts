@@ -18,6 +18,17 @@ export function useContract(id: string) {
   });
 }
 
+/** Tenant-link token; degrades to null if migration 0007 isn't applied yet. */
+export function useContractToken(id: string) {
+  return useQuery({
+    queryKey: [...queryKeys.contract(id), 'token'],
+    queryFn: () => repositories.contracts.getPublicToken(id),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
 export function useCreateContract() {
   const qc = useQueryClient();
   return useMutation({

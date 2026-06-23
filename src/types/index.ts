@@ -68,7 +68,25 @@ export interface Contract {
   notifyTenant: boolean;
   notifyStaff: boolean;
 
+  /** Tenant self-service link token (/k/<token>). Absent in mock mode. */
+  publicToken?: string | null;
+
   createdAt: string;
+}
+
+/** A payment the tenant reported via their link, pending owner approval. */
+export interface TenantClaim {
+  id: string;
+  contractId: string;
+  periodMonth: string;
+  amount: number;
+  note: string | null;
+  receiptUrl: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  /** Joined for display (may be absent). */
+  tenantName?: string;
+  propertyName?: string;
 }
 
 export type PaymentStatus = 'paid' | 'partial' | 'pending' | 'overdue';

@@ -8,6 +8,7 @@ import {
   fromCompany,
   fromContract,
   fromUser,
+  toClaim,
   toCompany,
   toContract,
   toPayment,
@@ -80,6 +81,20 @@ export const supabaseRepositories: Repositories = {
     async remove(id) {
       const { error } = await db().from('contracts').delete().eq('id', id);
       if (error) throw error;
+    },
+    async getPublicToken(id) {
+      // Defensive: the column may not exist until migration 0007 is applied.
+      try {
+        const { data, error } = await db()
+          .from('contracts')
+          .select('public_token')
+          .eq('id', id)
+          .maybeSingle();
+        if (error) return null;
+        return (data as { public_token?: string } | null)?.public_token ?? null;
+      } catch {
+        return null;
+      }
     },
   },
 
@@ -156,6 +171,70 @@ export const supabaseRepositories: Repositories = {
       const { error } = await db()
         .from('payments')
         .upsert(rows, { onConflict: 'contract_id,period_month', ignoreDuplicates: true });
+      if (error) throw error;
+    },
+  },
+
+  claims: {
+    async listPending() {
+      const { data, error } = await db()
+        .from('tenant_payment_claims')
+        .select('*, contracts!inner(tenant_name, property_name)')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map(toClaim);
+    },
+    async approve(claim, contract) {
+      const period = claim.periodMonth.slice(0, 10);
+      const monthKey = period.slice(0, 7);
+      // Ensure the charge row for that month exists.
+      const d = new Date(period);
+      const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      const day = Math.min(contract.paymentDay, dim);
+      const dueDate = `${monthKey}-${String(day).padStart(2, '0')}`;
+      await db()
+        .from('payments')
+        .upsert(
+          {
+            contract_id: contract.id,
+            period_month: period,
+            due_date: dueDate,
+            amount_due: contract.rentAmount + contract.duesAmount,
+            amount_paid: 0,
+            status: 'pending',
+          },
+          { onConflict: 'contract_id,period_month', ignoreDuplicates: true }
+        );
+      const { data: pay, error: payErr } = await db()
+        .from('payments')
+        .select('id')
+        .eq('contract_id', contract.id)
+        .eq('period_month', period)
+        .single();
+      if (payErr) throw payErr;
+
+      const { error: txErr } = await db().from('payment_transactions').insert({
+        payment_id: pay.id,
+        amount: claim.amount,
+        paid_at: new Date().toISOString().slice(0, 10),
+        method: 'transfer',
+        description: 'Kiracı bildirimi (onaylandı)',
+        receipt_url: claim.receiptUrl,
+      });
+      if (txErr) throw txErr;
+
+      const { error: updErr } = await db()
+        .from('tenant_payment_claims')
+        .update({ status: 'approved', resolved_at: new Date().toISOString() })
+        .eq('id', claim.id);
+      if (updErr) throw updErr;
+    },
+    async reject(id) {
+      const { error } = await db()
+        .from('tenant_payment_claims')
+        .update({ status: 'rejected', resolved_at: new Date().toISOString() })
+        .eq('id', id);
       if (error) throw error;
     },
   },

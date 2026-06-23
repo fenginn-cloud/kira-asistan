@@ -53,6 +53,7 @@ export const mockRepositories: Repositories = {
       contracts = contracts.filter((c) => c.id !== id);
       return delay(undefined);
     },
+    getPublicToken: () => delay(null),
   },
 
   payments: {
@@ -128,6 +129,13 @@ export const mockRepositories: Repositories = {
       }
       return delay(undefined);
     },
+  },
+
+  claims: {
+    // Tenant portal is a live-only (Supabase) feature.
+    listPending: () => delay([]),
+    approve: () => delay(undefined),
+    reject: () => delay(undefined),
   },
 
   users: {

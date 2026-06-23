@@ -8,6 +8,7 @@ import type {
   Contract,
   Payment,
   PaymentTransaction,
+  TenantClaim,
 } from '@/types';
 
 export const contractColumns =
@@ -38,7 +39,23 @@ export function toContract(r: any): Contract {
     notifyOwner: r.notify_owner,
     notifyTenant: r.notify_tenant,
     notifyStaff: r.notify_staff,
+    publicToken: r.public_token ?? null,
     createdAt: r.created_at,
+  };
+}
+
+export function toClaim(r: any): TenantClaim {
+  return {
+    id: r.id,
+    contractId: r.contract_id,
+    periodMonth: r.period_month,
+    amount: Number(r.amount),
+    note: r.note,
+    receiptUrl: r.receipt_url,
+    status: r.status,
+    createdAt: r.created_at,
+    tenantName: r.contracts?.tenant_name,
+    propertyName: r.contracts?.property_name,
   };
 }
 

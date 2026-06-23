@@ -7,9 +7,13 @@ import * as DocumentPicker from 'expo-document-picker';
 import {
   ArrowLeft,
   CalendarX2,
+  Check,
   CheckCircle2,
+  Copy,
   Eye,
   FileText,
+  Link2,
+  MessageCircle,
   MessageSquareText,
   MoreHorizontal,
   PauseCircle,
@@ -41,6 +45,7 @@ import {
 } from '@/features/payments/components/AddTransactionModal';
 import {
   useContract,
+  useContractToken,
   useDeleteContract,
   useUpdateContract,
 } from '@/features/contracts/hooks';
@@ -50,6 +55,9 @@ import {
   useContractTransactions,
   useDeleteTransaction,
   useEnsureRecentPayments,
+  usePendingClaims,
+  useApproveClaim,
+  useRejectClaim,
 } from '@/features/payments/hooks';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -59,9 +67,10 @@ import {
   uploadReceipt,
 } from '@/services/storage';
 import { buildMessage } from '@/lib/utils/message';
-import { callPhone } from '@/lib/utils/contact';
+import { callPhone, copyText, openWhatsApp } from '@/lib/utils/contact';
+import { tenantLinkFor } from '@/services/tenantPortal';
 import { errorMessage } from '@/lib/utils/error';
-import { formatCurrency, formatShortDate } from '@/lib/utils/format';
+import { formatCurrency, formatMonth, formatShortDate } from '@/lib/utils/format';
 import { derivePaymentStatus } from '@/lib/utils/payments';
 import { recentPeriodCutoff } from '@/lib/utils/paymentPeriods';
 import { generateLedgerRows, getContractBalance } from '@/lib/ledger/ledger';
@@ -78,13 +87,14 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function ContractDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, tab: tabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
   const router = useRouter();
   const toast = useToast();
   const role = useAuthStore((s) => s.user?.role);
   const canDelete = role === 'admin' || role === 'super_admin';
 
   const { data: contract, isLoading } = useContract(id);
+  const { data: publicToken } = useContractToken(id);
   const { data: payments = [] } = usePaymentsByContract(id);
   const { data: transactions = [] } = useContractTransactions(id);
   const addTransaction = useAddTransaction(id);
@@ -92,6 +102,13 @@ export default function ContractDetailScreen() {
   const updateContract = useUpdateContract();
   const deleteContract = useDeleteContract();
   const ensureRecent = useEnsureRecentPayments(id);
+  const { data: allClaims = [] } = usePendingClaims();
+  const approveClaim = useApproveClaim();
+  const rejectClaim = useRejectClaim();
+  const claims = useMemo(
+    () => allClaims.filter((c) => c.contractId === id),
+    [allClaims, id]
+  );
 
   // Backfill recent + upcoming charge months once the contract loads, so past
   // months with no record show up as overdue/pending (never silently paid).
@@ -103,7 +120,7 @@ export default function ContractDetailScreen() {
     }
   }, [contract, ensureRecent]);
 
-  const [tab, setTab] = useState<Tab>('genel');
+  const [tab, setTab] = useState<Tab>(tabParam === 'odemeler' ? 'odemeler' : 'genel');
   const [messageOpen, setMessageOpen] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false);
@@ -260,6 +277,47 @@ export default function ContractDetailScreen() {
       },
       onError: (e) => toast.error(errorMessage(e, 'Ödeme silinemedi')),
     });
+  };
+
+  // --- Tenant link (kiracı ödeme linki) ---
+  const tenantLink = publicToken ? tenantLinkFor(publicToken) : null;
+
+  const copyTenantLink = async () => {
+    if (!tenantLink) return;
+    await copyText(tenantLink);
+    toast.success('Link kopyalandı');
+  };
+
+  const sendTenantLink = () => {
+    if (!tenantLink) return;
+    const msg = `Sayın ${contract.tenantName}, kira ödeme durumunuzu görüntülemek ve ödeme bildirmek için: ${tenantLink}`;
+    void openWhatsApp(contract.tenantPhone, msg);
+  };
+
+  const handleApproveClaim = (claim: (typeof claims)[number]) => {
+    approveClaim.mutate(
+      { claim, contract },
+      {
+        onSuccess: () => toast.success('Ödeme onaylandı ve cari hesaba işlendi'),
+        onError: (e) => toast.error(errorMessage(e, 'Onaylanamadı')),
+      }
+    );
+  };
+
+  const handleRejectClaim = (claimId: string) => {
+    rejectClaim.mutate(claimId, {
+      onSuccess: () => toast.success('Bildirim reddedildi'),
+      onError: (e) => toast.error(errorMessage(e, 'Reddedilemedi')),
+    });
+  };
+
+  const viewClaimReceipt = async (path: string) => {
+    try {
+      const url = await getDocumentViewUrl(path);
+      Linking.openURL(url);
+    } catch {
+      toast.error('Dekont açılamadı');
+    }
   };
 
   const actionItems: ActionSheetItem[] = [
@@ -469,12 +527,121 @@ export default function ContractDetailScreen() {
                 </Pressable>
               )}
             </Card>
+
+            {/* Tenant payment link */}
+            <SectionHeader title="Kiracı Ödeme Linki" />
+            <Card>
+              <View className="flex-row items-center gap-3">
+                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                  <Link2 size={20} color={palette.primary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground">
+                    Kiracıya özel link
+                  </Text>
+                  <Text className="text-sm text-muted">
+                    {tenantLink
+                      ? 'Kiracı giriş yapmadan borcunu görür, ödeme bildirir'
+                      : 'Bu özellik canlı modda kullanılabilir'}
+                  </Text>
+                </View>
+              </View>
+              {tenantLink ? (
+                <>
+                  <View className="mt-3 rounded-2xl bg-background px-3 py-2.5">
+                    <Text className="text-xs text-muted" numberOfLines={1}>
+                      {tenantLink}
+                    </Text>
+                  </View>
+                  <View className="mt-3 flex-row gap-2 border-t border-border/60 pt-3">
+                    <Pressable
+                      onPress={copyTenantLink}
+                      className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-2.5 active:opacity-80"
+                    >
+                      <Copy size={16} color={palette.primary} />
+                      <Text className="text-xs font-semibold text-primary-700">Kopyala</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={sendTenantLink}
+                      className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-success-soft py-2.5 active:opacity-80"
+                    >
+                      <MessageCircle size={16} color={palette.success} />
+                      <Text className="text-xs font-semibold text-success">WhatsApp</Text>
+                    </Pressable>
+                  </View>
+                </>
+              ) : null}
+            </Card>
           </>
         ) : null}
 
         {/* --- ÖDEMELER --- */}
         {tab === 'odemeler' ? (
           <>
+            {claims.length > 0 ? (
+              <>
+                <SectionHeader title="Onay Bekleyen Ödemeler" />
+                <View className="gap-3">
+                  {claims.map((claim) => {
+                    const busy =
+                      (approveClaim.isPending &&
+                        approveClaim.variables?.claim.id === claim.id) ||
+                      (rejectClaim.isPending && rejectClaim.variables === claim.id);
+                    return (
+                      <View
+                        key={claim.id}
+                        className="rounded-2xl border border-warning/40 bg-warning-soft p-4"
+                      >
+                        <View className="flex-row items-center justify-between">
+                          <Text className="text-base font-bold text-foreground">
+                            {formatCurrency(claim.amount)}
+                          </Text>
+                          <Text className="text-xs text-muted">
+                            {formatShortDate(claim.createdAt)}
+                          </Text>
+                        </View>
+                        <Text className="mt-0.5 text-sm capitalize text-muted">
+                          Kiracı bildirimi • {formatMonth(claim.periodMonth)}
+                        </Text>
+                        {claim.note ? (
+                          <Text className="mt-1 text-sm text-foreground">{claim.note}</Text>
+                        ) : null}
+                        {claim.receiptUrl ? (
+                          <Pressable
+                            onPress={() => viewClaimReceipt(claim.receiptUrl!)}
+                            className="mt-2 flex-row items-center gap-1.5"
+                          >
+                            <Eye size={14} color={palette.primary} />
+                            <Text className="text-xs font-semibold text-primary-700">
+                              Dekontu görüntüle
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                        <View className="mt-3 flex-row gap-2">
+                          <Pressable
+                            onPress={() => handleApproveClaim(claim)}
+                            disabled={busy}
+                            className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-success py-2.5 active:opacity-80"
+                          >
+                            <Check size={16} color="#FFFFFF" />
+                            <Text className="text-xs font-semibold text-white">Onayla</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => handleRejectClaim(claim.id)}
+                            disabled={busy}
+                            className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-surface border border-border py-2.5 active:opacity-80"
+                          >
+                            <Trash2 size={16} color={palette.danger} />
+                            <Text className="text-xs font-semibold text-danger">Reddet</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </>
+            ) : null}
+
             <SectionHeader title="Ödeme Geçmişi" />
             {recentPayments.length === 0 ? (
               <EmptyState icon={FileText} title="Ödeme kaydı yok" />
