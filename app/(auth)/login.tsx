@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link, useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import { Building2, Check } from 'lucide-react-native';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -105,6 +105,24 @@ export default function LoginScreen() {
             <View className="mt-2">
               <Button label="Giriş Yap" onPress={onSubmit} loading={isLoading} />
             </View>
+          </View>
+
+          <View className="mt-10 flex-row flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <Link href={'/yasal/gizlilik' as Href} asChild>
+              <Pressable>
+                <Text className="text-xs text-muted">Gizlilik Politikası</Text>
+              </Pressable>
+            </Link>
+            <Link href={'/yasal/kullanim' as Href} asChild>
+              <Pressable>
+                <Text className="text-xs text-muted">Kullanım Şartları</Text>
+              </Pressable>
+            </Link>
+            <Link href={'/yasal/kvkk' as Href} asChild>
+              <Pressable>
+                <Text className="text-xs text-muted">KVKK</Text>
+              </Pressable>
+            </Link>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

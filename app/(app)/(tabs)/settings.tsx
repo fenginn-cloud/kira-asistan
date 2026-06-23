@@ -1,14 +1,16 @@
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import {
   Bell,
   Building,
   ChevronRight,
   LogOut,
   Moon,
+  ShieldCheck,
   Users,
 } from 'lucide-react-native';
+import { LEGAL_LINKS } from '@/content/legal';
 import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Avatar } from '@/components/ui/Avatar';
@@ -179,6 +181,24 @@ export default function SettingsScreen() {
               );
             })}
           </View>
+        </Card>
+
+        {/* Legal */}
+        <SectionHeader title="Yasal" />
+        <Card>
+          {LEGAL_LINKS.map((l, idx) => (
+            <Pressable
+              key={l.slug}
+              onPress={() => router.push(`/yasal/${l.slug}` as Href)}
+              className={`flex-row items-center gap-3 py-3 ${
+                idx > 0 ? 'border-t border-border/60' : ''
+              }`}
+            >
+              <ShieldCheck size={18} color={palette.muted} />
+              <Text className="flex-1 text-base text-foreground">{l.title}</Text>
+              <ChevronRight size={18} color={palette.muted} />
+            </Pressable>
+          ))}
         </Card>
 
         {/* Logout */}

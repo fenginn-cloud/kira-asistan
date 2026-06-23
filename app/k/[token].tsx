@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, type Href } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Building2, CheckCircle2, Camera, X, ShieldCheck } from 'lucide-react-native';
 import { MoneyInput } from '@/components/ui/MoneyInput';
@@ -270,6 +270,11 @@ export default function TenantPortalScreen() {
             hesabınıza işlenir. Sorularınız için mülk sahibinizle iletişime geçin.
           </Text>
         </View>
+        <Link href={'/yasal/gizlilik' as Href} asChild>
+          <Pressable className="mt-2">
+            <Text className="text-[11px] text-primary-700">Gizlilik Politikası</Text>
+          </Pressable>
+        </Link>
       </ScrollView>
     </SafeAreaView>
   );
