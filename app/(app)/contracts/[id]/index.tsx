@@ -58,6 +58,7 @@ import {
   usePendingClaims,
   useApproveClaim,
   useRejectClaim,
+  useSetMonthlyPaid,
 } from '@/features/payments/hooks';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -99,6 +100,7 @@ export default function ContractDetailScreen() {
   const { data: transactions = [] } = useContractTransactions(id);
   const addTransaction = useAddTransaction(id);
   const deleteTransaction = useDeleteTransaction(id);
+  const setMonthlyPaid = useSetMonthlyPaid(id);
   const updateContract = useUpdateContract();
   const deleteContract = useDeleteContract();
   const ensureRecent = useEnsureRecentPayments(id);
@@ -127,6 +129,8 @@ export default function ContractDetailScreen() {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [txToDelete, setTxToDelete] = useState<PaymentTransaction | null>(null);
+  const [monthActions, setMonthActions] = useState<Payment | null>(null);
+  const [resetTarget, setResetTarget] = useState<Payment | null>(null);
   const [savingPayment, setSavingPayment] = useState(false);
 
   // Show only the recent window (last 3 + current + next 1), newest first.
@@ -319,6 +323,68 @@ export default function ContractDetailScreen() {
       toast.error('Dekont açılamadı');
     }
   };
+
+  const markMonthPaid = (p: Payment) => {
+    setMonthActions(null);
+    setMonthlyPaid.mutate(
+      { paymentId: p.id, amountPaid: p.amountDue },
+      {
+        onSuccess: () => toast.success('Ay ödendi olarak işaretlendi'),
+        onError: (e) => toast.error(errorMessage(e, 'İşlem başarısız')),
+      }
+    );
+  };
+
+  const confirmResetMonth = () => {
+    if (!resetTarget) return;
+    setMonthlyPaid.mutate(
+      { paymentId: resetTarget.id, amountPaid: 0 },
+      {
+        onSuccess: () => {
+          setResetTarget(null);
+          toast.success('Ay "ödenmedi" olarak güncellendi');
+        },
+        onError: (e) => toast.error(errorMessage(e, 'İşlem başarısız')),
+      }
+    );
+  };
+
+  const monthActionItems: ActionSheetItem[] = monthActions
+    ? [
+        {
+          label: 'Ödeme Ekle',
+          icon: Plus,
+          onPress: () => {
+            const p = monthActions;
+            setMonthActions(null);
+            openPaymentSheet(p);
+          },
+        },
+        ...(monthActions.amountPaid < monthActions.amountDue
+          ? [
+              {
+                label: 'Ödendi olarak işaretle',
+                icon: CheckCircle2,
+                onPress: () => markMonthPaid(monthActions),
+              },
+            ]
+          : []),
+        ...(monthActions.amountPaid > 0
+          ? [
+              {
+                label: 'Ödemeyi sıfırla (Ödenmedi)',
+                icon: Trash2,
+                destructive: true,
+                onPress: () => {
+                  const p = monthActions;
+                  setMonthActions(null);
+                  setResetTarget(p);
+                },
+              },
+            ]
+          : []),
+      ]
+    : [];
 
   const actionItems: ActionSheetItem[] = [
     {
@@ -648,7 +714,7 @@ export default function ContractDetailScreen() {
             ) : (
               <View className="gap-3">
                 {recentPayments.map((p) => (
-                  <PaymentItem key={p.id} payment={p} onPress={() => openPaymentSheet(p)} />
+                  <PaymentItem key={p.id} payment={p} onPress={() => setMonthActions(p)} />
                 ))}
               </View>
             )}
@@ -703,7 +769,7 @@ export default function ContractDetailScreen() {
                     row={row}
                     onPress={() => {
                       const p = payments.find((pp) => pp.id === row.paymentId);
-                      if (p) openPaymentSheet(p);
+                      if (p) setMonthActions(p);
                     }}
                   />
                 ))}
@@ -745,6 +811,22 @@ export default function ContractDetailScreen() {
         title="Sözleşme İşlemleri"
         items={actionItems}
         onClose={() => setActionsOpen(false)}
+      />
+      <ActionSheet
+        visible={monthActions !== null}
+        title={monthActions ? `${formatMonth(monthActions.periodMonth)} dönemi` : ''}
+        items={monthActionItems}
+        onClose={() => setMonthActions(null)}
+      />
+      <ConfirmModal
+        visible={resetTarget !== null}
+        title="Ödemeyi sıfırla"
+        message="Bu ayın ödemesi silinip 'ödenmedi' olarak işaretlenecek (varsa tahsilat kayıtları da silinir). Emin misiniz?"
+        confirmLabel="Sıfırla"
+        destructive
+        loading={setMonthlyPaid.isPending}
+        onCancel={() => setResetTarget(null)}
+        onConfirm={confirmResetMonth}
       />
       <ConfirmModal
         visible={confirmDelete}

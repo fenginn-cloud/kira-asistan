@@ -38,6 +38,12 @@ export interface PaymentRepository {
   listTransactionsByContract(contractId: string): Promise<PaymentTransaction[]>;
   /** Delete a single collection; the ledger recomputes automatically. */
   deleteTransaction(id: string): Promise<void>;
+  /**
+   * Manually set a month's collected amount (correction / undo). Clears any
+   * backing transactions first, then sets amount_paid + status directly.
+   * amountPaid = 0 → "Ödenmedi"; = amountDue → "Ödendi".
+   */
+  setMonthlyPaid(paymentId: string, amountPaid: number): Promise<void>;
   /** Create any missing payment rows for the contract's recent months. */
   ensureRecentPayments(contract: Contract): Promise<void>;
 }

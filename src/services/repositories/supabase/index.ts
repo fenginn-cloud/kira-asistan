@@ -158,6 +158,34 @@ export const supabaseRepositories: Repositories = {
         .eq('id', id);
       if (error) throw error;
     },
+    async setMonthlyPaid(paymentId, amountPaid) {
+      // Clear backing transactions so the trigger doesn't overwrite our value.
+      const { error: delErr } = await db()
+        .from('payment_transactions')
+        .delete()
+        .eq('payment_id', paymentId);
+      if (delErr) throw delErr;
+
+      const { data: pay, error: getErr } = await db()
+        .from('payments')
+        .select('amount_due')
+        .eq('id', paymentId)
+        .single();
+      if (getErr) throw getErr;
+
+      const due = Number(pay.amount_due);
+      const status =
+        amountPaid >= due ? 'paid' : amountPaid > 0 ? 'partial' : 'pending';
+      const { error } = await db()
+        .from('payments')
+        .update({
+          amount_paid: amountPaid,
+          paid_at: amountPaid > 0 ? new Date().toISOString().slice(0, 10) : null,
+          status,
+        })
+        .eq('id', paymentId);
+      if (error) throw error;
+    },
     async ensureRecentPayments(contract) {
       const rows = recentPaymentPeriods(contract).map((s) => ({
         contract_id: s.contractId,

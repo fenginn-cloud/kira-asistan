@@ -95,6 +95,19 @@ export const mockRepositories: Repositories = {
       }
       return delay(undefined);
     },
+    setMonthlyPaid: (paymentId, amountPaid) => {
+      transactions = transactions.filter((t) => t.paymentId !== paymentId);
+      payments = payments.map((p) =>
+        p.id === paymentId
+          ? {
+              ...p,
+              amountPaid,
+              paidAt: amountPaid > 0 ? new Date().toISOString().slice(0, 10) : null,
+            }
+          : p
+      );
+      return delay(undefined);
+    },
     listTransactionsByContract: (contractId) => {
       const ids = new Set(
         payments.filter((p) => p.contractId === contractId).map((p) => p.id)
