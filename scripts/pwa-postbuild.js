@@ -51,3 +51,9 @@ if (!html.includes("serviceWorker.register('/sw.js')")) {
 
 fs.writeFileSync(indexPath, html);
 console.log('[pwa] Injected manifest, Apple meta tags and service worker into dist/index.html');
+
+// SPA fallback for GitHub Pages: serve the app shell for unknown deep links
+// (e.g. /k/<token> tenant links) so expo-router can resolve them client-side.
+const notFoundPath = path.join(__dirname, '..', 'dist', '404.html');
+fs.copyFileSync(indexPath, notFoundPath);
+console.log('[pwa] Wrote dist/404.html (SPA deep-link fallback)');
