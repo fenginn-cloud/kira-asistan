@@ -133,11 +133,12 @@ export default function ContractDetailScreen() {
   const [resetTarget, setResetTarget] = useState<Payment | null>(null);
   const [savingPayment, setSavingPayment] = useState(false);
 
-  // Show only the recent window (last 3 + current + next 1), newest first.
+  // "Ödeme Geçmişi": geçmiş + içinde bulunulan ay (gelecek aylar hariç), yeni→eski.
   const recentPayments = useMemo(() => {
     const cutoff = recentPeriodCutoff();
+    const currentKey = new Date().toISOString().slice(0, 7);
     return payments
-      .filter((p) => p.periodMonth >= cutoff)
+      .filter((p) => p.periodMonth >= cutoff && p.periodMonth.slice(0, 7) <= currentKey)
       .sort((a, b) => b.periodMonth.localeCompare(a.periodMonth));
   }, [payments]);
 

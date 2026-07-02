@@ -1,8 +1,9 @@
 import { Text, View } from 'react-native';
 import { Card } from '@/components/ui/Card';
-import { PaymentBadge } from '@/components/ui/StatusBadge';
+import { LedgerBadge } from '@/components/ui/StatusBadge';
 import { formatCurrency, formatMonth, formatShortDate } from '@/lib/utils/format';
 import { remainingDebt } from '@/lib/utils/payments';
+import { getPaymentStatus } from '@/lib/ledger/ledger';
 import type { Payment } from '@/types';
 
 interface PaymentItemProps {
@@ -12,6 +13,14 @@ interface PaymentItemProps {
 
 export function PaymentItem({ payment, onPress }: PaymentItemProps) {
   const remaining = remainingDebt(payment);
+  // Live status: a month is only "borç/gecikme" once its due date has passed.
+  const status = getPaymentStatus(
+    payment.amountDue,
+    payment.amountPaid,
+    payment.dueDate
+  );
+  const isOverdue = status === 'overdue';
+
   return (
     <Card onPress={onPress}>
       <View className="flex-row items-center justify-between">
@@ -23,7 +32,7 @@ export function PaymentItem({ payment, onPress }: PaymentItemProps) {
             Son ödeme: {formatShortDate(payment.dueDate)}
           </Text>
         </View>
-        <PaymentBadge status={payment.status} />
+        <LedgerBadge status={status} />
       </View>
 
       <View className="mt-3 flex-row items-center justify-between border-t border-border/60 pt-3">
@@ -35,8 +44,11 @@ export function PaymentItem({ payment, onPress }: PaymentItemProps) {
         </View>
         {remaining > 0 ? (
           <View className="items-end">
-            <Text className="text-xs text-muted">Kalan borç</Text>
-            <Text className="text-sm font-bold text-danger">
+            {/* Vadesi gelmemiş ay borç değildir: "Kalan" (nötr); geçmişse "Kalan borç" (kırmızı) */}
+            <Text className="text-xs text-muted">{isOverdue ? 'Kalan borç' : 'Kalan'}</Text>
+            <Text
+              className={`text-sm font-bold ${isOverdue ? 'text-danger' : 'text-foreground'}`}
+            >
               {formatCurrency(remaining)}
             </Text>
           </View>
