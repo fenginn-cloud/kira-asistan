@@ -61,7 +61,11 @@ export function ContractCard({ contract, balance, onPress }: ContractCardProps) 
             <Text className="text-[11px] text-muted">Bu ay kalan</Text>
             <Text
               className={`text-sm font-semibold ${
-                balance.currentMonth.remaining > 0 ? 'text-danger' : 'text-success'
+                balance.currentMonth.status === 'overdue'
+                  ? 'text-danger'
+                  : balance.currentMonth.remaining > 0
+                    ? 'text-foreground'
+                    : 'text-success'
               }`}
             >
               {formatCurrencyTRY(balance.currentMonth.remaining)}

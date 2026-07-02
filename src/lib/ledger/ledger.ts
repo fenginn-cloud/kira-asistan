@@ -49,7 +49,13 @@ export function formatCurrencyTRY(amount: number): string {
 // ---------------------------------------------------------------------------
 
 /** Bir ayın ödeme durumu (UI seviyesinde; DB enum'una dokunmaz). */
-export type LedgerStatus = 'paid' | 'partial' | 'pending' | 'overdue' | 'overpaid';
+export type LedgerStatus =
+  | 'paid'
+  | 'partial'
+  | 'pending'
+  | 'overdue'
+  | 'overpaid'
+  | 'upcoming';
 
 export const LEDGER_STATUS_LABEL: Record<LedgerStatus, string> = {
   paid: 'Ödendi',
@@ -57,9 +63,14 @@ export const LEDGER_STATUS_LABEL: Record<LedgerStatus, string> = {
   pending: 'Ödenmedi',
   overdue: 'Gecikmiş',
   overpaid: 'Fazla Ödeme',
+  upcoming: 'Bekliyor',
 };
 
-/** Tek bir ay için durum: o ayın kendi tahakkuk/tahsilatına göre. */
+/**
+ * Tek bir ay için durum. ÖNEMLİ: bir ay ancak ödeme (vade) tarihi geldiğinde
+ * "borç/gecikme" sayılır. Vadesi gelmemiş, ödenmemiş ay = "Bekliyor" (upcoming),
+ * borç değildir.
+ */
 export function getPaymentStatus(
   due: number,
   paid: number,
@@ -69,9 +80,11 @@ export function getPaymentStatus(
   if (due <= 0) return paid > 0 ? 'overpaid' : 'paid';
   if (paid > due) return 'overpaid';
   if (paid >= due) return 'paid';
-  const isOverdue = differenceInCalendarDays(today, parseISO(dueDate)) > 0;
-  if (paid > 0) return isOverdue ? 'overdue' : 'partial';
-  return isOverdue ? 'overdue' : 'pending';
+  // paid < due
+  const daysToDue = differenceInCalendarDays(parseISO(dueDate), today); // >0: vade ileride
+  if (daysToDue < 0) return 'overdue'; // vadesi geçti, tam ödenmedi
+  if (paid > 0) return 'partial'; // kısmi, henüz vadesi geçmemiş
+  return 'upcoming'; // ödenmemiş ve vadesi gelmemiş → Bekliyor (borç değil)
 }
 
 // ---------------------------------------------------------------------------
@@ -83,15 +96,24 @@ export function calculateMonthlyBalance(payment: Payment): number {
   return payment.amountPaid - payment.amountDue;
 }
 
-/** Bir ayın gelecekte (henüz tahakkuk etmemiş) olup olmadığı. */
+/** Bir ayın gelecekte (ay olarak) olup olmadığı — sadece etiket için. */
 function isFutureMonth(periodMonth: string, today: Date): boolean {
   return getMonthKey(periodMonth) > getMonthKey(today);
 }
 
 /**
- * Genel bakiye = toplam ödenen - toplam (tahakkuk etmiş) borç.
- * Gelecek ayların borcu sayılmaz (henüz vadesi gelmedi); ama gelecek aya
- * yapılmış peşin ödeme alacak olarak sayılır.
+ * Bir tahakkukun borç olarak sayılıp sayılmayacağı:
+ *   - ödeme (vade) tarihi geldiyse/geçtiyse, VEYA
+ *   - o aya kısmi/tam ödeme yapıldıysa (ödemeyle mahsuplaşmak için).
+ * Vadesi gelmemiş ve hiç ödenmemiş ay borç sayılmaz (upcoming/Bekliyor).
+ */
+function isAccrued(p: Payment, today: Date): boolean {
+  return differenceInCalendarDays(parseISO(p.dueDate), today) <= 0 || p.amountPaid > 0;
+}
+
+/**
+ * Genel bakiye = toplam ödenen - toplam (vadesi gelmiş) borç.
+ * Vadesi gelmemiş aylar borç sayılmaz; peşin ödeme alacak olarak sayılır.
  * Negatif = kiracı borçlu, pozitif = kiracının alacağı var.
  */
 export function calculateTotalBalance(
@@ -100,8 +122,7 @@ export function calculateTotalBalance(
 ): number {
   let total = 0;
   for (const p of payments) {
-    const accruedDue = isFutureMonth(p.periodMonth, today) ? 0 : p.amountDue;
-    total += p.amountPaid - accruedDue;
+    total += p.amountPaid - (isAccrued(p, today) ? p.amountDue : 0);
   }
   return total;
 }
@@ -147,8 +168,8 @@ export function generateLedgerRows(
   );
   let running = 0;
   return sorted.map((p) => {
-    const future = isFutureMonth(p.periodMonth, today);
-    running += p.amountPaid - (future ? 0 : p.amountDue);
+    const accrued = isAccrued(p, today);
+    running += p.amountPaid - (accrued ? p.amountDue : 0);
     return {
       paymentId: p.id,
       periodMonth: p.periodMonth,
@@ -157,10 +178,11 @@ export function generateLedgerRows(
       dueDate: p.dueDate,
       due: p.amountDue,
       paid: p.amountPaid,
-      monthBalance: p.amountPaid - p.amountDue,
+      // Vadesi gelmemiş ay için ay bakiyesi 0 (borç göstermez).
+      monthBalance: p.amountPaid - (accrued ? p.amountDue : 0),
       carryForward: running,
       status: getPaymentStatus(p.amountDue, p.amountPaid, p.dueDate, today),
-      isFuture: future,
+      isFuture: isFutureMonth(p.periodMonth, today),
     };
   });
 }
@@ -195,7 +217,7 @@ export function getCurrentMonthSummary(
     status: p
       ? getPaymentStatus(due, paid, p.dueDate, today)
       : due > 0
-        ? 'pending'
+        ? 'upcoming'
         : 'paid',
   };
 }

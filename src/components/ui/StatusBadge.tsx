@@ -51,6 +51,7 @@ const ledgerStyles: Record<LedgerStatus, { bg: string; text: string }> = {
   pending: { bg: 'bg-primary-50', text: 'text-primary-700' },
   overdue: { bg: 'bg-danger-soft', text: 'text-danger' },
   overpaid: { bg: 'bg-success-soft', text: 'text-success' },
+  upcoming: { bg: 'bg-primary-50', text: 'text-primary-700' },
 };
 
 /** Monthly ledger row status (Ödendi / Kısmi / Ödenmedi / Gecikmiş / Fazla). */

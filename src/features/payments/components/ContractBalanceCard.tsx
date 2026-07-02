@@ -25,7 +25,13 @@ export function ContractBalanceCard({ balance }: { balance: ContractBalance }) {
         <Row
           label="Bu ay kalan"
           value={formatCurrencyTRY(currentMonth.remaining)}
-          valueClass={currentMonth.remaining > 0 ? 'text-danger' : 'text-success'}
+          valueClass={
+            currentMonth.status === 'overdue'
+              ? 'text-danger'
+              : currentMonth.remaining > 0
+                ? 'text-foreground'
+                : 'text-success'
+          }
         />
       </View>
 
