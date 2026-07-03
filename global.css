@@ -19,3 +19,31 @@
     --border: 35 43 62; /* #232B3E */
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Masaüstü web: mobil-öncelikli arayüzü ortalanmış telefon-genişliğinde bir
+   kolona al. Kartlar uçtan uca yayılmaz, okuma/kullanım mobildeki gibi kalır.
+   RN-web Modal/ActionSheet portalları body'ye eklendiği için onlar da aynı
+   kolonda hizalanır (body > div kuralı).
+--------------------------------------------------------------------------- */
+@media (min-width: 768px) {
+  body {
+    background-color: #e2e8f0; /* kolon dışı sayfa zemini */
+  }
+  html.dark body {
+    background-color: #020617;
+  }
+  #root,
+  body > div:not(#root) {
+    max-width: 480px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  #root {
+    min-height: 100vh;
+    box-shadow: 0 0 48px rgba(2, 6, 23, 0.16);
+  }
+  html.dark #root {
+    box-shadow: 0 0 48px rgba(0, 0, 0, 0.6);
+  }
+}
