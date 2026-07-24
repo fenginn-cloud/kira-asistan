@@ -101,7 +101,7 @@ export default function HomeScreen() {
         ) : (
           <>
             {/* 0 — Tenant-reported payments awaiting approval */}
-            {pendingClaims.length > 0 ? (
+            {canSeeLedger && pendingClaims.length > 0 ? (
               <View className="mt-6 gap-2">
                 <View className="flex-row items-center gap-2">
                   <Inbox size={18} color="#D97706" />
@@ -186,7 +186,7 @@ export default function HomeScreen() {
             )}
 
             {/* 3.5 — Contracts ending soon (renewal / rent-increase opportunity) */}
-            {expiring.length > 0 ? (
+            {canSeeLedger && expiring.length > 0 ? (
               <>
                 <SectionHeader title="Yaklaşan Sözleşme Bitişleri" />
                 {expiring.map((item) => (

@@ -3,6 +3,7 @@ import { BarChart3, FileText, LayoutGrid, Settings, Sparkles } from 'lucide-reac
 import { palette } from '@/lib/theme/colors';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { triggerScrollTop } from '@/lib/scrollToTop';
+import { useAuthStore } from '@/store/authStore';
 
 /** Re-tapping the active tab scrolls that screen back to the top. */
 const reTap = (route: string) => ({ navigation }: { navigation: { isFocused: () => boolean } }) => ({
@@ -13,6 +14,9 @@ const reTap = (route: string) => ({ navigation }: { navigation: { isFocused: () 
 
 export default function TabsLayout() {
   const colors = useThemeColors();
+  const role = useAuthStore((s) => s.user?.role);
+  // Personel yalnızca sade akışı görür: İstatistik ve AI Asistan gizlenir.
+  const isAdmin = role === 'admin' || role === 'super_admin';
   return (
     <Tabs
       screenOptions={{
@@ -50,6 +54,7 @@ export default function TabsLayout() {
         listeners={reTap('stats')}
         options={{
           title: 'İstatistik',
+          href: isAdmin ? undefined : null,
           tabBarIcon: ({ color, size }) => <BarChart3 size={size} color={color} />,
         }}
       />
@@ -57,6 +62,7 @@ export default function TabsLayout() {
         name="ai"
         options={{
           title: 'AI Asistan',
+          href: isAdmin ? undefined : null,
           tabBarIcon: ({ color, size }) => <Sparkles size={size} color={color} />,
         }}
       />

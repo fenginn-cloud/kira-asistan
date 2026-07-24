@@ -375,7 +375,7 @@ export default function ContractDetailScreen() {
               },
             ]
           : []),
-        ...(monthActions.amountPaid > 0
+        ...(canSeeLedger && monthActions.amountPaid > 0
           ? [
               {
                 label: 'Ödemeyi sıfırla (Ödenmedi)',
@@ -650,7 +650,7 @@ export default function ContractDetailScreen() {
         {/* --- ÖDEMELER --- */}
         {activeTab === 'odemeler' ? (
           <>
-            {claims.length > 0 ? (
+            {canSeeLedger && claims.length > 0 ? (
               <>
                 <SectionHeader title="Onay Bekleyen Ödemeler" />
                 <View className="gap-3">
@@ -733,7 +733,7 @@ export default function ContractDetailScreen() {
                     <TransactionItem
                       key={tx.id}
                       tx={tx}
-                      onDelete={() => setTxToDelete(tx)}
+                      onDelete={canSeeLedger ? () => setTxToDelete(tx) : undefined}
                     />
                   ))}
                 </View>
