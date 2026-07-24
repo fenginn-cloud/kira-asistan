@@ -323,6 +323,17 @@ export const supabaseRepositories: Repositories = {
       return (data ?? []).map(toUser);
     },
     async create(input) {
+      // The access token expires (~1h); a stale one makes the Edge Function
+      // reply "Oturum geçersiz". Refresh before calling so this doesn't happen.
+      let { data: sess } = await db().auth.getSession();
+      if (!sess.session) {
+        const refreshed = await db().auth.refreshSession();
+        sess = refreshed.data;
+      }
+      if (!sess.session) {
+        throw new Error('Oturumunuz sona ermiş. Çıkış yapıp tekrar giriş yapın.');
+      }
+
       // Creating an auth user needs the service role, so this goes through the
       // `create-user` Edge Function (which verifies the caller is admin).
       const { data, error } = await db().functions.invoke('create-user', {
