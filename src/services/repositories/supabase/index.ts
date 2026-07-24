@@ -158,6 +158,52 @@ export const supabaseRepositories: Repositories = {
         .eq('id', id);
       if (error) throw error;
     },
+    async markCurrentMonthReceived(contract, note) {
+      const now = new Date();
+      const y = now.getFullYear();
+      const mo = now.getMonth(); // 0-based
+      const period = `${y}-${String(mo + 1).padStart(2, '0')}-01`;
+      const dim = new Date(y, mo + 1, 0).getDate();
+      const day = Math.min(contract.paymentDay, dim);
+      const dueDate = `${y}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const due = contract.rentAmount + contract.duesAmount;
+
+      // Ensure the current month's charge exists.
+      await db()
+        .from('payments')
+        .upsert(
+          {
+            contract_id: contract.id,
+            period_month: period,
+            due_date: dueDate,
+            amount_due: due,
+            amount_paid: 0,
+            status: 'pending',
+          },
+          { onConflict: 'contract_id,period_month', ignoreDuplicates: true }
+        );
+
+      const { data: pay, error: getErr } = await db()
+        .from('payments')
+        .select('id, amount_due, amount_paid')
+        .eq('contract_id', contract.id)
+        .eq('period_month', period)
+        .single();
+      if (getErr) throw getErr;
+
+      const remaining = Number(pay.amount_due) - Number(pay.amount_paid);
+      if (remaining <= 0) return; // zaten alınmış
+
+      const { error: txErr } = await db().from('payment_transactions').insert({
+        payment_id: pay.id,
+        amount: remaining,
+        paid_at: new Date().toISOString().slice(0, 10),
+        method: null,
+        description: note && note.trim() ? note.trim() : 'Alındı olarak işaretlendi',
+        receipt_url: null,
+      });
+      if (txErr) throw txErr;
+    },
     async setMonthlyPaid(paymentId, amountPaid) {
       // Clear backing transactions so the trigger doesn't overwrite our value.
       const { error: delErr } = await db()

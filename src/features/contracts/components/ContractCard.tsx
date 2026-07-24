@@ -1,9 +1,10 @@
-import { Text, View } from 'react-native';
-import { Building2, Phone } from 'lucide-react-native';
+import { Pressable, Text, View } from 'react-native';
+import { Building2, CheckCircle2, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { BalanceBadge, ContractBadge } from '@/components/ui/StatusBadge';
 import { formatCurrency } from '@/lib/utils/format';
 import { formatCurrencyTRY, type ContractBalance } from '@/lib/ledger/ledger';
+import { palette } from '@/lib/theme/colors';
 import type { Contract } from '@/types';
 
 interface ContractCardProps {
@@ -11,10 +12,14 @@ interface ContractCardProps {
   /** Cari hesap özeti — verilirse kartta bu ay + genel bakiye gösterilir. */
   balance?: ContractBalance;
   onPress: () => void;
+  /** Tek dokunuş "Alındı" — verilirse bu ay alınmadıysa buton gösterilir. */
+  onMarkReceived?: () => void;
 }
 
-export function ContractCard({ contract, balance, onPress }: ContractCardProps) {
+export function ContractCard({ contract, balance, onPress, onMarkReceived }: ContractCardProps) {
   const location = [contract.block, contract.unit].filter(Boolean).join(' / ');
+  const received =
+    balance?.currentMonth.status === 'paid' || balance?.currentMonth.status === 'overpaid';
   return (
     <Card onPress={onPress}>
       <View className="flex-row items-start justify-between">
@@ -86,6 +91,24 @@ export function ContractCard({ contract, balance, onPress }: ContractCardProps) 
             </Text>
           </View>
         </View>
+      ) : null}
+
+      {/* Tek dokunuş "Alındı" */}
+      {balance && onMarkReceived ? (
+        received ? (
+          <View className="mt-3 flex-row items-center justify-center gap-1.5 rounded-2xl bg-success-soft py-2.5">
+            <CheckCircle2 size={16} color={palette.success} />
+            <Text className="text-sm font-semibold text-success">Bu ay alındı</Text>
+          </View>
+        ) : (
+          <Pressable
+            onPress={onMarkReceived}
+            className="mt-3 flex-row items-center justify-center gap-1.5 rounded-2xl bg-success py-2.5 active:opacity-80"
+          >
+            <CheckCircle2 size={16} color="#FFFFFF" />
+            <Text className="text-sm font-semibold text-white">Alındı</Text>
+          </Pressable>
+        )
       ) : null}
     </Card>
   );

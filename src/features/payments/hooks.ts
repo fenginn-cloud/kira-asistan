@@ -77,6 +77,20 @@ export function useDeleteTransaction(contractId: string) {
   });
 }
 
+/** One-tap "Alındı": mark current month received + notify the team. */
+export function useMarkReceived() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ contract, note }: { contract: Contract; note: string | null }) =>
+      repositories.payments.markCurrentMonthReceived(contract, note),
+    onSuccess: (_data, { contract }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contract.id) });
+      qc.invalidateQueries({ queryKey: ['transactions', 'contract', contract.id] });
+    },
+  });
+}
+
 export function useSetMonthlyPaid(contractId: string) {
   const qc = useQueryClient();
   return useMutation({

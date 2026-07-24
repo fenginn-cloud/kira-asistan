@@ -44,6 +44,12 @@ export interface PaymentRepository {
    * amountPaid = 0 → "Ödenmedi"; = amountDue → "Ödendi".
    */
   setMonthlyPaid(paymentId: string, amountPaid: number): Promise<void>;
+  /**
+   * One-tap "Alındı": mark the CURRENT month fully received for a contract
+   * (creates the charge row if missing, records the remaining as collected).
+   * Optional note is stored on the collection record.
+   */
+  markCurrentMonthReceived(contract: Contract, note: string | null): Promise<void>;
   /** Create any missing payment rows for the contract's recent months. */
   ensureRecentPayments(contract: Contract): Promise<void>;
 }

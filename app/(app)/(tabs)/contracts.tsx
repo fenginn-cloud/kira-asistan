@@ -4,8 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowDownUp, FileSearch, Plus, Search } from 'lucide-react-native';
 import { ContractCard } from '@/features/contracts/components/ContractCard';
+import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useContracts } from '@/features/contracts/hooks';
-import { useAllPayments } from '@/features/payments/hooks';
+import { useAllPayments, useMarkReceived } from '@/features/payments/hooks';
+import { notifyTeamPaymentReceived } from '@/services/notifyTeam';
+import { useToast } from '@/components/ui/Toast';
+import { errorMessage } from '@/lib/utils/error';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
@@ -89,9 +93,28 @@ export default function ContractsScreen() {
   const { data: payments = [] } = useAllPayments();
   const [query, setQuery] = useState('');
   const [sortOpen, setSortOpen] = useState(false);
+  const [receiveTarget, setReceiveTarget] = useState<Contract | null>(null);
+  const toast = useToast();
+  const markReceived = useMarkReceived();
 
   const { status, property, sort, setStatus, setProperty, setSort } =
     useContractsViewStore();
+
+  const confirmReceived = (note: string | null) => {
+    const contract = receiveTarget;
+    if (!contract) return;
+    markReceived.mutate(
+      { contract, note },
+      {
+        onSuccess: () => {
+          setReceiveTarget(null);
+          toast.success('Kira alındı olarak işaretlendi');
+          void notifyTeamPaymentReceived(contract.id, note);
+        },
+        onError: (e) => toast.error(errorMessage(e, 'İşaretlenemedi')),
+      }
+    );
+  };
 
   // Auto-generated property options from existing contracts.
   const propertyOptions = useMemo(() => {
@@ -286,6 +309,7 @@ export default function ContractsScreen() {
               contract={item}
               balance={balances.get(item.id)}
               onPress={() => router.push(`/(app)/contracts/${item.id}`)}
+              onMarkReceived={() => setReceiveTarget(item)}
             />
           )}
         />
@@ -296,6 +320,13 @@ export default function ContractsScreen() {
         title="Sırala"
         items={sortItems}
         onClose={() => setSortOpen(false)}
+      />
+
+      <MarkReceivedSheet
+        contract={receiveTarget}
+        submitting={markReceived.isPending}
+        onClose={() => setReceiveTarget(null)}
+        onConfirm={confirmReceived}
       />
     </SafeAreaView>
   );

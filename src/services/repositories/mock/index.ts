@@ -95,6 +95,35 @@ export const mockRepositories: Repositories = {
       }
       return delay(undefined);
     },
+    markCurrentMonthReceived: (contract, _note) => {
+      const now = new Date();
+      const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const due = contract.rentAmount + contract.duesAmount;
+      const existing = payments.find(
+        (p) => p.contractId === contract.id && p.periodMonth === period
+      );
+      if (existing) {
+        payments = payments.map((p) =>
+          p.id === existing.id ? { ...p, amountPaid: p.amountDue, paidAt: period } : p
+        );
+      } else {
+        payments = [
+          ...payments,
+          {
+            id: uid('p'),
+            contractId: contract.id,
+            periodMonth: period,
+            dueDate: period,
+            amountDue: due,
+            amountPaid: due,
+            status: 'paid',
+            paidAt: period,
+            note: null,
+          },
+        ];
+      }
+      return delay(undefined);
+    },
     setMonthlyPaid: (paymentId, amountPaid) => {
       transactions = transactions.filter((t) => t.paymentId !== paymentId);
       payments = payments.map((p) =>
