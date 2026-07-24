@@ -33,6 +33,8 @@ import type { OpenItem } from '@/features/notifications/reminders';
 export default function HomeScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  // Cari hesap / finansal özet yalnızca yöneticide.
+  const canSeeLedger = user?.role === 'admin' || user?.role === 'super_admin';
   const scrollRef = useScrollToTop<ScrollView>('index');
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -197,7 +199,9 @@ export default function HomeScreen() {
               </>
             ) : null}
 
-            {/* 4 — Monthly + cari hesap summary */}
+            {/* 4 — Aylık özet + cari hesap: yalnızca yönetici */}
+            {canSeeLedger ? (
+            <>
             <SectionHeader title="Aylık Özet" />
             <View className="gap-3">
               <View className="flex-row gap-3">
@@ -261,6 +265,8 @@ export default function HomeScreen() {
                 />
               </View>
             </View>
+            </>
+            ) : null}
           </>
         )}
       </ScrollView>

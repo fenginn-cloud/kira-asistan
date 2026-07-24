@@ -93,6 +93,8 @@ export default function ContractDetailScreen() {
   const toast = useToast();
   const role = useAuthStore((s) => s.user?.role);
   const canDelete = role === 'admin' || role === 'super_admin';
+  // Cari hesap (bakiye/borç) yalnızca yöneticide; personel sade görünüm alır.
+  const canSeeLedger = role === 'admin' || role === 'super_admin';
 
   const { data: contract, isLoading } = useContract(id);
   const { data: publicToken } = useContractToken(id);
@@ -123,6 +125,9 @@ export default function ContractDetailScreen() {
   }, [contract, ensureRecent]);
 
   const [tab, setTab] = useState<Tab>(tabParam === 'odemeler' ? 'odemeler' : 'genel');
+  // Personel "Cari Hesap" sekmesini görmez.
+  const visibleTabs = canSeeLedger ? TABS : TABS.filter((t) => t.key !== 'cari');
+  const activeTab: Tab = !canSeeLedger && tab === 'cari' ? 'genel' : tab;
   const [messageOpen, setMessageOpen] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false);
@@ -488,8 +493,8 @@ export default function ContractDetailScreen() {
           );
         })()}
 
-        {/* Cari hesap summary card (always visible) */}
-        {balance ? (
+        {/* Cari hesap özeti — yalnızca yönetici */}
+        {balance && canSeeLedger ? (
           <View className="mt-5">
             <ContractBalanceCard balance={balance} />
           </View>
@@ -497,8 +502,8 @@ export default function ContractDetailScreen() {
 
         {/* Tabs */}
         <View className="mt-5 flex-row rounded-2xl bg-surface p-1">
-          {TABS.map((t) => {
-            const active = tab === t.key;
+          {visibleTabs.map((t) => {
+            const active = activeTab === t.key;
             return (
               <Pressable
                 key={t.key}
@@ -518,7 +523,7 @@ export default function ContractDetailScreen() {
         </View>
 
         {/* --- GENEL --- */}
-        {tab === 'genel' ? (
+        {activeTab === 'genel' ? (
           <>
             <SectionHeader title="Kiracı" />
             <Card>
@@ -643,7 +648,7 @@ export default function ContractDetailScreen() {
         ) : null}
 
         {/* --- ÖDEMELER --- */}
-        {tab === 'odemeler' ? (
+        {activeTab === 'odemeler' ? (
           <>
             {claims.length > 0 ? (
               <>
@@ -738,7 +743,7 @@ export default function ContractDetailScreen() {
         ) : null}
 
         {/* --- CARI HESAP --- */}
-        {tab === 'cari' ? (
+        {activeTab === 'cari' ? (
           <>
             <View className="mt-5 flex-row items-center justify-between">
               <Text className="text-base font-bold text-foreground">Cari Hesap Defteri</Text>

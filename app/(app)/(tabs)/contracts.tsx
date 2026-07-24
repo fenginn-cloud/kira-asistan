@@ -13,6 +13,7 @@ import { errorMessage } from '@/lib/utils/error';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
+import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
@@ -96,6 +97,9 @@ export default function ContractsScreen() {
   const [receiveTarget, setReceiveTarget] = useState<Contract | null>(null);
   const toast = useToast();
   const markReceived = useMarkReceived();
+  const role = useAuthStore((s) => s.user?.role);
+  // Cari hesap (bakiye/borç) yalnızca yöneticide; personel sade checklist görür.
+  const canSeeLedger = role === 'admin' || role === 'super_admin';
 
   const { status, property, sort, setStatus, setProperty, setSort } =
     useContractsViewStore();
@@ -184,7 +188,17 @@ export default function ContractsScreen() {
     return sortContracts(result, sort, balances);
   }, [contracts, balances, query, status, property, sort]);
 
-  const sortItems: ActionSheetItem[] = SORT_ORDER.map((key) => ({
+  // Muhasebe odaklı filtre/sıralamalar yalnızca yöneticide görünür.
+  const LEDGER_FILTERS: StatusFilter[] = ['debtor', 'creditor'];
+  const LEDGER_SORTS: SortKey[] = ['debt_desc', 'debt_asc', 'over_desc'];
+  const statusFilters = canSeeLedger
+    ? STATUS_FILTERS
+    : STATUS_FILTERS.filter((f) => !LEDGER_FILTERS.includes(f.key));
+  const sortOrder = canSeeLedger
+    ? SORT_ORDER
+    : SORT_ORDER.filter((k) => !LEDGER_SORTS.includes(k));
+
+  const sortItems: ActionSheetItem[] = sortOrder.map((key) => ({
     label: SORT_LABELS[key] + (sort === key ? '  ✓' : ''),
     onPress: () => setSort(key),
   }));
@@ -219,7 +233,7 @@ export default function ContractsScreen() {
         {/* Status filters */}
         <FlatList
           horizontal
-          data={STATUS_FILTERS}
+          data={statusFilters}
           keyExtractor={(f) => f.key}
           showsHorizontalScrollIndicator={false}
           className="mt-3"
@@ -308,6 +322,7 @@ export default function ContractsScreen() {
             <ContractCard
               contract={item}
               balance={balances.get(item.id)}
+              showLedger={canSeeLedger}
               onPress={() => router.push(`/(app)/contracts/${item.id}`)}
               onMarkReceived={() => setReceiveTarget(item)}
             />

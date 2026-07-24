@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { Building2, CalendarDays, CheckCircle2, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
-import { BalanceBadge, ContractBadge } from '@/components/ui/StatusBadge';
+import { BalanceBadge, ContractBadge, LedgerBadge } from '@/components/ui/StatusBadge';
 import { formatCurrency, paymentDayLabel } from '@/lib/utils/format';
 import { formatCurrencyTRY, type ContractBalance } from '@/lib/ledger/ledger';
 import { palette } from '@/lib/theme/colors';
@@ -14,9 +14,17 @@ interface ContractCardProps {
   onPress: () => void;
   /** Tek dokunuş "Alındı" — verilirse bu ay alınmadıysa buton gösterilir. */
   onMarkReceived?: () => void;
+  /** Cari hesap detayları (bakiye, kalan) yalnızca yöneticide gösterilir. */
+  showLedger?: boolean;
 }
 
-export function ContractCard({ contract, balance, onPress, onMarkReceived }: ContractCardProps) {
+export function ContractCard({
+  contract,
+  balance,
+  onPress,
+  onMarkReceived,
+  showLedger = false,
+}: ContractCardProps) {
   const location = [contract.block, contract.unit].filter(Boolean).join(' / ');
   // Blok/daire varsa onu başlık yap (öne çıksın); yoksa mülk adı başlık olur.
   const title = location || contract.propertyName;
@@ -50,7 +58,12 @@ export function ContractCard({ contract, balance, onPress, onMarkReceived }: Con
           </View>
         </View>
         {balance ? (
-          <BalanceBadge status={balance.status} />
+          showLedger ? (
+            <BalanceBadge status={balance.status} />
+          ) : (
+            // Personel: muhasebe dili yok — sadece bu ayın durumu
+            <LedgerBadge status={balance.currentMonth.status} />
+          )
         ) : (
           <ContractBadge status={contract.status} />
         )}
@@ -66,7 +79,7 @@ export function ContractCard({ contract, balance, onPress, onMarkReceived }: Con
         </Text>
       </View>
 
-      {balance ? (
+      {balance && showLedger ? (
         <View className="mt-3 flex-row items-center justify-between border-t border-border/60 pt-3">
           <View>
             <Text className="text-[11px] text-muted">Bu ay ödenen</Text>
