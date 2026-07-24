@@ -1,8 +1,8 @@
 import { Pressable, Text, View } from 'react-native';
-import { Building2, CheckCircle2, Phone } from 'lucide-react-native';
+import { Building2, CalendarDays, CheckCircle2, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { BalanceBadge, ContractBadge } from '@/components/ui/StatusBadge';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, paymentDayLabel } from '@/lib/utils/format';
 import { formatCurrencyTRY, type ContractBalance } from '@/lib/ledger/ledger';
 import { palette } from '@/lib/theme/colors';
 import type { Contract } from '@/types';
@@ -18,6 +18,11 @@ interface ContractCardProps {
 
 export function ContractCard({ contract, balance, onPress, onMarkReceived }: ContractCardProps) {
   const location = [contract.block, contract.unit].filter(Boolean).join(' / ');
+  // Blok/daire varsa onu başlık yap (öne çıksın); yoksa mülk adı başlık olur.
+  const title = location || contract.propertyName;
+  const subtitle = location
+    ? `${contract.propertyName} • ${contract.tenantName}`
+    : contract.tenantName;
   const received =
     balance?.currentMonth.status === 'paid' || balance?.currentMonth.status === 'overpaid';
   return (
@@ -28,13 +33,20 @@ export function ContractCard({ contract, balance, onPress, onMarkReceived }: Con
             <Building2 size={20} color="#2563EB" />
           </View>
           <View className="flex-1">
-            <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
-              {contract.propertyName}
+            <Text className="text-base font-bold text-foreground" numberOfLines={1}>
+              {title}
             </Text>
             <Text className="text-sm text-muted" numberOfLines={1}>
-              {location ? `${location} • ` : ''}
-              {contract.tenantName}
+              {subtitle}
             </Text>
+            <View className="mt-1.5 flex-row">
+              <View className="flex-row items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1">
+                <CalendarDays size={12} color={palette.primary} />
+                <Text className="text-[11px] font-bold text-primary-700">
+                  {paymentDayLabel(contract.paymentDay)}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
         {balance ? (

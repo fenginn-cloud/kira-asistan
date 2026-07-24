@@ -30,6 +30,17 @@ export function formatDateTime(iso: string): string {
   return format(parseISO(iso), 'dd.MM.yyyy HH:mm', { locale: tr });
 }
 
+/** Türkçe iyelik ekiyle ödeme günü: 20 -> "Her ayın 20'si" */
+export function paymentDayLabel(day: number): string {
+  const suffixByLastDigit: Record<string, string> = {
+    '1': "'i", '2': "'si", '3': "'ü", '4': "'ü", '5': "'i",
+    '6': "'sı", '7': "'si", '8': "'i", '9': "'u", '0': "'ı",
+  };
+  const special: Record<number, string> = { 10: "'u", 20: "'si", 30: "'u" };
+  const suffix = special[day] ?? suffixByLastDigit[String(day).slice(-1)] ?? "'i";
+  return `Her ayın ${day}${suffix}`;
+}
+
 export function getInitials(name: string): string {
   return name
     .split(' ')
