@@ -105,7 +105,7 @@ export async function scheduleAllReminders(
   for (const contract of contracts) {
     if (contract.status !== 'active' || !contract.notifyStaff) continue;
 
-    const open = openPaymentFor(payments.filter((p) => p.contractId === contract.id));
+    const open = openPaymentFor(payments.filter((p) => p.contractId === contract.id), now);
     if (!open) continue;
 
     const loc = locationOf(contract);

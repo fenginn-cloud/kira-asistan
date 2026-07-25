@@ -1,5 +1,5 @@
 /* Kira Asistan — Service Worker (offline shell + push-ready) */
-const CACHE = 'kira-asistan-v3';
+const CACHE = 'kira-asistan-v4';
 const APP_SHELL = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -74,17 +74,19 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     (async () => {
       const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      // Açık bir pencere varsa: o pencereyi hedef sayfaya yönlendir + odakla.
+      // Açık bir pencere varsa: uygulamaya yönlendirme mesajı gönder (uygulama
+      // içi router yakalar ve o mülke gider) + pencereyi odakla.
       for (const client of list) {
-        let c = client;
-        if ('navigate' in client) {
+        try {
+          client.postMessage({ type: 'notification-navigate', url: target });
+        } catch (_) {}
+        if ('focus' in client) {
           try {
-            c = (await client.navigate(target)) || client;
+            return await client.focus();
           } catch (_) {}
         }
-        if ('focus' in c) return c.focus();
       }
-      // Açık pencere yoksa yeni sekmede hedefi aç.
+      // Açık pencere yoksa yeni sekmede hedefi aç (SPA route'u çözer).
       return self.clients.openWindow(target);
     })()
   );

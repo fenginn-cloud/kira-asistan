@@ -104,10 +104,15 @@ Deno.serve(async (req) => {
     .in('payment_id', paymentIds.length ? paymentIds : fallback);
   const paidTodayPaymentIds = new Set((txToday ?? []).map((t) => t.payment_id));
 
-  // open (unpaid) payment per contract, earliest due first
+  // open (unpaid) payment per contract, earliest due first.
+  // Yalnızca içinde bulunulan ay ve öncesi — gelecek ay (henüz sırası gelmemiş)
+  // ödemesi hatırlatma üretmez; aksi halde bu ayı ödemiş sözleşme için gelecek
+  // ayın vadesi "X gün kaldı" diye erken bildirim giderdi.
+  const curMonth = today.slice(0, 7);
   const openByContract = new Map<string, any>();
   for (const p of payments ?? []) {
     if (Number(p.amount_due) - Number(p.amount_paid) <= 0) continue;
+    if (String(p.period_month).slice(0, 7) > curMonth) continue; // gelecek ay: atla
     const cur = openByContract.get(p.contract_id);
     if (!cur || p.due_date < cur.due_date) openByContract.set(p.contract_id, p);
   }

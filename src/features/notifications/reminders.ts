@@ -24,10 +24,19 @@ export interface ReminderWithRefs extends Reminder {
   payment: Payment;
 }
 
-/** The single open (unpaid/partial) payment that still owes money. */
-export function openPaymentFor(payments: Payment[]): Payment | undefined {
+/**
+ * The single open (unpaid/partial) payment that still owes money.
+ * ÖNEMLİ: yalnızca içinde bulunulan ay ve öncesi dikkate alınır. GELECEK ayların
+ * (henüz sırası gelmemiş) ödemeleri hatırlatma üretmez — aksi halde bu ay ödenmiş
+ * bir sözleşme için gelecek ayın vadesi "X gün kaldı" diye görünür (hatalı).
+ */
+export function openPaymentFor(
+  payments: Payment[],
+  today: Date = new Date()
+): Payment | undefined {
+  const currentKey = today.toISOString().slice(0, 7); // YYYY-MM
   return payments
-    .filter((p) => remainingDebt(p) > 0)
+    .filter((p) => remainingDebt(p) > 0 && p.periodMonth.slice(0, 7) <= currentKey)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0];
 }
 
@@ -65,7 +74,7 @@ export function computeTodayReminders({
     if (contract.status !== 'active') continue;
 
     const contractPayments = payments.filter((p) => p.contractId === contract.id);
-    const open = openPaymentFor(contractPayments);
+    const open = openPaymentFor(contractPayments, today);
     if (!open) continue;
 
     const daysUntil = differenceInCalendarDays(parseISO(open.dueDate), today);
@@ -98,7 +107,7 @@ function openItems(contracts: Contract[], payments: Payment[], today: Date): Ope
   const items: OpenItem[] = [];
   for (const contract of contracts) {
     if (contract.status !== 'active') continue;
-    const open = openPaymentFor(payments.filter((p) => p.contractId === contract.id));
+    const open = openPaymentFor(payments.filter((p) => p.contractId === contract.id), today);
     if (!open) continue;
     items.push({
       contract,
