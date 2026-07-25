@@ -55,6 +55,17 @@ function contractName(c: Contract): string {
   return [c.propertyName, c.block, c.unit].filter(Boolean).join(' ');
 }
 
+/**
+ * Bina adı: mülk adının sonundaki daire/no ekini atar.
+ * "EGE İREM 21" → "EGE İREM", "SERDEN GEÇTİ A1" → "SERDEN GEÇTİ",
+ * "ÖZ APT 5" → "ÖZ APT", "Dream Rezidans" → "Dream Rezidans".
+ */
+function buildingName(propertyName: string): string {
+  const trimmed = propertyName.trim();
+  const stripped = trimmed.replace(/\s+[A-Za-zÇĞİÖŞÜçğıöşü]?\d+\s*$/, '').trim();
+  return stripped || trimmed;
+}
+
 function sortContracts(
   list: Contract[],
   sort: SortKey,
@@ -128,9 +139,11 @@ export default function ContractsScreen() {
     );
   };
 
-  // Auto-generated property options from existing contracts.
+  // Bina bazlı otomatik mülk filtreleri (EGE İREM, ELİZE APT, Dream Rezidans…).
   const propertyOptions = useMemo(() => {
-    const names = [...new Set(contracts.map((c) => c.propertyName.trim()).filter(Boolean))];
+    const names = [
+      ...new Set(contracts.map((c) => buildingName(c.propertyName)).filter(Boolean)),
+    ];
     names.sort((a, b) => a.localeCompare(b, 'tr'));
     return ['all', ...names];
   }, [contracts]);
@@ -153,17 +166,16 @@ export default function ContractsScreen() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const result = contracts.filter((c) => {
-      // Search
-      if (
-        q &&
-        !c.propertyName.toLowerCase().includes(q) &&
-        !c.tenantName.toLowerCase().includes(q) &&
-        !c.tenantPhone.toLowerCase().includes(q)
-      ) {
-        return false;
+      // Arama: mülk + blok + daire + kiracı + telefon
+      if (q) {
+        const hay = [c.propertyName, c.block, c.unit, c.tenantName, c.tenantPhone]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
       }
-      // Property filter
-      if (property !== 'all' && c.propertyName !== property) return false;
+      // Bina filtresi (mülk adının bina kısmına göre)
+      if (property !== 'all' && buildingName(c.propertyName) !== property) return false;
 
       // Status / cari hesap filter
       const bal = balances.get(c.id);
