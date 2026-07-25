@@ -113,7 +113,15 @@ export default function ContractsScreen() {
         onSuccess: () => {
           setReceiveTarget(null);
           toast.success('Kira alındı olarak işaretlendi');
-          void notifyTeamPaymentReceived(contract.id, note);
+          void notifyTeamPaymentReceived(contract.id, note).then((r) => {
+            if (r.ok && r.sent > 0) {
+              toast.info(`${r.sent} kişiye bildirim gönderildi`);
+            } else if (r.ok && r.sent === 0) {
+              toast.info('Bildirim alacak (izin vermiş) başka kullanıcı yok');
+            } else if (r.error) {
+              toast.error(`Bildirim gönderilemedi: ${r.error}`);
+            }
+          });
         },
         onError: (e) => toast.error(errorMessage(e, 'İşaretlenemedi')),
       }
