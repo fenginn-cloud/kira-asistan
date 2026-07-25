@@ -344,7 +344,7 @@ export default function ContractsScreen() {
               balance={balances.get(item.id)}
               showLedger={canSeeLedger}
               onPress={() => router.push(`/(app)/contracts/${item.id}`)}
-              onMarkReceived={() => setReceiveTarget(item)}
+              onMarkReceived={canSeeLedger ? () => setReceiveTarget(item) : undefined}
             />
           )}
         />

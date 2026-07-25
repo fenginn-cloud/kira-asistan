@@ -27,7 +27,7 @@ import {
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { ContractBadge } from '@/components/ui/StatusBadge';
+import { ContractBadge, LedgerBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
@@ -125,9 +125,9 @@ export default function ContractDetailScreen() {
   }, [contract, ensureRecent]);
 
   const [tab, setTab] = useState<Tab>(tabParam === 'odemeler' ? 'odemeler' : 'genel');
-  // Personel "Cari Hesap" sekmesini görmez.
-  const visibleTabs = canSeeLedger ? TABS : TABS.filter((t) => t.key !== 'cari');
-  const activeTab: Tab = !canSeeLedger && tab === 'cari' ? 'genel' : tab;
+  // Personel yalnızca "Genel"i görür (Ödemeler + Cari Hesap yönetici için).
+  const visibleTabs = canSeeLedger ? TABS : TABS.filter((t) => t.key === 'genel');
+  const activeTab: Tab = canSeeLedger ? tab : 'genel';
   const [messageOpen, setMessageOpen] = useState(false);
   const [activePayment, setActivePayment] = useState<Payment | null>(null);
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false);
@@ -458,15 +458,25 @@ export default function ContractDetailScreen() {
               onPress={() => callPhone(contract.tenantPhone)}
             />
           </View>
-          <View className="flex-1">
-            <Button
-              label="Ödeme"
-              icon={Plus}
-              size="md"
-              onPress={() => openPaymentSheet(outstanding ?? null)}
-            />
-          </View>
+          {canSeeLedger ? (
+            <View className="flex-1">
+              <Button
+                label="Ödeme"
+                icon={Plus}
+                size="md"
+                onPress={() => openPaymentSheet(outstanding ?? null)}
+              />
+            </View>
+          ) : null}
         </View>
+
+        {/* Personel: bu ayın durumu (Gecikmiş / Bekliyor / Ödendi) */}
+        {balance && !canSeeLedger ? (
+          <View className="mt-4 flex-row items-center justify-between rounded-2xl border border-border bg-surface p-4">
+            <Text className="text-sm font-semibold text-foreground">Bu ay</Text>
+            <LedgerBadge status={balance.currentMonth.status} />
+          </View>
+        ) : null}
 
         {/* Contract expiry banner (renewal / rent-increase reminder) */}
         {(() => {
@@ -501,26 +511,28 @@ export default function ContractDetailScreen() {
         ) : null}
 
         {/* Tabs */}
-        <View className="mt-5 flex-row rounded-2xl bg-surface p-1">
-          {visibleTabs.map((t) => {
-            const active = activeTab === t.key;
-            return (
-              <Pressable
-                key={t.key}
-                onPress={() => setTab(t.key)}
-                className={`flex-1 items-center rounded-xl py-2.5 ${
-                  active ? 'bg-primary' : ''
-                }`}
-              >
-                <Text
-                  className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}
+        {visibleTabs.length > 1 ? (
+          <View className="mt-5 flex-row rounded-2xl bg-surface p-1">
+            {visibleTabs.map((t) => {
+              const active = activeTab === t.key;
+              return (
+                <Pressable
+                  key={t.key}
+                  onPress={() => setTab(t.key)}
+                  className={`flex-1 items-center rounded-xl py-2.5 ${
+                    active ? 'bg-primary' : ''
+                  }`}
                 >
-                  {t.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+                  <Text
+                    className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}
+                  >
+                    {t.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
 
         {/* --- GENEL --- */}
         {activeTab === 'genel' ? (
