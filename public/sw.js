@@ -1,5 +1,5 @@
 /* Kira Asistan — Service Worker (offline shell + push-ready) */
-const CACHE = 'kira-asistan-v4';
+const CACHE = 'kira-asistan-v5';
 const APP_SHELL = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -59,12 +59,24 @@ self.addEventListener('push', (event) => {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch (_) {}
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      data: data.data || {},
-    })
+    (async () => {
+      await self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        data: data.data || {},
+      });
+      // Uygulama açıksa: özel bildirim sesini çalması için client'lara haber ver.
+      const list = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      for (const client of list) {
+        try {
+          client.postMessage({ type: 'notification-sound' });
+        } catch (_) {}
+      }
+    })()
   );
 });
 

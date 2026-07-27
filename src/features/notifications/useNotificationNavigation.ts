@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { playNotificationSound, unlockNotificationSound } from '@/lib/utils/sound';
 
 /**
  * Bir push bildirimine tıklandığında service worker'ın gönderdiği
@@ -16,7 +17,13 @@ export function useNotificationNavigation() {
 
     const handler = (event: MessageEvent) => {
       const data = event.data;
-      if (data && data.type === 'notification-navigate' && typeof data.url === 'string') {
+      if (!data) return;
+      // Uygulama açıkken push geldi → özel bildirim sesini çal.
+      if (data.type === 'notification-sound') {
+        playNotificationSound();
+        return;
+      }
+      if (data.type === 'notification-navigate' && typeof data.url === 'string') {
         try {
           router.push(data.url as Href);
         } catch {
@@ -26,6 +33,17 @@ export function useNotificationNavigation() {
     };
 
     navigator.serviceWorker.addEventListener('message', handler);
-    return () => navigator.serviceWorker.removeEventListener('message', handler);
+
+    // Tarayıcı otomatik ses çalmayı ilk kullanıcı etkileşimine kadar engeller.
+    // İlk dokunuş/tıklamada sesi sessizce hazırla (kilidini aç).
+    const unlock = () => unlockNotificationSound();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handler);
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
   }, [router]);
 }
