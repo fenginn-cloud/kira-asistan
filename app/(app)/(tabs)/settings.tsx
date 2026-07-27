@@ -9,7 +9,9 @@ import {
   Moon,
   ShieldCheck,
   Users,
+  Volume2,
 } from 'lucide-react-native';
+import { playNotificationSound, unlockNotificationSound } from '@/lib/utils/sound';
 import { LEGAL_LINKS } from '@/content/legal';
 import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -42,7 +44,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const scrollRef = useScrollToTop<ScrollView>('settings');
   const { user, signOut } = useAuthStore();
-  const { notifications, toggleNotification, theme, setTheme } = useSettingsStore();
+  const { notifications, toggleNotification, theme, setTheme, reminderSound, setReminderSound } =
+    useSettingsStore();
   const { data: company } = useCompany();
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
@@ -151,6 +154,36 @@ export default function SettingsScreen() {
             </View>
           ))}
         </Card>
+
+        {/* Custom reminder sound — admin only */}
+        {isAdmin ? (
+          <View className="mt-3">
+            <Card>
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 flex-row items-center gap-2 pr-3">
+                  <Volume2 size={16} color={palette.primary} />
+                  <View className="flex-1">
+                    <Text className="text-base text-foreground">Kira günü bildirim sesi</Text>
+                    <Text className="mt-0.5 text-xs text-muted">
+                      Uygulama açıkken kira hatırlatması gelince özel ses çalar.
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={reminderSound}
+                  onValueChange={(on) => {
+                    setReminderSound(on);
+                    if (on) {
+                      unlockNotificationSound();
+                      playNotificationSound();
+                    }
+                  }}
+                  trackColor={{ true: palette.primary, false: palette.border }}
+                />
+              </View>
+            </Card>
+          </View>
+        ) : null}
 
         {/* Theme */}
         <SectionHeader title="Tema" />

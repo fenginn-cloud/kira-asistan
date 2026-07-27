@@ -71,9 +71,10 @@ self.addEventListener('push', (event) => {
         type: 'window',
         includeUncontrolled: true,
       });
+      const kind = (data.data && data.data.kind) || null;
       for (const client of list) {
         try {
-          client.postMessage({ type: 'notification-sound' });
+          client.postMessage({ type: 'notification-sound', kind });
         } catch (_) {}
       }
     })()

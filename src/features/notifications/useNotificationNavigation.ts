@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { playNotificationSound, unlockNotificationSound } from '@/lib/utils/sound';
+import { useSettingsStore } from '@/store/settingsStore';
 
 /**
  * Bir push bildirimine tıklandığında service worker'ın gönderdiği
@@ -18,9 +19,12 @@ export function useNotificationNavigation() {
     const handler = (event: MessageEvent) => {
       const data = event.data;
       if (!data) return;
-      // Uygulama açıkken push geldi → özel bildirim sesini çal.
+      // Uygulama açıkken kira günü hatırlatması geldi → yalnızca yönetici bu
+      // sesi ayarlardan açtıysa özel bildirim sesini çal.
       if (data.type === 'notification-sound') {
-        playNotificationSound();
+        if (data.kind === 'reminder' && useSettingsStore.getState().reminderSound) {
+          playNotificationSound();
+        }
         return;
       }
       if (data.type === 'notification-navigate' && typeof data.url === 'string') {

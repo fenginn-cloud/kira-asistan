@@ -16,8 +16,11 @@ const defaultNotifications: NotificationPreferences = {
 interface SettingsState {
   theme: ThemePreference;
   notifications: NotificationPreferences;
+  /** Kira günü hatırlatmalarında özel bildirim sesi çalınsın mı (yönetici tercihi). */
+  reminderSound: boolean;
   setTheme: (theme: ThemePreference) => void;
   toggleNotification: (key: keyof NotificationPreferences) => void;
+  setReminderSound: (on: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -25,7 +28,9 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       theme: 'system',
       notifications: defaultNotifications,
+      reminderSound: false,
       setTheme: (theme) => set({ theme }),
+      setReminderSound: (on) => set({ reminderSound: on }),
       toggleNotification: (key) =>
         set((state) => ({
           notifications: {

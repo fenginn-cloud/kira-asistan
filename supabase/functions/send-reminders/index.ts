@@ -161,7 +161,11 @@ Deno.serve(async (req) => {
       }
 
       const { title, body } = buildMessage(trigger, c, pay, days);
-      const payload = JSON.stringify({ title, body, data: { url: `/contracts/${c.id}` } });
+      const payload = JSON.stringify({
+        title,
+        body,
+        data: { url: `/contracts/${c.id}`, kind: 'reminder' },
+      });
 
       for (const s of userSubs) {
         try {
