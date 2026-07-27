@@ -18,7 +18,7 @@ import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
-import { buildingName } from '@/lib/utils/property';
+import { buildingName, foldSearch } from '@/lib/utils/property';
 import {
   SORT_LABELS,
   useContractsViewStore,
@@ -154,14 +154,16 @@ export default function ContractsScreen() {
   }, [contracts, payments]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    // Türkçe-duyarlı, aksan/büyük-küçük harf duyarsız arama.
+    const q = foldSearch(query.trim());
     const result = contracts.filter((c) => {
       // Arama: mülk + blok + daire + kiracı + telefon
       if (q) {
-        const hay = [c.propertyName, c.block, c.unit, c.tenantName, c.tenantPhone]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
+        const hay = foldSearch(
+          [c.propertyName, c.block, c.unit, c.tenantName, c.tenantPhone]
+            .filter(Boolean)
+            .join(' ')
+        );
         if (!hay.includes(q)) return false;
       }
       // Bina filtresi (mülk adının bina kısmına göre)
