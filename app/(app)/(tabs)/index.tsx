@@ -4,8 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  BellRing,
-  CalendarClock,
   CheckCircle2,
   Inbox,
   TimerReset,
@@ -15,13 +13,16 @@ import { StatCard } from '@/components/ui/StatCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
-import { DashboardPaymentRow } from '@/features/dashboard/components/DashboardPaymentRow';
 import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
-import { PersonnelHome } from '@/features/dashboard/PersonnelHome';
-import { ReminderCard } from '@/features/notifications/components/ReminderCard';
+import { CollectionHome } from '@/features/dashboard/CollectionHome';
+import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useContracts } from '@/features/contracts/hooks';
-import { useAllPayments, usePendingClaims } from '@/features/payments/hooks';
+import { useAllPayments, usePendingClaims, useMarkReceived } from '@/features/payments/hooks';
+import { notifyTeamPaymentReceived } from '@/services/notifyTeam';
+import { useToast } from '@/components/ui/Toast';
+import { errorMessage } from '@/lib/utils/error';
+import type { Contract } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { queryKeys } from '@/lib/query';
@@ -29,7 +30,6 @@ import { formatCurrency } from '@/lib/utils/format';
 import { formatCurrencyTRY, getDashboardFinancialSummary } from '@/lib/ledger/ledger';
 import { expiringContracts } from '@/lib/utils/contractExpiry';
 import { palette } from '@/lib/theme/colors';
-import type { OpenItem } from '@/features/notifications/reminders';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -39,12 +39,31 @@ export default function HomeScreen() {
   const scrollRef = useScrollToTop<ScrollView>('index');
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
-  const { isLoading, today, upcoming, overdue } = useNotificationCenter();
+  const { isLoading, upcoming, overdue } = useNotificationCenter();
   const { data: contracts = [] } = useContracts();
   const { data: payments = [] } = useAllPayments();
   const finance = getDashboardFinancialSummary(contracts, payments);
   const expiring = expiringContracts(contracts);
   const { data: pendingClaims = [] } = usePendingClaims();
+  const toast = useToast();
+  const markReceived = useMarkReceived();
+  const [receiveTarget, setReceiveTarget] = useState<Contract | null>(null);
+
+  const confirmReceived = (note: string | null) => {
+    const contract = receiveTarget;
+    if (!contract) return;
+    markReceived.mutate(
+      { contract, note },
+      {
+        onSuccess: () => {
+          setReceiveTarget(null);
+          toast.success('Kira alındı olarak işaretlendi');
+          void notifyTeamPaymentReceived(contract.id, note);
+        },
+        onError: (e) => toast.error(errorMessage(e, 'İşaretlenemedi')),
+      }
+    );
+  };
 
   // Pull-to-refresh: refetch contracts + payments (Supabase or mock).
   const onRefresh = async () => {
@@ -60,17 +79,6 @@ export default function HomeScreen() {
   };
 
   const goToContract = (id: string) => router.push(`/(app)/contracts/${id}`);
-  const hasUpcoming =
-    upcoming.in7.length + upcoming.in3.length + upcoming.in1.length > 0;
-
-  const renderRows = (items: OpenItem[]) =>
-    items.map((item) => (
-      <DashboardPaymentRow
-        key={item.contract.id}
-        item={item}
-        onPress={() => goToContract(item.contract.id)}
-      />
-    ));
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -100,11 +108,12 @@ export default function HomeScreen() {
             <CardSkeleton />
           </View>
         ) : !canSeeLedger ? (
-          // Personel: sade tahsilat takibi
-          <PersonnelHome
+          // Personel: sade tahsilat takibi (Ara / WhatsApp)
+          <CollectionHome
             overdue={overdue}
             upcoming={upcoming}
             onContractPress={goToContract}
+            showContact
           />
         ) : (
           <>
@@ -139,61 +148,15 @@ export default function HomeScreen() {
               </View>
             ) : null}
 
-            {/* 1 — Today's reminders (the heart of the app) */}
-            <View className="mb-1 mt-6 flex-row items-center gap-2">
-              <BellRing size={18} color="#2563EB" />
-              <Text className="text-lg font-bold text-foreground">
-                Bugün İşlem Gerektirenler
-              </Text>
-            </View>
-            {today.length === 0 ? (
-              <EmptyState
-                icon={CheckCircle2}
-                title="Bugün gönderilecek bildirim yok"
-                description="Yaklaşan veya geciken bir ödeme bildirimi bulunmuyor."
-              />
-            ) : (
-              <View className="mt-2">
-                {today.map((r) => (
-                  <ReminderCard
-                    key={r.id}
-                    id={r.id}
-                    contract={r.contract}
-                    payment={r.payment}
-                    daysUntil={r.daysUntil}
-                    kind={r.kind}
-                  />
-                ))}
-              </View>
-            )}
+            {/* Tahsilat takibi — Bugün / Geciken / Bu hafta (yöneticide "Alındı") */}
+            <CollectionHome
+              overdue={overdue}
+              upcoming={upcoming}
+              onContractPress={goToContract}
+              onMarkReceived={(c) => setReceiveTarget(c)}
+            />
 
-            {/* 2 — Upcoming payments, grouped 7 / 3 / 1 */}
-            <SectionHeader title="Yaklaşan Kira Ödemeleri" />
-            {!hasUpcoming ? (
-              <EmptyState icon={CalendarClock} title="Yaklaşan ödeme yok" />
-            ) : (
-              <View className="gap-1">
-                {upcoming.in7.length > 0 ? (
-                  <Bucket label="7 gün kala">{renderRows(upcoming.in7)}</Bucket>
-                ) : null}
-                {upcoming.in3.length > 0 ? (
-                  <Bucket label="3 gün kala">{renderRows(upcoming.in3)}</Bucket>
-                ) : null}
-                {upcoming.in1.length > 0 ? (
-                  <Bucket label="1 gün kala">{renderRows(upcoming.in1)}</Bucket>
-                ) : null}
-              </View>
-            )}
-
-            {/* 3 — Overdue */}
-            <SectionHeader title="Gecikmiş Ödemeler" />
-            {overdue.length === 0 ? (
-              <EmptyState icon={CheckCircle2} title="Gecikme yok" description="Tüm ödemeler güncel." />
-            ) : (
-              renderRows(overdue)
-            )}
-
-            {/* 3.5 — Contracts ending soon (renewal / rent-increase opportunity) */}
+            {/* Contracts ending soon (renewal / rent-increase opportunity) */}
             {canSeeLedger && expiring.length > 0 ? (
               <>
                 <SectionHeader title="Yaklaşan Sözleşme Bitişleri" />
@@ -278,17 +241,14 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
-  );
-}
 
-function Bucket({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View className="mb-1">
-      <Text className="mb-1 mt-2 text-xs font-semibold uppercase tracking-wide text-muted">
-        {label}
-      </Text>
-      {children}
-    </View>
+      {/* Yönetici: tek tuş "Alındı" onayı */}
+      <MarkReceivedSheet
+        contract={receiveTarget}
+        submitting={markReceived.isPending}
+        onClose={() => setReceiveTarget(null)}
+        onConfirm={confirmReceived}
+      />
+    </SafeAreaView>
   );
 }

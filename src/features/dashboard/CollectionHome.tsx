@@ -2,29 +2,36 @@ import { Text, View } from 'react-native';
 import { CalendarCheck, CalendarClock, CheckCircle2, TimerReset } from 'lucide-react-native';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CollectionCard } from './components/CollectionCard';
+import type { Contract } from '@/types';
 import type { OpenItem, UpcomingBuckets } from '@/features/notifications/reminders';
 
 interface Props {
   overdue: OpenItem[];
   upcoming: UpcomingBuckets;
   onContractPress: (id: string) => void;
+  /** Personel: kartlarda Ara / WhatsApp. */
+  showContact?: boolean;
+  /** Yönetici: kartlarda tek tuş "Alındı". */
+  onMarkReceived?: (contract: Contract) => void;
 }
 
 /**
- * Personel ana sayfası — sade "tahsilat takibi" listesi.
- * Sıra: Bugün → Geciken → Bu hafta. Her kartta tek tuş Ara / WhatsApp.
- * Cari hesap / bakiye / istatistik yok.
+ * Ortak "tahsilat takibi" listesi. Sıra: Bugün → Geciken → Bu hafta.
+ * Kart aksiyonları role göre: personel Ara/WhatsApp, yönetici Alındı.
  */
-export function PersonnelHome({ overdue, upcoming, onContractPress }: Props) {
-  // Bugün ödeme günü olanlar (vadesi bugün).
+export function CollectionHome({
+  overdue,
+  upcoming,
+  onContractPress,
+  showContact,
+  onMarkReceived,
+}: Props) {
   const todayList = [...overdue, ...upcoming.in1, ...upcoming.in3, ...upcoming.in7].filter(
     (i) => i.daysUntil === 0
   );
-  // Gecikenler (vadesi geçmiş, ödenmemiş), en çok geciken önce.
   const overdueList = overdue
     .filter((i) => i.daysUntil < 0)
     .sort((a, b) => a.daysUntil - b.daysUntil);
-  // Bu hafta yaklaşanlar (1–7 gün), en yakın önce.
   const upcomingList = [...upcoming.in1, ...upcoming.in3, ...upcoming.in7]
     .filter((i) => i.daysUntil > 0)
     .sort((a, b) => a.daysUntil - b.daysUntil);
@@ -56,6 +63,8 @@ export function PersonnelHome({ overdue, upcoming, onContractPress }: Props) {
             key={item.contract.id}
             item={item}
             onPress={() => onContractPress(item.contract.id)}
+            showContact={showContact}
+            onMarkReceived={onMarkReceived}
           />
         ))}
       </>
@@ -64,29 +73,10 @@ export function PersonnelHome({ overdue, upcoming, onContractPress }: Props) {
 
   return (
     <View className="mt-4">
-      {/* Özet */}
       <View className="flex-row gap-3">
-        <View className="flex-1 rounded-2xl border border-border bg-surface p-4">
-          <View className="flex-row items-center gap-1.5">
-            <CalendarCheck size={16} color="#D97706" />
-            <Text className="text-xs text-muted">Bugün</Text>
-          </View>
-          <Text className="mt-1 text-2xl font-bold text-warning">{todayList.length}</Text>
-        </View>
-        <View className="flex-1 rounded-2xl border border-border bg-surface p-4">
-          <View className="flex-row items-center gap-1.5">
-            <TimerReset size={16} color="#DC2626" />
-            <Text className="text-xs text-muted">Geciken</Text>
-          </View>
-          <Text className="mt-1 text-2xl font-bold text-danger">{overdueList.length}</Text>
-        </View>
-        <View className="flex-1 rounded-2xl border border-border bg-surface p-4">
-          <View className="flex-row items-center gap-1.5">
-            <CalendarClock size={16} color="#2563EB" />
-            <Text className="text-xs text-muted">Bu hafta</Text>
-          </View>
-          <Text className="mt-1 text-2xl font-bold text-primary-700">{upcomingList.length}</Text>
-        </View>
+        <SummaryTile icon={CalendarCheck} color="#D97706" label="Bugün" value={todayList.length} tone="text-warning" />
+        <SummaryTile icon={TimerReset} color="#DC2626" label="Geciken" value={overdueList.length} tone="text-danger" />
+        <SummaryTile icon={CalendarClock} color="#2563EB" label="Bu hafta" value={upcomingList.length} tone="text-primary-700" />
       </View>
 
       {nothing ? (
@@ -102,6 +92,30 @@ export function PersonnelHome({ overdue, upcoming, onContractPress }: Props) {
       <Section icon={CalendarCheck} color="#D97706" title="Bugün Ödenecekler" items={todayList} />
       <Section icon={TimerReset} color="#DC2626" title="Geciken Tahsilatlar" items={overdueList} />
       <Section icon={CalendarClock} color="#2563EB" title="Bu Hafta Ödenecekler" items={upcomingList} />
+    </View>
+  );
+}
+
+function SummaryTile({
+  icon: Icon,
+  color,
+  label,
+  value,
+  tone,
+}: {
+  icon: typeof TimerReset;
+  color: string;
+  label: string;
+  value: number;
+  tone: string;
+}) {
+  return (
+    <View className="flex-1 rounded-2xl border border-border bg-surface p-4">
+      <View className="flex-row items-center gap-1.5">
+        <Icon size={16} color={color} />
+        <Text className="text-xs text-muted">{label}</Text>
+      </View>
+      <Text className={`mt-1 text-2xl font-bold ${tone}`}>{value}</Text>
     </View>
   );
 }

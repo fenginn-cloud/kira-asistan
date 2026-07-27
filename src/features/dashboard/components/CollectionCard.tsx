@@ -1,11 +1,12 @@
 import { Pressable, Text, View } from 'react-native';
-import { MessageCircle, Phone } from 'lucide-react-native';
+import { CheckCircle2, MessageCircle, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils/format';
 import { remainingDebt } from '@/lib/utils/payments';
 import { callPhone, openWhatsApp } from '@/lib/utils/contact';
 import { buildMessage } from '@/lib/utils/message';
 import { palette } from '@/lib/theme/colors';
+import type { Contract } from '@/types';
 import type { OpenItem } from '@/features/notifications/reminders';
 
 function statusLabel(days: number): { text: string; tone: string } {
@@ -14,8 +15,17 @@ function statusLabel(days: number): { text: string; tone: string } {
   return { text: `${days} gün kaldı`, tone: 'text-primary-700' };
 }
 
-/** Personel tahsilat kartı: kiracı + tutar + tek tuş Ara / WhatsApp. */
-export function CollectionCard({ item, onPress }: { item: OpenItem; onPress: () => void }) {
+interface Props {
+  item: OpenItem;
+  onPress: () => void;
+  /** Personel: kiracıyı Ara / WhatsApp butonları. */
+  showContact?: boolean;
+  /** Yönetici: tek tuş "Alındı" işaretle. */
+  onMarkReceived?: (contract: Contract) => void;
+}
+
+/** Tahsilat kartı: kiracı + tutar + role göre aksiyon (Ara/WhatsApp veya Alındı). */
+export function CollectionCard({ item, onPress, showContact, onMarkReceived }: Props) {
   const { contract, payment, daysUntil } = item;
   const location = [contract.block, contract.unit].filter(Boolean).join(' / ');
   const title = location || contract.propertyName;
@@ -30,6 +40,8 @@ export function CollectionCard({ item, onPress }: { item: OpenItem; onPress: () 
       buildMessage(daysUntil < 0 ? 'overdue' : 'upcoming', contract, payment)
     );
 
+  const hasActions = showContact || !!onMarkReceived;
+
   return (
     <Card onPress={onPress} className="mb-2">
       <View className="flex-row items-start justify-between">
@@ -43,22 +55,37 @@ export function CollectionCard({ item, onPress }: { item: OpenItem; onPress: () 
         </Text>
       </View>
 
-      <View className="mt-3 flex-row gap-2 border-t border-border/60 pt-3">
-        <Pressable
-          onPress={() => callPhone(contract.tenantPhone)}
-          className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-2.5 active:opacity-80"
-        >
-          <Phone size={16} color={palette.primary} />
-          <Text className="text-sm font-semibold text-primary-700">Ara</Text>
-        </Pressable>
-        <Pressable
-          onPress={message}
-          className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-success-soft py-2.5 active:opacity-80"
-        >
-          <MessageCircle size={16} color={palette.success} />
-          <Text className="text-sm font-semibold text-success">WhatsApp</Text>
-        </Pressable>
-      </View>
+      {hasActions ? (
+        <View className="mt-3 flex-row gap-2 border-t border-border/60 pt-3">
+          {showContact ? (
+            <>
+              <Pressable
+                onPress={() => callPhone(contract.tenantPhone)}
+                className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-2.5 active:opacity-80"
+              >
+                <Phone size={16} color={palette.primary} />
+                <Text className="text-sm font-semibold text-primary-700">Ara</Text>
+              </Pressable>
+              <Pressable
+                onPress={message}
+                className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-success-soft py-2.5 active:opacity-80"
+              >
+                <MessageCircle size={16} color={palette.success} />
+                <Text className="text-sm font-semibold text-success">WhatsApp</Text>
+              </Pressable>
+            </>
+          ) : null}
+          {onMarkReceived ? (
+            <Pressable
+              onPress={() => onMarkReceived(contract)}
+              className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-success py-2.5 active:opacity-80"
+            >
+              <CheckCircle2 size={16} color="#FFFFFF" />
+              <Text className="text-sm font-semibold text-white">Alındı</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </Card>
   );
 }
