@@ -4,7 +4,15 @@ import { tr } from 'date-fns/locale';
 import { useContracts } from '@/features/contracts/hooks';
 import { useAllPayments } from '@/features/payments/hooks';
 import { remainingDebt } from '@/lib/utils/payments';
+import { buildingName } from '@/lib/utils/property';
 import type { BarDatum } from '@/components/charts/BarChart';
+
+export interface BuildingStat {
+  building: string;
+  collected: number;
+  due: number;
+  contracts: number;
+}
 
 export function useStats() {
   const { data: contracts = [], isLoading: lc } = useContracts();
@@ -59,6 +67,28 @@ export function useStats() {
       .filter((p) => p.status === 'overdue')
       .reduce((s, p) => s + remainingDebt(p), 0);
 
+    // Bina bazlı tahsilat (her binadan toplam ne kadar toplandı)
+    const contractById = new Map(contracts.map((c) => [c.id, c]));
+    const buildingMap = new Map<string, BuildingStat>();
+    for (const c of contracts) {
+      const b = buildingName(c.propertyName);
+      const cur = buildingMap.get(b) ?? { building: b, collected: 0, due: 0, contracts: 0 };
+      cur.contracts += 1;
+      buildingMap.set(b, cur);
+    }
+    for (const p of payments) {
+      const c = contractById.get(p.contractId);
+      if (!c) continue;
+      const b = buildingName(c.propertyName);
+      const cur = buildingMap.get(b) ?? { building: b, collected: 0, due: 0, contracts: 0 };
+      cur.collected += p.amountPaid;
+      cur.due += p.amountDue;
+      buildingMap.set(b, cur);
+    }
+    const byBuilding: BuildingStat[] = [...buildingMap.values()].sort(
+      (a, b) => b.collected - a.collected
+    );
+
     return {
       isLoading: lc || lp,
       monthlyCollection,
@@ -69,6 +99,7 @@ export function useStats() {
       monthlyRentIncome,
       pendingCollection,
       overdueCollectionTotal,
+      byBuilding,
     };
   }, [contracts, payments, lc, lp]);
 }

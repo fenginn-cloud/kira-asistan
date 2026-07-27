@@ -63,6 +63,39 @@ export default function StatsScreen() {
               </View>
             </View>
 
+            <SectionHeader title="Bina Bazlı Tahsilat" />
+            <Card>
+              {s.byBuilding.length === 0 ? (
+                <Text className="text-sm text-muted">Kayıt yok</Text>
+              ) : (
+                <View className="gap-3">
+                  {s.byBuilding.map((b, i) => {
+                    const max = s.byBuilding[0]?.collected || 1;
+                    const pct = Math.max(2, Math.round((b.collected / max) * 100));
+                    return (
+                      <View key={b.building} className={i > 0 ? 'border-t border-border/60 pt-3' : ''}>
+                        <View className="flex-row items-center justify-between">
+                          <Text className="flex-1 pr-2 text-sm font-semibold text-foreground" numberOfLines={1}>
+                            {b.building}
+                            <Text className="text-xs font-normal text-muted">  ({b.contracts})</Text>
+                          </Text>
+                          <Text className="text-sm font-bold text-success">
+                            {formatCurrency(b.collected)}
+                          </Text>
+                        </View>
+                        <View className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-background">
+                          <View
+                            className="h-full rounded-full bg-primary"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </Card>
+
             <SectionHeader title="Aylık Tahsilat" />
             <Card>
               <BarChart

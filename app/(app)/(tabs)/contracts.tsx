@@ -18,6 +18,7 @@ import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
+import { buildingName } from '@/lib/utils/property';
 import {
   SORT_LABELS,
   useContractsViewStore,
@@ -53,17 +54,6 @@ const SORT_ORDER: SortKey[] = [
 
 function contractName(c: Contract): string {
   return [c.propertyName, c.block, c.unit].filter(Boolean).join(' ');
-}
-
-/**
- * Bina adı: mülk adının sonundaki daire/no ekini atar.
- * "EGE İREM 21" → "EGE İREM", "SERDEN GEÇTİ A1" → "SERDEN GEÇTİ",
- * "ÖZ APT 5" → "ÖZ APT", "Dream Rezidans" → "Dream Rezidans".
- */
-function buildingName(propertyName: string): string {
-  const trimmed = propertyName.trim();
-  const stripped = trimmed.replace(/\s+[A-Za-zÇĞİÖŞÜçğıöşü]?\d+\s*$/, '').trim();
-  return stripped || trimmed;
 }
 
 function sortContracts(
