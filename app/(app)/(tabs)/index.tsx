@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { DashboardPaymentRow } from '@/features/dashboard/components/DashboardPaymentRow';
 import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
+import { PersonnelHome } from '@/features/dashboard/PersonnelHome';
 import { ReminderCard } from '@/features/notifications/components/ReminderCard';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useContracts } from '@/features/contracts/hooks';
@@ -98,6 +99,13 @@ export default function HomeScreen() {
             <CardSkeleton />
             <CardSkeleton />
           </View>
+        ) : !canSeeLedger ? (
+          // Personel: sade tahsilat takibi
+          <PersonnelHome
+            overdue={overdue}
+            upcoming={upcoming}
+            onContractPress={goToContract}
+          />
         ) : (
           <>
             {/* 0 — Tenant-reported payments awaiting approval */}
