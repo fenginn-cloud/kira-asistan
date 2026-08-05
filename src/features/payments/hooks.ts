@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { repositories } from '@/services';
 import { queryKeys } from '@/lib/query';
-import type { Contract, PaymentMethod, TenantClaim } from '@/types';
+import type { Contract, Payment, PaymentMethod, TenantClaim } from '@/types';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 export function usePaymentsByContract(contractId: string) {
@@ -87,6 +87,20 @@ export function useMarkReceived() {
       qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
       qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contract.id) });
       qc.invalidateQueries({ queryKey: ['transactions', 'contract', contract.id] });
+    },
+  });
+}
+
+/** One-tap "Alındı" on the dashboard: settle the exact payment shown. */
+export function useSettlePayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ payment, note }: { payment: Payment; note: string | null }) =>
+      repositories.payments.settlePayment(payment.id, note),
+    onSuccess: (_data, { payment }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(payment.contractId) });
+      qc.invalidateQueries({ queryKey: ['transactions', 'contract', payment.contractId] });
     },
   });
 }

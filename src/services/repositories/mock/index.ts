@@ -124,6 +124,19 @@ export const mockRepositories: Repositories = {
       }
       return delay(undefined);
     },
+    settlePayment: (paymentId, _note) => {
+      payments = payments.map((p) =>
+        p.id === paymentId
+          ? {
+              ...p,
+              amountPaid: p.amountDue,
+              status: 'paid',
+              paidAt: new Date().toISOString().slice(0, 10),
+            }
+          : p
+      );
+      return delay(undefined);
+    },
     setMonthlyPaid: (paymentId, amountPaid) => {
       transactions = transactions.filter((t) => t.paymentId !== paymentId);
       payments = payments.map((p) =>

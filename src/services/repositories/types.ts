@@ -50,6 +50,13 @@ export interface PaymentRepository {
    * Optional note is stored on the collection record.
    */
   markCurrentMonthReceived(contract: Contract, note: string | null): Promise<void>;
+  /**
+   * Settle a SPECIFIC month's remaining debt in one tap. Records the remaining
+   * amount as collected on exactly that payment row. Used by the dashboard
+   * "Alındı" so the exact overdue/upcoming card the user tapped is settled
+   * (not always the current month).
+   */
+  settlePayment(paymentId: string, note: string | null): Promise<void>;
   /** Create any missing payment rows for the contract's recent months. */
   ensureRecentPayments(contract: Contract): Promise<void>;
 }

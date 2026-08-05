@@ -204,6 +204,27 @@ export const supabaseRepositories: Repositories = {
       });
       if (txErr) throw txErr;
     },
+    async settlePayment(paymentId, note) {
+      const { data: pay, error: getErr } = await db()
+        .from('payments')
+        .select('id, amount_due, amount_paid')
+        .eq('id', paymentId)
+        .single();
+      if (getErr) throw getErr;
+
+      const remaining = Number(pay.amount_due) - Number(pay.amount_paid);
+      if (remaining <= 0) return; // zaten alınmış
+
+      const { error: txErr } = await db().from('payment_transactions').insert({
+        payment_id: pay.id,
+        amount: remaining,
+        paid_at: new Date().toISOString().slice(0, 10),
+        method: null,
+        description: note && note.trim() ? note.trim() : 'Alındı olarak işaretlendi',
+        receipt_url: null,
+      });
+      if (txErr) throw txErr;
+    },
     async setMonthlyPaid(paymentId, amountPaid) {
       // Clear backing transactions so the trigger doesn't overwrite our value.
       const { error: delErr } = await db()

@@ -18,11 +18,11 @@ import { CollectionHome } from '@/features/dashboard/CollectionHome';
 import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useContracts } from '@/features/contracts/hooks';
-import { useAllPayments, usePendingClaims, useMarkReceived } from '@/features/payments/hooks';
+import { useAllPayments, usePendingClaims, useSettlePayment } from '@/features/payments/hooks';
 import { notifyTeamPaymentReceived } from '@/services/notifyTeam';
 import { useToast } from '@/components/ui/Toast';
 import { errorMessage } from '@/lib/utils/error';
-import type { Contract } from '@/types';
+import type { OpenItem } from '@/features/notifications/reminders';
 import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { queryKeys } from '@/lib/query';
@@ -46,19 +46,19 @@ export default function HomeScreen() {
   const expiring = expiringContracts(contracts);
   const { data: pendingClaims = [] } = usePendingClaims();
   const toast = useToast();
-  const markReceived = useMarkReceived();
-  const [receiveTarget, setReceiveTarget] = useState<Contract | null>(null);
+  const settlePayment = useSettlePayment();
+  const [receiveTarget, setReceiveTarget] = useState<OpenItem | null>(null);
 
   const confirmReceived = (note: string | null) => {
-    const contract = receiveTarget;
-    if (!contract) return;
-    markReceived.mutate(
-      { contract, note },
+    const item = receiveTarget;
+    if (!item) return;
+    settlePayment.mutate(
+      { payment: item.payment, note },
       {
         onSuccess: () => {
           setReceiveTarget(null);
           toast.success('Kira alındı olarak işaretlendi');
-          void notifyTeamPaymentReceived(contract.id, note);
+          void notifyTeamPaymentReceived(item.contract.id, note);
         },
         onError: (e) => toast.error(errorMessage(e, 'İşaretlenemedi')),
       }
@@ -153,7 +153,7 @@ export default function HomeScreen() {
               overdue={overdue}
               upcoming={upcoming}
               onContractPress={goToContract}
-              onMarkReceived={(c) => setReceiveTarget(c)}
+              onMarkReceived={(item) => setReceiveTarget(item)}
             />
 
             {/* Contracts ending soon (renewal / rent-increase opportunity) */}
@@ -244,8 +244,8 @@ export default function HomeScreen() {
 
       {/* Yönetici: tek tuş "Alındı" onayı */}
       <MarkReceivedSheet
-        contract={receiveTarget}
-        submitting={markReceived.isPending}
+        contract={receiveTarget?.contract ?? null}
+        submitting={settlePayment.isPending}
         onClose={() => setReceiveTarget(null)}
         onConfirm={confirmReceived}
       />

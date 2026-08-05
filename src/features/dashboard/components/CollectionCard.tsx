@@ -6,7 +6,6 @@ import { remainingDebt } from '@/lib/utils/payments';
 import { callPhone, openWhatsApp } from '@/lib/utils/contact';
 import { buildMessage } from '@/lib/utils/message';
 import { palette } from '@/lib/theme/colors';
-import type { Contract } from '@/types';
 import type { OpenItem } from '@/features/notifications/reminders';
 
 function statusLabel(days: number): { text: string; tone: string } {
@@ -20,8 +19,8 @@ interface Props {
   onPress: () => void;
   /** Personel: kiracıyı Ara / WhatsApp butonları. */
   showContact?: boolean;
-  /** Yönetici: tek tuş "Alındı" işaretle. */
-  onMarkReceived?: (contract: Contract) => void;
+  /** Yönetici: tek tuş "Alındı" — kartta gösterilen ay/ödeme işaretlenir. */
+  onMarkReceived?: (item: OpenItem) => void;
 }
 
 /** Tahsilat kartı: kiracı + tutar + role göre aksiyon (Ara/WhatsApp veya Alındı). */
@@ -77,7 +76,7 @@ export function CollectionCard({ item, onPress, showContact, onMarkReceived }: P
           ) : null}
           {onMarkReceived ? (
             <Pressable
-              onPress={() => onMarkReceived(contract)}
+              onPress={() => onMarkReceived(item)}
               className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-success py-2.5 active:opacity-80"
             >
               <CheckCircle2 size={16} color="#FFFFFF" />

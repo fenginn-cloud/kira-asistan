@@ -2,7 +2,6 @@ import { Text, View } from 'react-native';
 import { CalendarCheck, CalendarClock, CheckCircle2, TimerReset } from 'lucide-react-native';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CollectionCard } from './components/CollectionCard';
-import type { Contract } from '@/types';
 import type { OpenItem, UpcomingBuckets } from '@/features/notifications/reminders';
 
 interface Props {
@@ -11,8 +10,8 @@ interface Props {
   onContractPress: (id: string) => void;
   /** Personel: kartlarda Ara / WhatsApp. */
   showContact?: boolean;
-  /** Yönetici: kartlarda tek tuş "Alındı". */
-  onMarkReceived?: (contract: Contract) => void;
+  /** Yönetici: kartlarda tek tuş "Alındı" — o kartın ayı/ödemesi işaretlenir. */
+  onMarkReceived?: (item: OpenItem) => void;
 }
 
 /**
