@@ -4,6 +4,7 @@ import { palette } from '@/lib/theme/colors';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { triggerScrollTop } from '@/lib/scrollToTop';
 import { useAuthStore } from '@/store/authStore';
+import { useDesktopShell } from '@/lib/useDesktopShell';
 
 /** Re-tapping the active tab scrolls that screen back to the top. */
 const reTap = (route: string) => ({ navigation }: { navigation: { isFocused: () => boolean } }) => ({
@@ -17,13 +18,17 @@ export default function TabsLayout() {
   const role = useAuthStore((s) => s.user?.role);
   // Personel yalnızca sade akışı görür: İstatistik ve AI Asistan gizlenir.
   const isAdmin = role === 'admin' || role === 'super_admin';
+  // Geniş ekran + yönetici: gezinme sol menüye taşınır, alt sekme gizlenir.
+  const { enabled: desktopShell } = useDesktopShell();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: palette.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
+        tabBarStyle: desktopShell
+          ? { display: 'none' }
+          : {
           height: 86,
           paddingTop: 8,
           paddingBottom: 28,
