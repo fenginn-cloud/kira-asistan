@@ -76,10 +76,20 @@ export function DesktopSidebar({ width }: { width: number }) {
 
   return (
     <View
-      style={{ width }}
-      className="h-full border-r border-border bg-surface"
+      // Sabit (fixed) sol menü: uygulama akışının dışında durur, bu yüzden
+      // gezinme yapısını (navigator) bozmaz. İçerik contentStyle ile itilir.
+      style={{
+        position: 'fixed' as unknown as 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        width,
+        zIndex: 50,
+      }}
+      className="border-r border-border bg-surface"
     >
       <ScrollView
+        className="flex-1"
         contentContainerClassName="px-4 pb-5 pt-6"
         showsVerticalScrollIndicator={false}
       >

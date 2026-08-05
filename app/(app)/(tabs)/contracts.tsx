@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowDownUp, FileSearch, Plus, Search } from 'lucide-react-native';
@@ -19,6 +19,7 @@ import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
 import { buildingName, foldSearch } from '@/lib/utils/property';
+import { useDesktopShell } from '@/lib/useDesktopShell';
 import {
   SORT_LABELS,
   useContractsViewStore,
@@ -101,6 +102,10 @@ export default function ContractsScreen() {
   const role = useAuthStore((s) => s.user?.role);
   // Cari hesap (bakiye/borç) yalnızca yöneticide; personel sade checklist görür.
   const canSeeLedger = role === 'admin' || role === 'super_admin';
+  // Geniş ekran (yönetici masaüstü kabuğu): kartları ızgara olarak göster.
+  const { enabled: desktopShell } = useDesktopShell();
+  const { width } = useWindowDimensions();
+  const numColumns = desktopShell ? (width >= 1500 ? 3 : 2) : 1;
 
   const { status, property, sort, setStatus, setProperty, setSort } =
     useContractsViewStore();
@@ -320,6 +325,10 @@ export default function ContractsScreen() {
         <FlatList
           ref={listRef}
           data={filtered}
+          // numColumns değişince FlatList yeniden kurulmalı (key değişimi).
+          key={`cols-${numColumns}`}
+          numColumns={numColumns}
+          columnWrapperStyle={numColumns > 1 ? { gap: 12 } : undefined}
           keyExtractor={(c: Contract) => c.id}
           contentContainerClassName="px-5 pt-4 pb-10 gap-3"
           showsVerticalScrollIndicator={false}
@@ -330,15 +339,19 @@ export default function ContractsScreen() {
               description="Arama veya filtre kriterlerinize uygun sözleşme yok."
             />
           }
-          renderItem={({ item }) => (
-            <ContractCard
-              contract={item}
-              balance={balances.get(item.id)}
-              showLedger={canSeeLedger}
-              onPress={() => router.push(`/(app)/contracts/${item.id}`)}
-              onMarkReceived={canSeeLedger ? () => setReceiveTarget(item) : undefined}
-            />
-          )}
+          renderItem={({ item }) => {
+            const card = (
+              <ContractCard
+                contract={item}
+                balance={balances.get(item.id)}
+                showLedger={canSeeLedger}
+                onPress={() => router.push(`/(app)/contracts/${item.id}`)}
+                onMarkReceived={canSeeLedger ? () => setReceiveTarget(item) : undefined}
+              />
+            );
+            // Izgarada her hücre eşit genişlik kaplasın.
+            return numColumns > 1 ? <View style={{ flex: 1 }}>{card}</View> : card;
+          }}
         />
       )}
 

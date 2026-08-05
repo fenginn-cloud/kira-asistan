@@ -27,23 +27,27 @@
    kolonda hizalanır (body > div kuralı).
 --------------------------------------------------------------------------- */
 @media (min-width: 768px) {
-  body {
+  /* Telefon-kolonu görünümü: yönetici masaüstü kabuğu (html.desktop-shell)
+     dışındaki tüm profiller (personel, mobil) için korunur. Yönetici geniş
+     ekranda gerçek masaüstü düzeni (sol menü + geniş içerik) gördüğünden bu
+     kısıt onda uygulanmaz. */
+  html:not(.desktop-shell) body {
     background-color: #e2e8f0; /* kolon dışı sayfa zemini */
   }
-  html.dark body {
+  html.dark:not(.desktop-shell) body {
     background-color: #020617;
   }
-  #root,
-  body > div:not(#root) {
+  html:not(.desktop-shell) #root,
+  html:not(.desktop-shell) body > div:not(#root) {
     max-width: 480px;
     margin-left: auto !important;
     margin-right: auto !important;
   }
-  #root {
+  html:not(.desktop-shell) #root {
     min-height: 100vh;
     box-shadow: 0 0 48px rgba(2, 6, 23, 0.16);
   }
-  html.dark #root {
+  html.dark:not(.desktop-shell) #root {
     box-shadow: 0 0 48px rgba(0, 0, 0, 0.6);
   }
 }
