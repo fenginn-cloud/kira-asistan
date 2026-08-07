@@ -59,6 +59,16 @@ export interface PaymentRepository {
   settlePayment(paymentId: string, note: string | null): Promise<void>;
   /** Create any missing payment rows for the contract's recent months. */
   ensureRecentPayments(contract: Contract): Promise<void>;
+  /**
+   * Excel senkron: bir ayı "ödendi" yap. Güvenli — mevcut ödeme/dekont varsa
+   * DOKUNMAZ, asla "ödenmedi"ye çevirmez; yalnızca kalan borcu tahsil eder.
+   */
+  syncPaidMonth(input: {
+    contractId: string;
+    periodMonth: string; // 'YYYY-MM-01'
+    amountDue: number;
+    paymentDay: number;
+  }): Promise<void>;
 }
 
 export interface CreateUserInput extends Omit<AppUser, 'id' | 'createdAt'> {

@@ -45,6 +45,7 @@ export default function AppLayout() {
         <Stack.Screen name="users" />
         <Stack.Screen name="profile" />
         <Stack.Screen name="company" />
+        <Stack.Screen name="excel-import" />
       </Stack>
       {enabled ? <DesktopSidebar width={sidebarWidth} /> : null}
     </>

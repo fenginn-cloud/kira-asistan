@@ -225,6 +225,49 @@ export const supabaseRepositories: Repositories = {
       });
       if (txErr) throw txErr;
     },
+    async syncPaidMonth({ contractId, periodMonth, amountDue, paymentDay }) {
+      const y = Number(periodMonth.slice(0, 4));
+      const mo = Number(periodMonth.slice(5, 7)); // 1-based
+      const dim = new Date(y, mo, 0).getDate();
+      const day = Math.min(Math.max(paymentDay || 1, 1), dim);
+      const dueDate = `${periodMonth.slice(0, 7)}-${String(day).padStart(2, '0')}`;
+
+      // Ay satırını oluştur (varsa dokunma — geçmiş korunur).
+      await db()
+        .from('payments')
+        .upsert(
+          {
+            contract_id: contractId,
+            period_month: periodMonth,
+            due_date: dueDate,
+            amount_due: amountDue,
+            amount_paid: 0,
+            status: 'pending',
+          },
+          { onConflict: 'contract_id,period_month', ignoreDuplicates: true }
+        );
+
+      const { data: pay, error: getErr } = await db()
+        .from('payments')
+        .select('id, amount_due, amount_paid')
+        .eq('contract_id', contractId)
+        .eq('period_month', periodMonth)
+        .single();
+      if (getErr) throw getErr;
+
+      const remaining = Number(pay.amount_due) - Number(pay.amount_paid);
+      if (remaining <= 0) return; // zaten ödenmiş — dokunma
+
+      const { error: txErr } = await db().from('payment_transactions').insert({
+        payment_id: pay.id,
+        amount: remaining,
+        paid_at: new Date().toISOString().slice(0, 10),
+        method: null,
+        description: 'Excel senkron: ödendi',
+        receipt_url: null,
+      });
+      if (txErr) throw txErr;
+    },
     async setMonthlyPaid(paymentId, amountPaid) {
       // Clear backing transactions so the trigger doesn't overwrite our value.
       const { error: delErr } = await db()

@@ -124,6 +124,25 @@ export const mockRepositories: Repositories = {
       }
       return delay(undefined);
     },
+    syncPaidMonth: ({ contractId, periodMonth, amountDue }) => {
+      const existing = payments.find(
+        (p) => p.contractId === contractId && p.periodMonth === periodMonth
+      );
+      const today = new Date().toISOString().slice(0, 10);
+      if (existing) {
+        payments = payments.map((p) =>
+          p.id === existing.id
+            ? { ...p, amountPaid: Math.max(p.amountPaid, p.amountDue || amountDue), status: 'paid', paidAt: p.paidAt ?? today }
+            : p
+        );
+      } else {
+        payments = [
+          ...payments,
+          { id: uid('p'), contractId, periodMonth, dueDate: periodMonth, amountDue, amountPaid: amountDue, status: 'paid', paidAt: today, note: null },
+        ];
+      }
+      return delay(undefined);
+    },
     settlePayment: (paymentId, _note) => {
       payments = payments.map((p) =>
         p.id === paymentId

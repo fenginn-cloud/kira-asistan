@@ -7,6 +7,7 @@ import {
   ChevronRight,
   LogOut,
   Moon,
+  FileSpreadsheet,
   ShieldCheck,
   Users,
   Volume2,
@@ -118,6 +119,28 @@ export default function SettingsScreen() {
                   </Text>
                   <Text className="text-sm text-muted">
                     Kullanıcı ekle, rol ve durum yönet
+                  </Text>
+                </View>
+                <ChevronRight size={20} color={palette.muted} />
+              </View>
+            </Card>
+          </Pressable>
+        ) : null}
+
+        {/* Excel import (admins only) */}
+        {isAdmin ? (
+          <Pressable onPress={() => router.push('/(app)/excel-import')} className="mt-3">
+            <Card>
+              <View className="flex-row items-center gap-3">
+                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                  <FileSpreadsheet size={20} color={palette.primary} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground">
+                    Excel Aktarımı
+                  </Text>
+                  <Text className="text-sm text-muted">
+                    Güncel Excel'i yükle, sözleşmeleri otomatik güncelle
                   </Text>
                 </View>
                 <ChevronRight size={20} color={palette.muted} />
