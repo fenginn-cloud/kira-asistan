@@ -89,33 +89,50 @@ export default function SettingsScreen() {
           </Card>
         </Pressable>
 
-        {/* Subscription plan (read-only badge) */}
-        <View className="mt-3">
-          <Card>
-            <View className="flex-row items-center gap-3">
-              <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
-                <Crown size={20} color={palette.primary} />
-              </View>
-              <View className="flex-1">
-                <Text className="text-base font-semibold text-foreground">
-                  {PLAN_LABELS[entitlement.plan]} Plan
-                </Text>
-                <Text className="text-sm text-muted">
-                  {entitlement.isLegacy
-                    ? 'Erken kullanıcı — ömür boyu ücretsiz'
-                    : entitlement.limits.maxContracts === null
-                      ? 'Sınırsız sözleşme'
-                      : `${entitlement.limits.maxContracts} sözleşmeye kadar`}
-                </Text>
-              </View>
-              {entitlement.isLegacy ? (
-                <View className="rounded-full bg-success-soft px-3 py-1">
-                  <Text className="text-xs font-semibold text-success">Legacy</Text>
+        {/* Subscription plan */}
+        {(() => {
+          const canUpgrade = !entitlement.isLegacy && entitlement.plan !== 'business';
+          const planCard = (
+            <Card>
+              <View className="flex-row items-center gap-3">
+                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                  <Crown size={20} color={palette.primary} />
                 </View>
-              ) : null}
+                <View className="flex-1">
+                  <Text className="text-base font-semibold text-foreground">
+                    {PLAN_LABELS[entitlement.plan]} Plan
+                  </Text>
+                  <Text className="text-sm text-muted">
+                    {entitlement.isLegacy
+                      ? 'Erken kullanıcı — ömür boyu ücretsiz'
+                      : entitlement.limits.maxContracts === null
+                        ? 'Sınırsız sözleşme'
+                        : `${entitlement.limits.maxContracts} sözleşmeye kadar`}
+                  </Text>
+                </View>
+                {entitlement.isLegacy ? (
+                  <View className="rounded-full bg-success-soft px-3 py-1">
+                    <Text className="text-xs font-semibold text-success">Legacy</Text>
+                  </View>
+                ) : canUpgrade ? (
+                  <View className="flex-row items-center gap-1">
+                    <Text className="text-sm font-semibold text-primary-700">Yükselt</Text>
+                    <ChevronRight size={18} color={palette.primary} />
+                  </View>
+                ) : null}
+              </View>
+            </Card>
+          );
+          return (
+            <View className="mt-3">
+              {canUpgrade ? (
+                <Pressable onPress={() => router.push('/(app)/paywall')}>{planCard}</Pressable>
+              ) : (
+                planCard
+              )}
             </View>
-          </Card>
-        </View>
+          );
+        })()}
 
         {/* Company settings (super admin only) */}
         {isSuperAdmin ? (
