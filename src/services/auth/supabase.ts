@@ -25,6 +25,12 @@ export const supabaseAuthProvider: AuthProvider = {
     const user = data.user;
     if (!user) throw new Error('Giriş başarısız.');
 
+    // Guard: an unverified e-mail must never reach the protected app.
+    if (!user.email_confirmed_at) {
+      await db().auth.signOut();
+      throw new Error('E-posta adresiniz doğrulanmamış. Lütfen önce doğrulayın.');
+    }
+
     const profile = await loadProfile(user.id);
     if (!profile.isActive) {
       await db().auth.signOut();
@@ -104,10 +110,12 @@ export const supabaseAuthProvider: AuthProvider = {
 
   async restore() {
     const { data } = await db().auth.getSession();
-    const userId = data.session?.user?.id;
-    if (!userId) return null;
+    const sessionUser = data.session?.user;
+    if (!sessionUser?.id) return null;
+    // Guard: do not restore an unverified session into the protected app.
+    if (!sessionUser.email_confirmed_at) return null;
     try {
-      return await loadProfile(userId);
+      return await loadProfile(sessionUser.id);
     } catch {
       return null;
     }
