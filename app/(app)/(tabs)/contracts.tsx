@@ -6,6 +6,7 @@ import { ArrowDownUp, FileSearch, Plus, Search } from 'lucide-react-native';
 import { ContractCard } from '@/features/contracts/components/ContractCard';
 import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useContracts } from '@/features/contracts/hooks';
+import { useContractGate } from '@/features/subscription/useContractGate';
 import { useAllPayments, useMarkReceived } from '@/features/payments/hooks';
 import { notifyTeamPaymentReceived } from '@/services/notifyTeam';
 import { useToast } from '@/components/ui/Toast';
@@ -93,6 +94,9 @@ export default function ContractsScreen() {
   const colors = useThemeColors();
   const listRef = useScrollToTop<FlatList>('contracts');
   const { data: contracts = [], isLoading } = useContracts();
+  const gate = useContractGate();
+  const onNewContract = () =>
+    router.push(gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall');
   const { data: payments = [] } = useAllPayments();
   const [query, setQuery] = useState('');
   const [sortOpen, setSortOpen] = useState(false);
@@ -228,7 +232,7 @@ export default function ContractsScreen() {
         <View className="flex-row items-center justify-between">
           <Text className="text-2xl font-bold text-foreground">Sözleşmeler</Text>
           <Pressable
-            onPress={() => router.push('/(app)/contracts/new')}
+            onPress={onNewContract}
             className="h-11 w-11 items-center justify-center rounded-2xl bg-primary active:opacity-80"
           >
             <Plus size={22} color="#FFFFFF" />
