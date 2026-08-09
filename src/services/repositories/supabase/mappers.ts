@@ -159,6 +159,12 @@ export function toCompany(r: any): Company {
     currency: r.currency,
     defaultNotificationDays: r.default_notification_days ?? [],
     createdAt: r.created_at,
+    // Entitlement (columns added in 0011; default safely when absent).
+    plan: (r.plan ?? 'free') as Company['plan'],
+    subscriptionStatus: (r.subscription_status ?? 'none') as Company['subscriptionStatus'],
+    isLegacy: r.is_legacy ?? false,
+    entitlementType: r.entitlement_type ?? null,
+    currentPeriodEnd: r.current_period_end ?? null,
   };
 }
 

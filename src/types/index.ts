@@ -6,6 +6,15 @@
 
 export type UserRole = 'super_admin' | 'admin' | 'personnel';
 
+export type PlanId = 'free' | 'pro' | 'business';
+export type SubscriptionStatus =
+  | 'none'
+  | 'active'
+  | 'trialing'
+  | 'past_due'
+  | 'canceled'
+  | 'legacy';
+
 export interface Company {
   id: string;
   name: string;
@@ -18,6 +27,12 @@ export interface Company {
   currency: string;
   defaultNotificationDays: number[];
   createdAt: string;
+  /** Subscription / entitlement (company-level). */
+  plan: PlanId;
+  subscriptionStatus: SubscriptionStatus;
+  isLegacy: boolean;
+  entitlementType: string | null;
+  currentPeriodEnd: string | null;
 }
 
 export interface AppUser {

@@ -18,6 +18,11 @@ export const mockCompany: Company = {
   currency: 'TRY',
   defaultNotificationDays: [7, 3, 1],
   createdAt: '2024-01-01T00:00:00Z',
+  plan: 'free',
+  subscriptionStatus: 'none',
+  isLegacy: false,
+  entitlementType: null,
+  currentPeriodEnd: null,
 };
 
 export const mockUsers: AppUser[] = [
