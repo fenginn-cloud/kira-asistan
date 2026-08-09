@@ -5,6 +5,7 @@ import {
   Bell,
   Building,
   ChevronRight,
+  Crown,
   LogOut,
   Moon,
   FileSpreadsheet,
@@ -20,6 +21,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCompany } from '@/features/users/hooks';
+import { useEntitlement } from '@/features/subscription/useEntitlement';
+import { PLAN_LABELS } from '@/features/subscription/entitlement';
 import { NotificationControlCard } from '@/features/notifications/components/NotificationControlCard';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import type { NotificationPreferences, ThemePreference } from '@/types';
@@ -48,6 +51,7 @@ export default function SettingsScreen() {
   const { notifications, toggleNotification, theme, setTheme, reminderSound, setReminderSound } =
     useSettingsStore();
   const { data: company } = useCompany();
+  const entitlement = useEntitlement();
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
@@ -84,6 +88,34 @@ export default function SettingsScreen() {
             </View>
           </Card>
         </Pressable>
+
+        {/* Subscription plan (read-only badge) */}
+        <View className="mt-3">
+          <Card>
+            <View className="flex-row items-center gap-3">
+              <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                <Crown size={20} color={palette.primary} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-foreground">
+                  {PLAN_LABELS[entitlement.plan]} Plan
+                </Text>
+                <Text className="text-sm text-muted">
+                  {entitlement.isLegacy
+                    ? 'Erken kullanıcı — ömür boyu ücretsiz'
+                    : entitlement.limits.maxContracts === null
+                      ? 'Sınırsız sözleşme'
+                      : `${entitlement.limits.maxContracts} sözleşmeye kadar`}
+                </Text>
+              </View>
+              {entitlement.isLegacy ? (
+                <View className="rounded-full bg-success-soft px-3 py-1">
+                  <Text className="text-xs font-semibold text-success">Legacy</Text>
+                </View>
+              ) : null}
+            </View>
+          </Card>
+        </View>
 
         {/* Company settings (super admin only) */}
         {isSuperAdmin ? (
