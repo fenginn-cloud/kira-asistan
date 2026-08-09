@@ -46,6 +46,45 @@ Deno.serve(async (req) => {
       return json({ error: 'Bu işlem için yetkiniz yok.' }, 403);
     }
 
+    // Seat limit (server-side backstop; mirrors resolveEntitlement).
+    // Free/Pro = 1 user, Business = 5, legacy = unlimited. super_admin bypasses.
+    if (caller.role !== 'super_admin') {
+      const { data: company } = await admin
+        .from('companies')
+        .select('plan, is_legacy, subscription_status')
+        .eq('id', caller.company_id)
+        .single();
+
+      let maxUsers: number | null = 1;
+      if (company?.is_legacy) {
+        maxUsers = null; // unlimited (grandfathered)
+      } else if (
+        (company?.subscription_status === 'active' ||
+          company?.subscription_status === 'trialing') &&
+        company?.plan === 'business'
+      ) {
+        maxUsers = 5;
+      }
+
+      if (maxUsers !== null) {
+        const { count } = await admin
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('company_id', caller.company_id);
+        if ((count ?? 0) >= maxUsers) {
+          return json(
+            {
+              error:
+                maxUsers === 1
+                  ? 'Ekip yönetimi Business planına dahildir.'
+                  : `Planınız ${maxUsers} kullanıcı içerir. Daha fazlası için yükseltin.`,
+            },
+            403,
+          );
+        }
+      }
+    }
+
     const body = await req.json().catch(() => ({}));
     const email = String(body.email ?? '').trim().toLowerCase();
     const password = String(body.password ?? '');

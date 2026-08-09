@@ -113,10 +113,50 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
       },
     ],
   },
+
+  abonelik: {
+    slug: 'abonelik',
+    title: 'Abonelik ve Mesafeli Satış Koşulları',
+    updated: UPDATED,
+    sections: [
+      {
+        body: `Bu koşullar, ${OPERATOR} tarafından sunulan Kira Asistan ücretli aboneliklerinin (Pro ve Business) satışına ilişkin esasları düzenler. Ücretsiz (Free) plan süre sınırı olmadan kullanılabilir; ücretli planlar isteğe bağlıdır. [Bu metin bir taslaktır; yayından önce hukuk danışmanına gözden geçirtiniz.]`,
+      },
+      {
+        heading: 'Planlar ve ücretler',
+        body: `• Free: 0 TL — en fazla 3 aktif sözleşme, tek kullanıcı.\n• Pro: 1.799 TL/yıl (≈150 TL/ay) — 99 aktif sözleşmeye kadar, tek kullanıcı.\n• Business: 9.599 TL/yıl (≈800 TL/ay) — sınırsız sözleşme, 5 kullanıcı dahil, ekip yönetimi.\nÜcretler yıllık faturalanır. Fiyatlar uygulama içinde güncel olarak gösterilir; değişiklikler yürürlükten önce bildirilir.`,
+      },
+      {
+        heading: 'Satın alma ve faturalama',
+        body: `Ücretli abonelikler App Store (Apple) veya Google Play üzerinden, ilgili mağazanın uygulama içi satın alma sistemiyle tahsil edilir. Faturalama, ödeme ve yenileme mağaza hesabınız üzerinden yürütülür.`,
+      },
+      {
+        heading: 'Otomatik yenileme',
+        body: `Abonelik, dönem bitiminden en az 24 saat önce iptal edilmediği takdirde aynı süre için otomatik olarak yenilenir. Yenileme ücreti, dönem bitiminden önceki 24 saat içinde mağaza hesabınızdan tahsil edilir.`,
+      },
+      {
+        heading: 'İptal',
+        body: `Aboneliğinizi istediğiniz zaman cihazınızın mağaza ayarlarından (App Store / Google Play → Abonelikler) iptal edebilirsiniz. İptal, mevcut faturalama döneminin sonunda yürürlüğe girer; dönem sonuna kadar ücretli özellikleri kullanmaya devam edersiniz.`,
+      },
+      {
+        heading: 'Cayma hakkı ve iade',
+        body: `Uygulama içi satın almalarda iade işlemleri ilgili mağazanın (Apple/Google) iade politikalarına tabidir ve talepler mağaza üzerinden yapılır. Dijital hizmetin ifasına başlanmış olması cayma hakkını sınırlayabilir. İade talepleriniz için mağaza destek kanallarını kullanabilir, ayrıca ${CONTACT} adresinden bize ulaşabilirsiniz.`,
+      },
+      {
+        heading: 'Plan değişiklikleri ve mevcut kullanıcılar',
+        body: `Plan yükseltme/düşürme uygulama içinden yapılabilir. Abonelik sona erdiğinde hesabınız otomatik olarak Free plana döner; sözleşme ve ödeme verileriniz silinmez, yalnızca ücretli özelliklere erişim kısıtlanır.`,
+      },
+      {
+        heading: 'İletişim',
+        body: `Satıcı: ${OPERATOR}. Abonelikle ilgili sorularınız için: ${CONTACT}.`,
+      },
+    ],
+  },
 };
 
 export const LEGAL_LINKS: { slug: string; title: string }[] = [
   { slug: 'gizlilik', title: 'Gizlilik Politikası' },
   { slug: 'kullanim', title: 'Kullanım Şartları' },
   { slug: 'kvkk', title: 'KVKK Aydınlatma Metni' },
+  { slug: 'abonelik', title: 'Abonelik ve Mesafeli Satış Koşulları' },
 ];
