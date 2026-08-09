@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { useContracts } from '@/features/contracts/hooks';
 import { useAuthStore } from '@/store/authStore';
+import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { queryKeys } from '@/lib/query';
 import { formatCurrency } from '@/lib/utils/format';
 import { palette } from '@/lib/theme/colors';
@@ -42,6 +43,7 @@ export default function ExcelImportScreen() {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const { data: contracts = [] } = useContracts();
+  const entitlement = useEntitlement();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [stage, setStage] = useState<Stage>('idle');
@@ -105,6 +107,11 @@ export default function ExcelImportScreen() {
 
   const updates = plan?.rows.filter((r) => r.kind === 'update') ?? [];
   const reviews = plan?.rows.filter((r) => r.kind === 'review') ?? [];
+
+  // Excel import is a Pro/Business feature — redirect Free users to the paywall.
+  if (!entitlement.limits.excel) {
+    return <Redirect href="/(app)/paywall" />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>

@@ -56,7 +56,15 @@ interface ComputeInput {
   payments: Payment[];
   prefs: NotificationPreferences;
   today?: Date;
+  /**
+   * Advance reminders (before_7/3/1). Free plan only gets due-day + overdue;
+   * pass false to suppress the "X gün önce" reminders. Defaults to true so
+   * other callers keep full behavior.
+   */
+  advanceReminders?: boolean;
 }
+
+const ADVANCE_TRIGGERS = new Set(['before_7', 'before_3', 'before_1']);
 
 /**
  * Reminders that should be SENT today — one per contract whose open payment's
@@ -67,6 +75,7 @@ export function computeTodayReminders({
   payments,
   prefs,
   today = new Date(),
+  advanceReminders = true,
 }: ComputeInput): ReminderWithRefs[] {
   const result: ReminderWithRefs[] = [];
 
@@ -80,6 +89,8 @@ export function computeTodayReminders({
     const daysUntil = differenceInCalendarDays(parseISO(open.dueDate), today);
     const trigger = triggerFiringToday(daysUntil);
     if (!trigger || !prefs[trigger]) continue;
+    // Free plan: advance ("X gün önce") reminders are a paid feature.
+    if (!advanceReminders && ADVANCE_TRIGGERS.has(trigger)) continue;
 
     result.push({
       id: `${contract.id}:${open.periodMonth}:${trigger}`,

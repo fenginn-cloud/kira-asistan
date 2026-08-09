@@ -23,12 +23,42 @@ export interface PlanLimits {
   maxUsers: number | null;
   /** Whether the plan includes the AI assistant. */
   ai: boolean;
+  /** Advance reminders (7/3/1 gün önce). Free only gets due-day + overdue. */
+  advanceReminders: boolean;
+  /** Excel'den sözleşme aktarımı. */
+  excel: boolean;
+  /** Kiracı ödeme portalı / bildirim linki. */
+  tenantPortal: boolean;
 }
 
 export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
-  free: { maxContracts: 3, team: false, maxUsers: 1, ai: false },
-  pro: { maxContracts: null, team: false, maxUsers: 1, ai: true },
-  business: { maxContracts: null, team: true, maxUsers: 5, ai: true },
+  free: {
+    maxContracts: 3,
+    team: false,
+    maxUsers: 1,
+    ai: false,
+    advanceReminders: false,
+    excel: false,
+    tenantPortal: false,
+  },
+  pro: {
+    maxContracts: 99,
+    team: false,
+    maxUsers: 1,
+    ai: true,
+    advanceReminders: true,
+    excel: true,
+    tenantPortal: true,
+  },
+  business: {
+    maxContracts: null,
+    team: true,
+    maxUsers: 5,
+    ai: true,
+    advanceReminders: true,
+    excel: true,
+    tenantPortal: true,
+  },
 };
 
 export const PLAN_LABELS: Record<PlanId, string> = {

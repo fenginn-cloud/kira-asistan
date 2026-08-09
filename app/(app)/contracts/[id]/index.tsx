@@ -70,6 +70,7 @@ import {
 import { buildMessage } from '@/lib/utils/message';
 import { callPhone, copyText, openWhatsApp } from '@/lib/utils/contact';
 import { tenantLinkFor } from '@/services/tenantPortal';
+import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { errorMessage } from '@/lib/utils/error';
 import { formatCurrency, formatMonth, formatShortDate } from '@/lib/utils/format';
 import { derivePaymentStatus } from '@/lib/utils/payments';
@@ -98,6 +99,7 @@ export default function ContractDetailScreen() {
 
   const { data: contract, isLoading } = useContract(id);
   const { data: publicToken } = useContractToken(id);
+  const entitlement = useEntitlement();
   const { data: payments = [] } = usePaymentsByContract(id);
   const { data: transactions = [] } = useContractTransactions(id);
   const addTransaction = useAddTransaction(id);
@@ -290,7 +292,9 @@ export default function ContractDetailScreen() {
   };
 
   // --- Tenant link (kiracı ödeme linki) ---
-  const tenantLink = publicToken ? tenantLinkFor(publicToken) : null;
+  // Tenant portal is a Pro/Business feature.
+  const tenantLink =
+    publicToken && entitlement.limits.tenantPortal ? tenantLinkFor(publicToken) : null;
 
   const copyTenantLink = async () => {
     if (!tenantLink) return;
@@ -626,11 +630,25 @@ export default function ContractDetailScreen() {
                   <Text className="text-sm text-muted">
                     {tenantLink
                       ? 'Kiracı giriş yapmadan borcunu görür, ödeme bildirir'
-                      : 'Bu özellik canlı modda kullanılabilir'}
+                      : !entitlement.limits.tenantPortal
+                        ? 'Pro ve Business planlarına dahildir'
+                        : 'Bu özellik canlı modda kullanılabilir'}
                   </Text>
                 </View>
+                {!entitlement.limits.tenantPortal ? (
+                  <View className="rounded-full bg-primary-50 px-3 py-1">
+                    <Text className="text-xs font-semibold text-primary-700">Pro</Text>
+                  </View>
+                ) : null}
               </View>
-              {tenantLink ? (
+              {!entitlement.limits.tenantPortal ? (
+                <Pressable
+                  onPress={() => router.push('/(app)/paywall')}
+                  className="mt-3 items-center rounded-2xl bg-primary py-2.5 active:opacity-80"
+                >
+                  <Text className="text-sm font-semibold text-white">Planları Gör</Text>
+                </Pressable>
+              ) : tenantLink ? (
                 <>
                   <View className="mt-3 rounded-2xl bg-background px-3 py-2.5">
                     <Text className="text-xs text-muted" numberOfLines={1}>
