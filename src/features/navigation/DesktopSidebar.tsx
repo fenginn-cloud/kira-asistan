@@ -10,6 +10,7 @@ import {
 } from 'lucide-react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
+import { useContractGate } from '@/features/subscription/useContractGate';
 import { palette } from '@/lib/theme/colors';
 
 type IconType = typeof LayoutGrid;
@@ -70,6 +71,7 @@ export function DesktopSidebar({ width }: { width: number }) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
+  const gate = useContractGate();
 
   const roleLabel =
     user?.role === 'super_admin' ? 'Süper Admin' : 'Yönetici';
@@ -106,7 +108,11 @@ export function DesktopSidebar({ width }: { width: number }) {
 
         {/* Hızlı eylem */}
         <Pressable
-          onPress={() => router.push('/(app)/contracts/new' as Href)}
+          onPress={() =>
+            router.push(
+              (gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall') as Href,
+            )
+          }
           className="mb-5 flex-row items-center justify-center gap-2 rounded-2xl bg-primary py-3 active:opacity-90"
         >
           <Plus size={18} color="#FFFFFF" />
