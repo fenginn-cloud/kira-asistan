@@ -105,6 +105,17 @@ export default function LoginScreen() {
             <View className="mt-2">
               <Button label="Giriş Yap" onPress={onSubmit} loading={isLoading} />
             </View>
+
+            <View className="mt-2 flex-row items-center justify-center gap-1">
+              <Text className="text-sm text-muted">Hesabınız yok mu?</Text>
+              <Link href="/(auth)/register" asChild>
+                <Pressable>
+                  <Text className="text-sm font-semibold text-primary-700">
+                    Kayıt Ol
+                  </Text>
+                </Pressable>
+              </Link>
+            </View>
           </View>
 
           <View className="mt-10 flex-row flex-wrap items-center justify-center gap-x-4 gap-y-1">
