@@ -65,7 +65,17 @@ export const supabaseRepositories: Repositories = {
         .insert(fromContract(input as Partial<Contract>))
         .select(contractColumns)
         .single();
-      if (error) throw error;
+      if (error) {
+        // Server-side plan limit (migration 0012). Surface a typed, friendly
+        // error the UI can catch to route to the paywall.
+        if (
+          error.message?.includes('contract_limit_reached') ||
+          (error as { hint?: string }).hint?.includes('3 sözleşme')
+        ) {
+          throw new Error('CONTRACT_LIMIT_REACHED');
+        }
+        throw error;
+      }
       return toContract(data);
     },
     async update(id, patch) {
