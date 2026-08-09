@@ -18,7 +18,7 @@ export const mockAuthProvider: AuthProvider = {
   },
   async verifyOtp(_email, code) {
     await new Promise((r) => setTimeout(r, 400));
-    if (code.trim().length !== 6) throw new Error('Doğrulama kodu 6 haneli olmalı.');
+    if (code.trim().length < 6) throw new Error('Doğrulama kodunu eksiksiz girin.');
   },
   async resendOtp() {
     await new Promise((r) => setTimeout(r, 300));
