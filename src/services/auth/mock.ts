@@ -11,6 +11,22 @@ export const mockAuthProvider: AuthProvider = {
       mockUsers[0]!;
     return { ...matched, lastLoginAt: new Date().toISOString() };
   },
+  async signUp(fullName, email) {
+    await new Promise((r) => setTimeout(r, 400));
+    if (!fullName.trim()) throw new Error('Ad soyad zorunludur.');
+    return { needsVerification: true, email: email.trim().toLowerCase() };
+  },
+  async verifyOtp(_email, code) {
+    await new Promise((r) => setTimeout(r, 400));
+    if (code.trim().length !== 6) throw new Error('Doğrulama kodu 6 haneli olmalı.');
+  },
+  async resendOtp() {
+    await new Promise((r) => setTimeout(r, 300));
+  },
+  async completeAccountSetup() {
+    await new Promise((r) => setTimeout(r, 300));
+    return { ...mockUsers[0]!, lastLoginAt: new Date().toISOString() };
+  },
   async signOut() {},
   async restore() {
     return null;
