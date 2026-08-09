@@ -63,8 +63,8 @@ export default function VerifyOtpScreen() {
   const onVerify = async () => {
     setError(null);
     setInfo(null);
-    if (code.trim().length !== 6) {
-      setError('Doğrulama kodu 6 haneli olmalı.');
+    if (code.trim().length < 6) {
+      setError('Doğrulama kodunu eksiksiz girin.');
       return;
     }
     try {
@@ -111,8 +111,8 @@ export default function VerifyOtpScreen() {
             </Text>
             <Text className="mt-2 text-center text-sm text-muted">
               {email
-                ? `${email} adresine gönderdiğimiz 6 haneli kodu girin.`
-                : 'E-postanıza gönderdiğimiz 6 haneli kodu girin.'}
+                ? `${email} adresine gönderdiğimiz doğrulama kodunu girin.`
+                : 'E-postanıza gönderdiğimiz doğrulama kodunu girin.'}
             </Text>
           </View>
 
@@ -120,11 +120,11 @@ export default function VerifyOtpScreen() {
             <Input
               label="Doğrulama Kodu"
               value={code}
-              onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))}
+              onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 10))}
               keyboardType="number-pad"
-              maxLength={6}
-              placeholder="______"
-              className="text-center text-2xl tracking-[12px]"
+              maxLength={10}
+              placeholder="------"
+              className="text-center text-2xl tracking-[10px]"
             />
 
             {error ? <Text className="text-sm text-danger">{error}</Text> : null}
