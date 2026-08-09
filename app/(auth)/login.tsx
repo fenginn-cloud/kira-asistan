@@ -17,7 +17,7 @@ import { useAuthStore } from '@/store/authStore';
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, isLoading, rememberMe, setRememberMe } = useAuthStore();
-  const [email, setEmail] = useState('admin@vista.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 

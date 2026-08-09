@@ -150,4 +150,37 @@ export const supabaseAuthProvider: AuthProvider = {
     const { error } = await db().auth.updateUser({ password: next });
     if (error) throw new Error('Şifre güncellenemedi.');
   },
+
+  async requestPasswordReset(email) {
+    // Sends the "Reset Password" e-mail. With the template using {{ .Token }}
+    // the user receives a numeric recovery code (no deep link needed).
+    const { error } = await db().auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+    );
+    // Do not reveal whether the address exists — treat as success either way.
+    if (error && !error.message?.toLowerCase().includes('rate limit')) {
+      // Only surface hard failures (e.g. rate limiting) to the user.
+    }
+    if (error?.message?.toLowerCase().includes('rate limit')) {
+      throw new Error('Çok fazla deneme yaptınız. Lütfen biraz sonra tekrar deneyin.');
+    }
+  },
+
+  async resetPassword(email, code, newPassword) {
+    if (newPassword.trim().length < 6) {
+      throw new Error('Yeni şifre en az 6 karakter olmalı.');
+    }
+    const { error: verifyErr } = await db().auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: code.trim(),
+      type: 'recovery',
+    });
+    if (verifyErr) throw new Error('Doğrulama kodu hatalı veya süresi dolmuş.');
+
+    const { error: updErr } = await db().auth.updateUser({ password: newPassword });
+    if (updErr) throw new Error('Şifre güncellenemedi.');
+
+    // Log out so the user signs in fresh with the new password.
+    await db().auth.signOut();
+  },
 };

@@ -19,6 +19,10 @@ interface AuthState {
   /** Verify the OTP, provision the account, and set the session user. */
   verifyOtp: (email: string, code: string) => Promise<void>;
   resendOtp: (email: string) => Promise<void>;
+  /** Send a password-reset (recovery) e-mail with a numeric code. */
+  requestPasswordReset: (email: string) => Promise<void>;
+  /** Verify the recovery code and set a new password. */
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
 }
 
 /**
@@ -88,5 +92,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   resendOtp: async (email) => {
     await authProvider.resendOtp(email);
+  },
+
+  requestPasswordReset: async (email) => {
+    await authProvider.requestPasswordReset(email);
+  },
+
+  resetPassword: async (email, code, newPassword) => {
+    await authProvider.resetPassword(email, code, newPassword);
   },
 }));

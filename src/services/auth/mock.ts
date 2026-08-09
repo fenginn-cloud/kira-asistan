@@ -37,4 +37,12 @@ export const mockAuthProvider: AuthProvider = {
     if (!current.trim()) throw new Error('Mevcut şifrenizi girin.');
     if (next.trim().length < 6) throw new Error('Yeni şifre en az 6 karakter olmalı.');
   },
+  async requestPasswordReset() {
+    await new Promise((r) => setTimeout(r, 400));
+  },
+  async resetPassword(_email, code, newPassword) {
+    await new Promise((r) => setTimeout(r, 400));
+    if (code.trim().length < 6) throw new Error('Doğrulama kodunu eksiksiz girin.');
+    if (newPassword.trim().length < 6) throw new Error('Yeni şifre en az 6 karakter olmalı.');
+  },
 };
