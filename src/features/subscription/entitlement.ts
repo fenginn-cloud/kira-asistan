@@ -19,12 +19,16 @@ export interface PlanLimits {
   maxContracts: number | null;
   /** Whether the plan allows staff / team members. */
   team: boolean;
+  /** Maximum number of users (incl. admin). `null` = unlimited. */
+  maxUsers: number | null;
+  /** Whether the plan includes the AI assistant. */
+  ai: boolean;
 }
 
 export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
-  free: { maxContracts: 3, team: false },
-  pro: { maxContracts: null, team: false },
-  business: { maxContracts: null, team: true },
+  free: { maxContracts: 3, team: false, maxUsers: 1, ai: false },
+  pro: { maxContracts: null, team: false, maxUsers: 1, ai: true },
+  business: { maxContracts: null, team: true, maxUsers: 5, ai: true },
 };
 
 export const PLAN_LABELS: Record<PlanId, string> = {
@@ -55,8 +59,15 @@ export function resolveEntitlement(company: Company | null | undefined): Entitle
   }
 
   // 1) Legacy always wins — permanent Business, no expiry, no paywall.
+  //    Legacy keeps unlimited users (grandfathered) so existing staff never
+  //    break, even though the paid Business tier includes 5.
   if (company.isLegacy) {
-    return { plan: 'business', source: 'legacy', isLegacy: true, limits: PLAN_LIMITS.business };
+    return {
+      plan: 'business',
+      source: 'legacy',
+      isLegacy: true,
+      limits: { ...PLAN_LIMITS.business, maxUsers: null },
+    };
   }
 
   // 2) / 3) Active paid subscription.

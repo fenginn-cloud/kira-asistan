@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
 import { CollectionHome } from '@/features/dashboard/CollectionHome';
+import { useContractGate } from '@/features/subscription/useContractGate';
 import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useContracts } from '@/features/contracts/hooks';
@@ -33,6 +34,12 @@ import { palette } from '@/lib/theme/colors';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const gate = useContractGate();
+  const showLimitStrip =
+    gate.plan === 'free' &&
+    !gate.isLegacy &&
+    gate.limit !== null &&
+    gate.count >= gate.limit - 1;
   const user = useAuthStore((s) => s.user);
   // Cari hesap / finansal özet yalnızca yöneticide.
   const canSeeLedger = user?.role === 'admin' || user?.role === 'super_admin';
@@ -101,6 +108,23 @@ export default function HomeScreen() {
             {user?.fullName ?? 'Kullanıcı'}
           </Text>
         </View>
+
+        {showLimitStrip ? (
+          <Pressable
+            onPress={() => router.push('/(app)/paywall')}
+            className="mt-4 flex-row items-center justify-between rounded-2xl border border-primary/30 bg-primary-50 px-4 py-3 active:opacity-80"
+          >
+            <View className="flex-1 pr-3">
+              <Text className="text-sm font-semibold text-primary-700">
+                {gate.count}/{gate.limit} sözleşme kullanıldı
+              </Text>
+              <Text className="text-xs text-muted">
+                Sınırsız sözleşme için planınızı yükseltin.
+              </Text>
+            </View>
+            <Text className="text-sm font-semibold text-primary-700">Yükselt</Text>
+          </Pressable>
+        ) : null}
 
         {isLoading ? (
           <View className="mt-6 gap-3">

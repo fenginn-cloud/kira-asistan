@@ -89,3 +89,29 @@ export const PLANS: Record<PlanId, PlanInfo> = {
 
 /** Paywall'da gösterilecek ücretli planlar (yükseltme hedefleri). */
 export const UPGRADE_PLANS: PlanInfo[] = [PLANS.pro, PLANS.business];
+
+/** Karşılaştırma tablosu satırı. Değer: true=var, false=yok, string=metin. */
+export interface FeatureRow {
+  label: string;
+  free: boolean | string;
+  pro: boolean | string;
+  business: boolean | string;
+}
+
+/** "Tüm özellikleri gör" karşılaştırma matrisi (Free / Pro / Business). */
+export const FEATURE_MATRIX: FeatureRow[] = [
+  { label: 'Aktif sözleşme', free: '3', pro: 'Sınırsız', business: 'Sınırsız' },
+  { label: 'Kullanıcı', free: '1', pro: '1', business: '5' },
+  { label: 'Kira ve tahsilat takibi', free: true, pro: true, business: true },
+  { label: 'Cari hesap / devreden bakiye', free: true, pro: true, business: true },
+  { label: 'Geciken kira takibi', free: true, pro: true, business: true },
+  { label: 'Hatırlatmalar', free: 'Temel', pro: 'Tümü', business: 'Tümü' },
+  { label: 'İstatistik ve raporlar', free: 'Temel', pro: 'Gelişmiş', business: 'Gelişmiş' },
+  { label: "Excel'den sözleşme aktarımı", free: false, pro: true, business: 'Gelişmiş' },
+  { label: 'Kiracı ödeme bildirimleri', free: false, pro: true, business: true },
+  { label: 'AI Asistan', free: false, pro: true, business: 'Gelişmiş' },
+  { label: 'Ekip / personel yönetimi', free: false, pro: false, business: true },
+  { label: 'Kullanıcı bazlı yetkilendirme', free: false, pro: false, business: true },
+  { label: 'İşlem geçmişi', free: false, pro: false, business: true },
+  { label: 'Öncelikli destek', free: false, pro: false, business: true },
+];

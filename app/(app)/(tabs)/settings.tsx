@@ -154,9 +154,14 @@ export default function SettingsScreen() {
           </Pressable>
         ) : null}
 
-        {/* User management (admins only) */}
+        {/* User management (admins only; team is a Business feature) */}
         {isAdmin ? (
-          <Pressable onPress={() => router.push('/(app)/users')} className="mt-3">
+          <Pressable
+            onPress={() =>
+              router.push(entitlement.limits.team ? '/(app)/users' : '/(app)/paywall')
+            }
+            className="mt-3"
+          >
             <Card>
               <View className="flex-row items-center gap-3">
                 <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
@@ -167,10 +172,18 @@ export default function SettingsScreen() {
                     Kullanıcı Yönetimi
                   </Text>
                   <Text className="text-sm text-muted">
-                    Kullanıcı ekle, rol ve durum yönet
+                    {entitlement.limits.team
+                      ? 'Kullanıcı ekle, rol ve durum yönet'
+                      : 'Ekip yönetimi Business planına dahildir'}
                   </Text>
                 </View>
-                <ChevronRight size={20} color={palette.muted} />
+                {entitlement.limits.team ? (
+                  <ChevronRight size={20} color={palette.muted} />
+                ) : (
+                  <View className="rounded-full bg-primary-50 px-3 py-1">
+                    <Text className="text-xs font-semibold text-primary-700">Business</Text>
+                  </View>
+                )}
               </View>
             </Card>
           </Pressable>
