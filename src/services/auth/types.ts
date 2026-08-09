@@ -41,4 +41,14 @@ export interface AuthProvider {
   /** Persist editable profile fields (name, phone, avatar). Best-effort. */
   persistProfile(patch: Partial<AppUser>): Promise<void>;
   changePassword(current: string, next: string): Promise<void>;
+  /**
+   * Start the "forgot password" flow: sends a recovery e-mail containing a
+   * numeric code (recovery OTP). No session is created here.
+   */
+  requestPasswordReset(email: string): Promise<void>;
+  /**
+   * Complete the "forgot password" flow: verify the recovery code, set the new
+   * password, then sign out so the user logs in fresh with the new password.
+   */
+  resetPassword(email: string, code: string, newPassword: string): Promise<void>;
 }
