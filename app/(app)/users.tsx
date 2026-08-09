@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { useUsers, useCreateUser, useUpdateUser } from '@/features/users/hooks';
 import { useAuthStore } from '@/store/authStore';
+import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { errorMessage } from '@/lib/utils/error';
 import { formatDateTime } from '@/lib/utils/format';
 import { palette } from '@/lib/theme/colors';
@@ -45,6 +46,9 @@ export default function UsersScreen() {
   const toast = useToast();
   const currentUser = useAuthStore((s) => s.user);
   const { data: users = [], isLoading } = useUsers();
+  const entitlement = useEntitlement();
+  const maxUsers = entitlement.limits.maxUsers;
+  const seatFull = maxUsers !== null && users.length >= maxUsers;
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
 
@@ -75,6 +79,16 @@ export default function UsersScreen() {
     } else {
       if (draft.password.trim().length < 6) {
         toast.error('Şifre en az 6 karakter olmalı.');
+        return;
+      }
+      if (seatFull) {
+        toast.error(
+          maxUsers === 1
+            ? 'Ekip yönetimi Business planına dahildir.'
+            : `Planınız ${maxUsers} kullanıcı içerir. Daha fazlası için yükseltin.`,
+        );
+        setDraft(null);
+        router.push('/(app)/paywall');
         return;
       }
       createUser.mutate(
@@ -110,7 +124,7 @@ export default function UsersScreen() {
           <Text className="text-2xl font-bold text-foreground">Kullanıcılar</Text>
         </View>
         <Pressable
-          onPress={() => setDraft(emptyDraft)}
+          onPress={() => (seatFull ? router.push('/(app)/paywall') : setDraft(emptyDraft))}
           className="h-11 w-11 items-center justify-center rounded-2xl bg-primary active:opacity-80"
         >
           <Plus size={22} color="#FFFFFF" />
