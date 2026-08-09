@@ -26,11 +26,21 @@ export default function PaywallScreen() {
           <View className="h-16 w-16 items-center justify-center rounded-3xl bg-primary">
             <Crown size={30} color="#FFFFFF" />
           </View>
-          <Text className="mt-4 text-2xl font-bold text-foreground">Planınızı yükseltin</Text>
-          <Text className="mt-2 text-center text-sm text-muted">
-            Ücretsiz planda en fazla 3 sözleşme ekleyebilirsiniz. Sınırsız sözleşme ve
-            ekip özellikleri için yükseltin.
+          <Text className="mt-4 text-center text-2xl font-bold text-foreground">
+            {entitlement.plan === 'free'
+              ? '3 sözleşme sınırına ulaştınız'
+              : 'Planınızı yükseltin'}
           </Text>
+          <Text className="mt-2 text-center text-sm text-muted">
+            Portföyünüzü sınırsız yönetin. Size uygun planı seçin.
+          </Text>
+          {entitlement.plan === 'free' && !entitlement.isLegacy ? (
+            <View className="mt-3 rounded-full bg-surface px-3 py-1">
+              <Text className="text-xs text-muted">
+                Mevcut planınız: Ücretsiz — 3 sözleşmeye kadar
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View className="mt-6 gap-4">

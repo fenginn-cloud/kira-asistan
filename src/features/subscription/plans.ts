@@ -4,8 +4,12 @@ import type { PlanId } from '@/types';
  * Plan catalog — the single source of truth for pricing and marketing copy
  * shown on the paywall. Billing is yearly-only for now.
  *
- * Fiyat değişikliği gerekiyorsa YALNIZCA bu dosyayı düzenle. (RevenueCat
- * entegrasyonunda store ürün fiyatları da buraya eşlenecek.)
+ * Fiyat/metin değişikliği gerekiyorsa YALNIZCA bu dosyayı düzenle.
+ * (RevenueCat entegrasyonunda store ürün fiyatları da buraya eşlenecek.)
+ *
+ * NOT: Kartlardaki bazı özelliklerin backend'i henüz hazır değildir
+ * (bkz. görev raporu: 5 kullanıcı limiti, işlem geçmişi/audit, AI kotası,
+ * katmanlı "gelişmiş" AI/Excel). Satın alma bu ekranda kapalıdır ("yakında").
  */
 
 export type BillingPeriod = 'yearly';
@@ -21,6 +25,7 @@ export interface PlanPrice {
 export interface PlanInfo {
   id: PlanId;
   name: string;
+  /** "Kendim yönetiyorum" gibi ürün ayrımını anlatan kısa başlık. */
   tagline: string;
   features: string[];
   /** Null for Free (no price). */
@@ -33,33 +38,51 @@ export const PLANS: Record<PlanId, PlanInfo> = {
   free: {
     id: 'free',
     name: 'Free',
-    tagline: 'Başlamak için ücretsiz',
-    features: ['En fazla 3 sözleşme', 'Tek kullanıcı', 'Temel hatırlatmalar'],
+    tagline: 'Uygulamayı ücretsiz kullanıyorum',
+    features: [
+      'En fazla 3 aktif sözleşme',
+      'Tek kullanıcı',
+      'Kira ve tahsilat takibi',
+      'Ödeme geçmişi',
+      'Cari hesap / devreden bakiye',
+      'Geciken kira takibi',
+      'Temel istatistikler',
+      'Temel hatırlatmalar',
+    ],
     price: null,
   },
   pro: {
     id: 'pro',
     name: 'Pro',
-    tagline: 'Sınırsız sözleşme, tek kullanıcı',
+    tagline: 'Portföyümü kendim yönetiyorum',
     features: [
       'Sınırsız sözleşme',
       'Tek kullanıcı',
       'Tüm hatırlatmalar',
-      'İstatistikler ve raporlar',
+      'Cari hesap ve tahsilat takibi',
+      "Excel'den sözleşme aktarımı",
+      'Gelişmiş istatistik ve raporlar',
+      'Kiracı ödeme bildirimleri',
+      'AI Asistan',
     ],
-    price: { yearly: 1788, monthlyEquivalent: 149, period: 'yearly' },
+    price: { yearly: 1799, monthlyEquivalent: 150, period: 'yearly' },
   },
   business: {
     id: 'business',
     name: 'Business',
-    tagline: 'Ekip ile sınırsız kullanım',
+    tagline: 'Portföyümü ekibimle yönetiyorum',
     features: [
-      'Sınırsız sözleşme',
-      'Personel / ekip yönetimi (sınırsız personel)',
-      'Excel senkronizasyonu',
+      "Pro'daki tüm özellikler",
+      '5 kullanıcı dahil',
+      'Ekip ve personel yönetimi',
+      'Kullanıcı bazlı yetkilendirme',
+      'Ekip tahsilat takibi',
+      'Gelişmiş Excel senkronizasyonu',
+      'Gelişmiş AI Asistan',
+      'İşlem geçmişi',
       'Öncelikli destek',
     ],
-    price: { yearly: 9588, monthlyEquivalent: 799, period: 'yearly' },
+    price: { yearly: 9599, monthlyEquivalent: 800, period: 'yearly' },
     recommended: true,
   },
 };
