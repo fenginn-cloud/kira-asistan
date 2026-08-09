@@ -39,8 +39,22 @@ if (!html.includes('rel="manifest"')) {
 const SW_SCRIPT = `
     <script>
       if ('serviceWorker' in navigator) {
+        // Auto-reload once when a NEW service worker takes control, so an
+        // already-open tab picks up a fresh deployment without a manual
+        // refresh. Guarded so the first-ever install does not reload, and so
+        // we never loop.
+        var hadController = !!navigator.serviceWorker.controller;
+        var refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!hadController || refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
         window.addEventListener('load', function () {
-          navigator.serviceWorker.register('/sw.js').catch(function () {});
+          navigator.serviceWorker.register('/sw.js').then(function (reg) {
+            // Proactively check for an update on each load.
+            reg.update().catch(function () {});
+          }).catch(function () {});
         });
       }
     </script>`;
