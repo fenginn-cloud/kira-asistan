@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emince Sözlük 🥜 — Emin'in Resmi Dil Akademisi</title>
+<meta name="description" content="Emin'in kendince icat ettiği efsane kelimelerin resmi sözlüğü. Ciddiyetten uzak durunuz.">
+<style>
+  :root{
+    --bg1:#ff9a3c; --bg2:#ff6f61; --bg3:#845ec2; --card:#fff8ef;
+    --ink:#2b2b2b; --accent:#e63946; --accent2:#2a9d8f; --gold:#ffcc33;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(-45deg,var(--bg1),var(--bg2),var(--bg3),#00c9a7);
+    background-size:400% 400%;
+    animation:gradient 16s ease infinite;
+    min-height:100vh;overflow-x:hidden;
+  }
+  @keyframes gradient{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+
+  header{text-align:center;padding:60px 20px 30px;color:#fff;position:relative}
+  .badge{display:inline-block;background:#000;color:var(--gold);padding:6px 16px;border-radius:30px;
+    font-size:.8rem;letter-spacing:2px;text-transform:uppercase;font-weight:bold;margin-bottom:18px;
+    transform:rotate(-3deg);box-shadow:0 6px 0 rgba(0,0,0,.25)}
+  h1{font-size:clamp(2.4rem,8vw,5rem);text-shadow:4px 4px 0 #000,8px 8px 0 rgba(0,0,0,.15);
+    letter-spacing:-2px;line-height:.95}
+  h1 .nut{display:inline-block;animation:spin 4s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .subtitle{margin-top:14px;font-size:clamp(1rem,3vw,1.4rem);font-weight:bold;opacity:.95;
+    text-shadow:2px 2px 0 rgba(0,0,0,.3)}
+  .tag{margin-top:8px;font-style:italic;opacity:.9}
+
+  /* Random word machine */
+  .machine{max-width:640px;margin:20px auto 10px;background:var(--card);border-radius:24px;
+    padding:26px;box-shadow:0 18px 0 rgba(0,0,0,.2),0 30px 60px rgba(0,0,0,.3);
+    border:4px solid #000;text-align:center}
+  .machine h3{font-size:1.1rem;color:var(--accent);text-transform:uppercase;letter-spacing:1px}
+  #rndWord{font-size:clamp(1.8rem,6vw,3rem);font-weight:900;margin:14px 0;min-height:1.2em;
+    color:var(--bg3);transition:transform .1s}
+  .btn{cursor:pointer;border:3px solid #000;background:var(--gold);color:#000;font-weight:900;
+    font-size:1.1rem;padding:14px 28px;border-radius:16px;box-shadow:0 6px 0 #000;
+    transition:transform .08s,box-shadow .08s;text-transform:uppercase;letter-spacing:1px}
+  .btn:active{transform:translateY(6px);box-shadow:0 0 0 #000}
+  .btn.alt{background:var(--accent2);color:#fff}
+
+  .search-wrap{max-width:640px;margin:26px auto 6px;text-align:center;padding:0 16px}
+  #search{width:100%;padding:16px 20px;border-radius:16px;border:4px solid #000;font-size:1.1rem;
+    font-weight:bold;box-shadow:0 6px 0 rgba(0,0,0,.25);outline:none}
+
+  main{max-width:1000px;margin:20px auto 60px;padding:0 16px;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px}
+  .card{background:var(--card);border:4px solid #000;border-radius:20px;padding:22px;
+    box-shadow:0 10px 0 rgba(0,0,0,.2);transition:transform .15s,box-shadow .15s;position:relative;
+    cursor:default;animation:pop .5s backwards}
+  @keyframes pop{from{opacity:0;transform:scale(.8) translateY(20px)}}
+  .card:hover{transform:translateY(-6px) rotate(-1deg);box-shadow:0 16px 0 rgba(0,0,0,.2)}
+  .card .num{position:absolute;top:-16px;right:-12px;background:var(--accent);color:#fff;
+    width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:900;border:3px solid #000;transform:rotate(8deg)}
+  .word{font-size:1.5rem;font-weight:900;color:var(--bg3);margin-bottom:4px}
+  .type{display:inline-block;font-size:.72rem;background:#000;color:var(--gold);padding:3px 10px;
+    border-radius:20px;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+  .mean{font-size:1rem;line-height:1.5}
+  .example{margin-top:12px;font-style:italic;font-size:.92rem;background:#fff;padding:10px 12px;
+    border-radius:12px;border-left:4px solid var(--accent2)}
+  .example b{color:var(--accent)}
+  .likes{margin-top:12px;display:flex;align-items:center;gap:8px}
+  .likes button{cursor:pointer;border:2px solid #000;background:#fff;border-radius:12px;
+    padding:6px 12px;font-weight:bold;transition:transform .1s}
+  .likes button:active{transform:scale(1.2)}
+
+  footer{text-align:center;padding:30px 20px 60px;color:#fff;font-weight:bold;
+    text-shadow:2px 2px 0 rgba(0,0,0,.3)}
+  footer .small{font-weight:normal;opacity:.85;margin-top:8px;font-size:.9rem}
+
+  .float{position:fixed;font-size:2rem;pointer-events:none;animation:floatUp linear infinite;opacity:.6;z-index:0}
+  @keyframes floatUp{from{transform:translateY(100vh) rotate(0)}to{transform:translateY(-10vh) rotate(360deg)}}
+
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);
+    background:#000;color:var(--gold);padding:14px 24px;border-radius:16px;font-weight:900;
+    z-index:99;transition:transform .3s;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Resmî Dil Akademisi · Kuruluş 2026</div>
+  <h1><span class="nut">🥜</span> EMİNCE</h1>
+  <div class="subtitle">Emin'in Kendince İcat Ettiği Efsane Kelimeler Sözlüğü</div>
+  <div class="tag">"Türkçe yetmedi, Emin devreye girdi."</div>
+</header>
+
+<div class="machine">
+  <h3>🎰 Rastgele Emince Kelime Makinesi</h3>
+  <div id="rndWord">Butona bas bakalım!</div>
+  <button class="btn" onclick="rollWord()">ÇEVİR ÇEVİR 🎲</button>
+  <button class="btn alt" onclick="speak()">SESLİ SÖYLE 🔊</button>
+</div>
+
+<div class="search-wrap">
+  <input id="search" placeholder="🔍 Kelime ara... (mesela: fıstıklı)" oninput="filter(this.value)">
+</div>
+
+<main id="grid"></main>
+
+<footer>
+  Emince Sözlük © 2026 — Tüm hakları Emin'e aittir (kendince). <br>
+  <span class="small">Bu site şaka amaçlıdır. Kelimeler zamanla artabilir. 🥜❤️</span>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+const words = [
+  {w:"Fıstıklı çubuk", t:"isim", m:"Görünüşte masum ama içi dolu, herkesin bayıldığı efsane kişi/durum. Emin'in en sevdiği övgü.", ex:"Bu adam tam bir <b>fıstıklı çubuk</b>ya!"},
+  {w:"Beter heyecan", t:"duygu", m:"Normal heyecanın bir üst versiyonu. Kalbin göğüsten çıkacak seviyesi.", ex:"Maç başlayınca <b>beter heyecan</b> bastı."},
+  {w:"Korkak feriş", t:"sıfat", m:"En ufak şeyden ödü kopan, ama komik şekilde kaçan tip.", ex:"Böcek görünce <b>korkak feriş</b> gibi kaçma!"},
+  {w:"Domuz gül", t:"nida", m:"Hem sinirlenip hem gülünce çıkan tepki. Kızgın ama sevimli.", ex:"Yaptığına bak, <b>domuz gül</b> resmen!"},
+  {w:"Püskürtme savun", t:"eylem", m:"Kendini son anda, olağanüstü refleksle koruma hareketi.", ex:"Topu <b>püskürtme savun</b> ile çıkardı."},
+  {w:"Lamiş lamoş", t:"nida", m:"Keyif zirvedeyken çıkan anlamsız ama tatlı ses. Mutluluk kodu.", ex:"Dondurma gelince <b>lamiş lamoş</b> oldu."},
+  {w:"Yunus aktürkoğlu", t:"özel isim", m:"Beklenmedik anda ortaya çıkan efsane kahraman. Gizli süper güç.", ex:"Son dakika <b>Yunus Aktürkoğlu</b> gibi geldi kurtardı."},
+  {w:"Altın tepsi", t:"deyim", m:"Her şeyin hazır sunulduğu, çabasız kazanılan durum.", ex:"Sana <b>altın tepsi</b>de sundum yine de yapmadın."},
+  {w:"Şans topu", t:"isim", m:"Denk gelince olan, kontrol edilemeyen talih. Emin'in kader anlayışı.", ex:"O gol tamamen <b>şans topu</b>ydu."},
+  {w:"Top şansı", t:"isim", m:"Şans topunun tersten söylenişi. Aynı şey ama daha havalı.", ex:"Bu sefer <b>top şansı</b> bizden yana."},
+  {w:"Haksız kazanç", t:"deyim", m:"Hak etmeden kazanan kişiye Emin'in resmi sitemi. Hafif kıskançlık içerir.", ex:"O ödül tam bir <b>haksız kazanç</b>tı!"},
+];
+
+const grid = document.getElementById('grid');
+function render(list){
+  grid.innerHTML = list.map((o,i)=>`
+    <div class="card" style="animation-delay:${i*0.05}s">
+      <div class="num">${words.indexOf(o)+1}</div>
+      <div class="word">${o.w}</div>
+      <span class="type">${o.t}</span>
+      <div class="mean">${o.m}</div>
+      <div class="example">🗣️ ${o.ex}</div>
+      <div class="likes">
+        <button onclick="like(this)">❤️ Beğen</button>
+        <span>0 kişi Emince konuşuyor</span>
+      </div>
+    </div>`).join('');
+}
+render(words);
+
+function filter(q){
+  q=q.toLowerCase().trim();
+  render(words.filter(o=>o.w.toLowerCase().includes(q)||o.m.toLowerCase().includes(q)));
+}
+
+let lastWord="";
+function rollWord(){
+  const el=document.getElementById('rndWord');
+  let n=0;const iv=setInterval(()=>{
+    el.textContent=words[Math.floor(Math.random()*words.length)].w;
+    el.style.transform=`rotate(${(Math.random()*10-5)}deg)`;
+    if(++n>12){clearInterval(iv);
+      const pick=words[Math.floor(Math.random()*words.length)];
+      lastWord=pick.w;el.textContent=pick.w;el.style.transform='rotate(0)';
+      toast("Yeni kelime: "+pick.w+" 🥜");
+    }
+  },70);
+}
+
+function speak(){
+  const txt = lastWord || "Emince";
+  if('speechSynthesis' in window){
+    const u=new SpeechSynthesisUtterance(txt);u.lang='tr-TR';u.rate=.9;u.pitch=1.3;
+    speechSynthesis.cancel();speechSynthesis.speak(u);
+    toast("🔊 "+txt);
+  } else toast("Tarayıcın konuşamıyor 😅");
+}
+
+function like(btn){
+  const span=btn.nextElementSibling;
+  const n=parseInt(span.textContent)+1;
+  span.textContent=n+" kişi Emince konuşuyor";
+  btn.textContent="❤️ Beğenildi!";
+  toast("Emince yayılıyor! 🥜");
+}
+
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// floating peanuts
+const emojis=['🥜','😂','🤣','⭐','🎲','🔥','❤️'];
+setInterval(()=>{
+  const f=document.createElement('div');f.className='float';
+  f.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+  f.style.left=Math.random()*100+'vw';
+  f.style.animationDuration=(6+Math.random()*6)+'s';
+  f.style.fontSize=(1.5+Math.random()*2)+'rem';
+  document.body.appendChild(f);
+  setTimeout(()=>f.remove(),12000);
+},900);
+</script>
+</body>
+</html>
