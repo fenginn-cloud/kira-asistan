@@ -43,6 +43,18 @@
   #search{width:100%;padding:16px 20px;border-radius:16px;border:4px solid #000;font-size:1.1rem;
     font-weight:bold;box-shadow:0 6px 0 rgba(0,0,0,.25);outline:none}
 
+  .add-wrap{max-width:640px;margin:22px auto 0;padding:0 16px}
+  .add-card{background:var(--card);border:4px solid #000;border-radius:20px;padding:20px;
+    box-shadow:0 10px 0 rgba(0,0,0,.2)}
+  .add-card h3{color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-size:1rem;
+    margin-bottom:12px;text-align:center}
+  .add-card input{width:100%;padding:12px 14px;border:3px solid #000;border-radius:12px;
+    font-size:1rem;margin-bottom:10px;font-weight:bold;outline:none;font-family:inherit}
+  .delx{position:absolute;top:-16px;left:-12px;background:#000;color:#fff;width:34px;height:34px;
+    border-radius:50%;border:3px solid var(--accent);cursor:pointer;font-weight:900;transform:rotate(-8deg)}
+  .mine-tag{display:inline-block;margin-left:6px;font-size:.62rem;background:var(--accent2);color:#fff;
+    padding:2px 8px;border-radius:20px;vertical-align:middle}
+
   main{max-width:1000px;margin:20px auto 60px;padding:0 16px;
     display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px}
   .card{background:var(--card);border:4px solid #000;border-radius:20px;padding:22px;
@@ -96,6 +108,19 @@
   <input id="search" placeholder="🔍 Kelime ara... (mesela: fıstıklı)" oninput="filter(this.value)">
 </div>
 
+<div class="add-wrap">
+  <div class="add-card">
+    <h3>✍️ Sen de Emince kelime ekle!</h3>
+    <input id="i-word" placeholder="Kelime (örn: Zıpır zurt)" maxlength="40">
+    <input id="i-type" placeholder="Tür (isim, nida, deyim...)" maxlength="20">
+    <input id="i-mean" placeholder="Anlamı ne demek?" maxlength="160">
+    <input id="i-ex" placeholder="Örnek cümle (opsiyonel)" maxlength="120">
+    <button class="btn" style="width:100%" onclick="addWord()">SÖZLÜĞE EKLE 🥜</button>
+    <p style="text-align:center;font-size:.78rem;margin-top:10px;opacity:.7">
+      Eklediğin kelimeler bu tarayıcıda saklanır. 💾</p>
+  </div>
+</div>
+
 <main id="grid"></main>
 
 <footer>
@@ -121,35 +146,63 @@ const words = [
 ];
 
 const grid = document.getElementById('grid');
+const STORE='emince-user-words';
+let userWords = JSON.parse(localStorage.getItem(STORE)||'[]');
+function allWords(){return words.concat(userWords);}
+function esc(s){return (s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+
 function render(list){
-  grid.innerHTML = list.map((o,i)=>`
+  const all=allWords();
+  grid.innerHTML = list.map((o,i)=>{
+    const mine=userWords.includes(o);
+    return `
     <div class="card" style="animation-delay:${i*0.05}s">
-      <div class="num">${words.indexOf(o)+1}</div>
-      <div class="word">${o.w}</div>
-      <span class="type">${o.t}</span>
-      <div class="mean">${o.m}</div>
-      <div class="example">🗣️ ${o.ex}</div>
+      <div class="num">${all.indexOf(o)+1}</div>
+      ${mine?`<button class="delx" title="Sil" onclick="delWord(${userWords.indexOf(o)})">✕</button>`:''}
+      <div class="word">${esc(o.w)}${mine?'<span class="mine-tag">senin</span>':''}</div>
+      <span class="type">${esc(o.t)}</span>
+      <div class="mean">${esc(o.m)}</div>
+      ${o.ex?`<div class="example">🗣️ ${o.ex}</div>`:''}
       <div class="likes">
         <button onclick="like(this)">❤️ Beğen</button>
         <span>0 kişi Emince konuşuyor</span>
       </div>
-    </div>`).join('');
+    </div>`;}).join('');
 }
-render(words);
+render(allWords());
 
 function filter(q){
   q=q.toLowerCase().trim();
-  render(words.filter(o=>o.w.toLowerCase().includes(q)||o.m.toLowerCase().includes(q)));
+  render(allWords().filter(o=>o.w.toLowerCase().includes(q)||o.m.toLowerCase().includes(q)));
+}
+
+function save(){localStorage.setItem(STORE,JSON.stringify(userWords));}
+
+function addWord(){
+  const w=document.getElementById('i-word').value.trim();
+  const t=document.getElementById('i-type').value.trim()||'emince';
+  const m=document.getElementById('i-mean').value.trim();
+  const ex=document.getElementById('i-ex').value.trim();
+  if(!w||!m){toast('Kelime ve anlamı lazım! 😅');return;}
+  userWords.push({w,t,m,ex:ex?esc(ex):''});
+  save();
+  ['i-word','i-type','i-mean','i-ex'].forEach(id=>document.getElementById(id).value='');
+  render(allWords());
+  toast('"'+w+'" sözlüğe eklendi! 🥜');
+}
+
+function delWord(i){
+  userWords.splice(i,1);save();render(allWords());toast('Silindi 🗑️');
 }
 
 let lastWord="";
 function rollWord(){
-  const el=document.getElementById('rndWord');
+  const el=document.getElementById('rndWord');const aw=allWords();
   let n=0;const iv=setInterval(()=>{
-    el.textContent=words[Math.floor(Math.random()*words.length)].w;
+    el.textContent=aw[Math.floor(Math.random()*aw.length)].w;
     el.style.transform=`rotate(${(Math.random()*10-5)}deg)`;
     if(++n>12){clearInterval(iv);
-      const pick=words[Math.floor(Math.random()*words.length)];
+      const pick=aw[Math.floor(Math.random()*aw.length)];
       lastWord=pick.w;el.textContent=pick.w;el.style.transform='rotate(0)';
       toast("Yeni kelime: "+pick.w+" 🥜");
     }
