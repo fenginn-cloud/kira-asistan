@@ -256,6 +256,27 @@ const VOICE_MODES={
   kizgin:{rate:1.5,pitch:0.6,emoji:'😡',shout:true},
 };
 let voiceMode='normal';
+const MODE_ORDER=['normal','sincap','dev','robot','sarhos','bebek','uzayli','anons','rapci','kizgin'];
+
+// Cihazdaki sesleri yükle (bazı tarayıcılarda async gelir)
+let VOICES=[];
+function loadVoices(){ VOICES = window.speechSynthesis ? speechSynthesis.getVoices() : []; }
+if('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+// Her moda mümkünse FARKLI bir gerçek ses ata (pitch yok sayılsa bile ayrışsın)
+function pickVoice(mode){
+  if(!VOICES.length) return null;
+  const idx = Math.max(0, MODE_ORDER.indexOf(mode));
+  // Türkçe sesleri öne al, ama çeşitlilik için tüm sesleri kullan
+  const tr = VOICES.filter(v=>/^tr/i.test(v.lang));
+  const others = VOICES.filter(v=>!/^tr/i.test(v.lang));
+  const pool = tr.concat(others);
+  return pool[idx % pool.length];
+}
+
 function setVoice(btn){
   voiceMode=btn.dataset.mode;
   document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b===btn));
@@ -267,6 +288,7 @@ function setVoice(btn){
 function speak(){
   const txt = lastWord || "Emince";
   if(!('speechSynthesis' in window)){toast("Tarayıcın konuşamıyor 😅");return;}
+  if(!VOICES.length) loadVoices();
   const cfg=VOICE_MODES[voiceMode]||VOICE_MODES.normal;
   speechSynthesis.cancel();
   let say=txt;
@@ -275,7 +297,9 @@ function speak(){
   if(cfg.rap)   say=txt+", yo! "+txt+", çk çk!";  // rap tekrarı
   if(cfg.shout) say=txt.toLocaleUpperCase('tr')+"!!!"; // bağır
   const u=new SpeechSynthesisUtterance(say);
-  u.lang='tr-TR';u.rate=cfg.rate;u.pitch=cfg.pitch;
+  const v=pickVoice(voiceMode);
+  if(v){u.voice=v;u.lang=v.lang;} else {u.lang='tr-TR';}
+  u.rate=cfg.rate;u.pitch=cfg.pitch;
   u.volume=cfg.shout?1:0.95;
   speechSynthesis.speak(u);
   toast(cfg.emoji+" "+txt);
