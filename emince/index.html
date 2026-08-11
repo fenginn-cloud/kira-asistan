@@ -267,39 +267,30 @@ function rollWord(){
   },70);
 }
 
+// rate = oynatma hızı; preservesPitch=false olduğu için perde de hızla birlikte değişir
+// (böylece tek kaliteli sesten sincap/dev/bebek gibi komik tonlar çıkar — iPhone dahil)
 const VOICE_MODES={
-  normal:{rate:.95,pitch:1.1,emoji:'😎'},
-  sincap:{rate:1.4,pitch:2.0,emoji:'🐿️'},
-  dev:{rate:.6,pitch:0.1,emoji:'👹'},
-  robot:{rate:.8,pitch:0.5,emoji:'🤖',robot:true},
-  sarhos:{rate:.55,pitch:0.9,emoji:'🍺',drunk:true},
-  bebek:{rate:.8,pitch:2.0,emoji:'👶'},
-  uzayli:{rate:1.6,pitch:0.3,emoji:'👽',robot:true},
-  anons:{rate:.7,pitch:0.8,emoji:'📢',shout:true},
-  rapci:{rate:1.9,pitch:1.0,emoji:'🎤',rap:true},
-  kizgin:{rate:1.5,pitch:0.6,emoji:'😡',shout:true},
+  normal:{rate:1.0, emoji:'😎'},
+  sincap:{rate:1.65,emoji:'🐿️'},
+  dev:   {rate:0.62,emoji:'👹'},
+  robot: {rate:0.95,emoji:'🤖',robot:true},
+  sarhos:{rate:0.72,emoji:'🍺',drunk:true},
+  bebek: {rate:1.45,emoji:'👶'},
+  uzayli:{rate:1.9, emoji:'👽'},
+  anons: {rate:1.0, emoji:'📢',shout:true},
+  rapci: {rate:1.75,emoji:'🎤',rap:true},
+  kizgin:{rate:1.28,emoji:'😡',shout:true},
 };
 let voiceMode='normal';
-const MODE_ORDER=['normal','sincap','dev','robot','sarhos','bebek','uzayli','anons','rapci','kizgin'];
 
-// Cihazdaki sesleri yükle (bazı tarayıcılarda async gelir)
-let VOICES=[];
-function loadVoices(){ VOICES = window.speechSynthesis ? speechSynthesis.getVoices() : []; }
-if('speechSynthesis' in window){
-  loadVoices();
-  speechSynthesis.onvoiceschanged = loadVoices;
+// Kaliteli Türkçe bulut sesi (AWS Polly "Filiz" — StreamElements üzerinden, ücretsiz)
+const TTS_VOICE='Filiz';
+function ttsUrl(text){
+  return 'https://api.streamelements.com/kappa/v2/speech?voice='+TTS_VOICE+
+         '&text='+encodeURIComponent(text.slice(0,200));
 }
-
-// Her moda mümkünse FARKLI bir gerçek ses ata (pitch yok sayılsa bile ayrışsın)
-function pickVoice(mode){
-  if(!VOICES.length) return null;
-  const idx = Math.max(0, MODE_ORDER.indexOf(mode));
-  // Türkçe sesleri öne al, ama çeşitlilik için tüm sesleri kullan
-  const tr = VOICES.filter(v=>/^tr/i.test(v.lang));
-  const others = VOICES.filter(v=>!/^tr/i.test(v.lang));
-  const pool = tr.concat(others);
-  return pool[idx % pool.length];
-}
+const audioEl=new Audio();
+audioEl.preload='auto';
 
 function setVoice(btn){
   voiceMode=btn.dataset.mode;
@@ -309,24 +300,49 @@ function setVoice(btn){
   if(lastWord) speak();
 }
 
+function shapeText(txt,cfg){
+  let say=txt;
+  if(cfg.robot) say=txt.split('').join(' ');              // harfleri tek tek
+  if(cfg.drunk) say=txt.replace(/([aeıioöuü])/gi,'$1$1'); // sesli harf uzat
+  if(cfg.rap)   say=txt+", yo! "+txt+"!";                 // rap tekrarı
+  if(cfg.shout) say=txt.toLocaleUpperCase('tr')+"!";      // bağır
+  return say;
+}
+
 function speak(){
   const txt = lastWord || "Emince";
-  if(!('speechSynthesis' in window)){toast("Tarayıcın konuşamıyor 😅");return;}
-  if(!VOICES.length) loadVoices();
   const cfg=VOICE_MODES[voiceMode]||VOICE_MODES.normal;
-  speechSynthesis.cancel();
-  let say=txt;
-  if(cfg.robot) say=txt.split('').join(' ');      // harfleri tek tek
-  if(cfg.drunk) say=txt.replace(/([aeıioöuü])/gi,'$1$1'); // sesli harf uzat
-  if(cfg.rap)   say=txt+", yo! "+txt+", çk çk!";  // rap tekrarı
-  if(cfg.shout) say=txt.toLocaleUpperCase('tr')+"!!!"; // bağır
-  const u=new SpeechSynthesisUtterance(say);
-  const v=pickVoice(voiceMode);
-  if(v){u.voice=v;u.lang=v.lang;} else {u.lang='tr-TR';}
-  u.rate=cfg.rate;u.pitch=cfg.pitch;
-  u.volume=cfg.shout?1:0.95;
-  speechSynthesis.speak(u);
+  const say=shapeText(txt,cfg);
   toast(cfg.emoji+" "+txt);
+  try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){}
+  try{
+    audioEl.pause();
+    audioEl.onerror=()=>fallbackSpeak(say,cfg);
+    const applyRate=()=>{
+      audioEl.preservesPitch=false;
+      audioEl.mozPreservesPitch=false;
+      audioEl.webkitPreservesPitch=false;
+      audioEl.playbackRate=cfg.rate;
+    };
+    audioEl.oncanplay=applyRate;
+    audioEl.src=ttsUrl(say);
+    applyRate();
+    const p=audioEl.play();
+    if(p&&p.catch) p.catch(()=>fallbackSpeak(say,cfg));
+    // yüklendikten sonra hız bazen sıfırlanır; tekrar uygula
+    setTimeout(applyRate,120);
+  }catch(e){ fallbackSpeak(say,cfg); }
+}
+
+// Bulut sesi çalışmazsa cihazın kendi motoruna düş
+function fallbackSpeak(say,cfg){
+  if(!('speechSynthesis' in window)) return;
+  const u=new SpeechSynthesisUtterance(say);
+  u.lang='tr-TR';
+  u.rate=Math.min(1.8,Math.max(.6,cfg.rate));
+  u.pitch=cfg.rate>=1.4?1.8:(cfg.rate<=0.7?0.4:1.1);
+  try{speechSynthesis.cancel();}catch(e){}
+  speechSynthesis.speak(u);
 }
 
 async function like(btn,key){
