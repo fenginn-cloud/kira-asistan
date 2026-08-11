@@ -109,11 +109,16 @@
   <button class="btn" onclick="rollWord()">ÇEVİR ÇEVİR 🎲</button>
   <button class="btn alt" onclick="speak()">SESLİ SÖYLE 🔊</button>
   <div class="voices" id="voices">
-    <button class="vbtn active" data-mode="normal" onclick="setVoice(this)">😎 Normal</button>
-    <button class="vbtn" data-mode="sincap" onclick="setVoice(this)">🐿️ Sincap</button>
-    <button class="vbtn" data-mode="dev" onclick="setVoice(this)">👹 Dev</button>
-    <button class="vbtn" data-mode="robot" onclick="setVoice(this)">🤖 Robot</button>
-    <button class="vbtn" data-mode="sarhos" onclick="setVoice(this)">🍺 Sarhoş</button>
+    <button class="vbtn active" data-mode="normal" onclick="setVoice(this)">😎 Normal Emin</button>
+    <button class="vbtn" data-mode="sincap" onclick="setVoice(this)">🐿️ Sincap Emin</button>
+    <button class="vbtn" data-mode="dev" onclick="setVoice(this)">👹 Dev Emin</button>
+    <button class="vbtn" data-mode="robot" onclick="setVoice(this)">🤖 Robot Emin</button>
+    <button class="vbtn" data-mode="sarhos" onclick="setVoice(this)">🍺 Sarhoş Emin</button>
+    <button class="vbtn" data-mode="bebek" onclick="setVoice(this)">👶 Bebek Emin</button>
+    <button class="vbtn" data-mode="uzayli" onclick="setVoice(this)">👽 Uzaylı Emin</button>
+    <button class="vbtn" data-mode="anons" onclick="setVoice(this)">📢 Anons Emin</button>
+    <button class="vbtn" data-mode="rapci" onclick="setVoice(this)">🎤 Rapçi Emin</button>
+    <button class="vbtn" data-mode="kizgin" onclick="setVoice(this)">😡 Kızgın Emin</button>
   </div>
 </div>
 
@@ -234,13 +239,18 @@ const VOICE_MODES={
   dev:{rate:.6,pitch:0.1,emoji:'👹'},
   robot:{rate:.8,pitch:0.5,emoji:'🤖',robot:true},
   sarhos:{rate:.55,pitch:0.9,emoji:'🍺',drunk:true},
+  bebek:{rate:.8,pitch:2.0,emoji:'👶'},
+  uzayli:{rate:1.6,pitch:0.3,emoji:'👽',robot:true},
+  anons:{rate:.7,pitch:0.8,emoji:'📢',shout:true},
+  rapci:{rate:1.9,pitch:1.0,emoji:'🎤',rap:true},
+  kizgin:{rate:1.5,pitch:0.6,emoji:'😡',shout:true},
 };
 let voiceMode='normal';
 function setVoice(btn){
   voiceMode=btn.dataset.mode;
   document.querySelectorAll('.vbtn').forEach(b=>b.classList.toggle('active',b===btn));
   const cfg=VOICE_MODES[voiceMode];
-  toast(cfg.emoji+" "+btn.textContent.trim()+" modu seçildi");
+  toast(cfg.emoji+" "+btn.textContent.trim()+" seçildi");
   if(lastWord) speak();
 }
 
@@ -249,12 +259,14 @@ function speak(){
   if(!('speechSynthesis' in window)){toast("Tarayıcın konuşamıyor 😅");return;}
   const cfg=VOICE_MODES[voiceMode]||VOICE_MODES.normal;
   speechSynthesis.cancel();
-  // Robot: harfleri tek tek, düz oku. Sarhoş: araya uzatmalar koy.
   let say=txt;
-  if(cfg.robot) say=txt.split('').join(' ');
-  if(cfg.drunk) say=txt.replace(/([aeıioöuü])/gi,'$1$1');
+  if(cfg.robot) say=txt.split('').join(' ');      // harfleri tek tek
+  if(cfg.drunk) say=txt.replace(/([aeıioöuü])/gi,'$1$1'); // sesli harf uzat
+  if(cfg.rap)   say=txt+", yo! "+txt+", çk çk!";  // rap tekrarı
+  if(cfg.shout) say=txt.toLocaleUpperCase('tr')+"!!!"; // bağır
   const u=new SpeechSynthesisUtterance(say);
   u.lang='tr-TR';u.rate=cfg.rate;u.pitch=cfg.pitch;
+  u.volume=cfg.shout?1:0.95;
   speechSynthesis.speak(u);
   toast(cfg.emoji+" "+txt);
 }
