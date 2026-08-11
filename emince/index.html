@@ -267,30 +267,32 @@ function rollWord(){
   },70);
 }
 
-// rate = oynatma hızı; preservesPitch=false olduğu için perde de hızla birlikte değişir
-// (böylece tek kaliteli sesten sincap/dev/bebek gibi komik tonlar çıkar — iPhone dahil)
+// Cihazın kendi konuşma motoru (iOS dahil her yerde çalışır). iOS pitch+rate destekler.
 const VOICE_MODES={
-  normal:{rate:1.0, emoji:'😎'},
-  sincap:{rate:1.65,emoji:'🐿️'},
-  dev:   {rate:0.62,emoji:'👹'},
-  robot: {rate:0.95,emoji:'🤖',robot:true},
-  sarhos:{rate:0.72,emoji:'🍺',drunk:true},
-  bebek: {rate:1.45,emoji:'👶'},
-  uzayli:{rate:1.9, emoji:'👽'},
-  anons: {rate:1.0, emoji:'📢',shout:true},
-  rapci: {rate:1.75,emoji:'🎤',rap:true},
-  kizgin:{rate:1.28,emoji:'😡',shout:true},
+  normal:{rate:1.0, pitch:1.0, emoji:'😎'},
+  sincap:{rate:1.5, pitch:2.0, emoji:'🐿️'},
+  dev:   {rate:0.6, pitch:0.2, emoji:'👹'},
+  robot: {rate:0.7, pitch:0.4, emoji:'🤖',robot:true},
+  sarhos:{rate:0.55,pitch:0.8, emoji:'🍺',drunk:true},
+  bebek: {rate:1.1, pitch:2.0, emoji:'👶'},
+  uzayli:{rate:1.7, pitch:0.3, emoji:'👽',robot:true},
+  anons: {rate:0.75,pitch:0.7, emoji:'📢',shout:true},
+  rapci: {rate:1.9, pitch:1.0, emoji:'🎤',rap:true},
+  kizgin:{rate:1.4, pitch:0.5, emoji:'😡',shout:true},
 };
 let voiceMode='normal';
 
-// Kaliteli Türkçe bulut sesi (AWS Polly "Filiz" — StreamElements üzerinden, ücretsiz)
-const TTS_VOICE='Filiz';
-function ttsUrl(text){
-  return 'https://api.streamelements.com/kappa/v2/speech?voice='+TTS_VOICE+
-         '&text='+encodeURIComponent(text.slice(0,200));
+// iOS sesleri bazen geç yükler; hazır tut
+let TR_VOICE=null;
+function loadVoices(){
+  if(!('speechSynthesis' in window)) return;
+  const vs=speechSynthesis.getVoices();
+  TR_VOICE = vs.find(v=>/^tr/i.test(v.lang)) || null;
 }
-const audioEl=new Audio();
-audioEl.preload='auto';
+if('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged=loadVoices;
+}
 
 function setVoice(btn){
   voiceMode=btn.dataset.mode;
@@ -300,49 +302,24 @@ function setVoice(btn){
   if(lastWord) speak();
 }
 
-function shapeText(txt,cfg){
+// ÖNEMLİ (iOS): speechSynthesis.speak butona basıldığı anda SENKRON çağrılmalı,
+// yoksa iOS sesi sessizce yok sayar. O yüzden hiçbir bekleme/promise kullanmıyoruz.
+function speak(){
+  const txt = lastWord || "Emince";
+  if(!('speechSynthesis' in window)){toast("Tarayıcın konuşamıyor 😅");return;}
+  const cfg=VOICE_MODES[voiceMode]||VOICE_MODES.normal;
   let say=txt;
   if(cfg.robot) say=txt.split('').join(' ');              // harfleri tek tek
   if(cfg.drunk) say=txt.replace(/([aeıioöuü])/gi,'$1$1'); // sesli harf uzat
   if(cfg.rap)   say=txt+", yo! "+txt+"!";                 // rap tekrarı
   if(cfg.shout) say=txt.toLocaleUpperCase('tr')+"!";      // bağır
-  return say;
-}
-
-function speak(){
-  const txt = lastWord || "Emince";
-  const cfg=VOICE_MODES[voiceMode]||VOICE_MODES.normal;
-  const say=shapeText(txt,cfg);
-  toast(cfg.emoji+" "+txt);
-  try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){}
-  try{
-    audioEl.pause();
-    audioEl.onerror=()=>fallbackSpeak(say,cfg);
-    const applyRate=()=>{
-      audioEl.preservesPitch=false;
-      audioEl.mozPreservesPitch=false;
-      audioEl.webkitPreservesPitch=false;
-      audioEl.playbackRate=cfg.rate;
-    };
-    audioEl.oncanplay=applyRate;
-    audioEl.src=ttsUrl(say);
-    applyRate();
-    const p=audioEl.play();
-    if(p&&p.catch) p.catch(()=>fallbackSpeak(say,cfg));
-    // yüklendikten sonra hız bazen sıfırlanır; tekrar uygula
-    setTimeout(applyRate,120);
-  }catch(e){ fallbackSpeak(say,cfg); }
-}
-
-// Bulut sesi çalışmazsa cihazın kendi motoruna düş
-function fallbackSpeak(say,cfg){
-  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(say);
+  if(TR_VOICE) u.voice=TR_VOICE;
   u.lang='tr-TR';
-  u.rate=Math.min(1.8,Math.max(.6,cfg.rate));
-  u.pitch=cfg.rate>=1.4?1.8:(cfg.rate<=0.7?0.4:1.1);
-  try{speechSynthesis.cancel();}catch(e){}
+  u.rate=cfg.rate; u.pitch=cfg.pitch;
   speechSynthesis.speak(u);
+  toast(cfg.emoji+" "+txt);
 }
 
 async function like(btn,key){
