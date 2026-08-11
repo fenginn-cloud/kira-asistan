@@ -103,6 +103,13 @@
     z-index:99;transition:transform .3s;box-shadow:0 8px 20px rgba(0,0,0,.4)}
   #toast.show{transform:translateX(-50%) translateY(0)}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Emince — Supabase ayarları (anon key tarayıcıya gömülmek için tasarlanmıştır, güvenlidir)
+  const SB_URL="https://ysxnvefmodcqkijauyvd.supabase.co";
+  const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeG52ZWZtb2RjcWtpamF1eXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NjAzNjksImV4cCI6MjEwMjAzNjM2OX0.bV_X9fbThKa1yakDx6ZtYY5NG3814PVJnmrguUT1mOk";
+  const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+</script>
 </head>
 <body>
 
@@ -180,26 +187,32 @@ const words = [
 ];
 
 const grid = document.getElementById('grid');
-const STORE='emince-user-words';
-let userWords = JSON.parse(localStorage.getItem(STORE)||'[]');
-function allWords(){return words.concat(userWords);}
+let dbWords = [];                 // Supabase'ten gelen ortak kelimeler
+let likesMap = {};                // {kelime: beğeni sayısı}
+const LIKED='emince-liked';       // bu tarayıcıda beğenilenler (tekrar beğeniyi engelle)
+let likedSet = new Set(JSON.parse(localStorage.getItem(LIKED)||'[]'));
+const MINE='emince-mine';         // bu tarayıcıda eklenenler ("senin" etiketi için)
+let mineSet = new Set(JSON.parse(localStorage.getItem(MINE)||'[]'));
+
+function allWords(){return words.concat(dbWords);}
 function esc(s){return (s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
 
 function render(list){
   const all=allWords();
   grid.innerHTML = list.map((o,i)=>{
-    const mine=userWords.includes(o);
+    const mine=mineSet.has(o.w);
+    const cnt=likesMap[o.w]||0;
+    const liked=likedSet.has(o.w);
     return `
     <div class="card" style="animation-delay:${i*0.05}s">
       <div class="num">${all.indexOf(o)+1}</div>
-      ${mine?`<button class="delx" title="Sil" onclick="delWord(${userWords.indexOf(o)})">✕</button>`:''}
       <div class="word">${esc(o.w)}${mine?'<span class="mine-tag">senin</span>':''}</div>
       <span class="type">${esc(o.t)}</span>
       <div class="mean">${esc(o.m)}</div>
       ${o.ex?`<div class="example">🗣️ ${o.ex}</div>`:''}
       <div class="likes">
-        <button onclick="like(this)">❤️ Beğen</button>
-        <span>0 kişi Emince konuşuyor</span>
+        <button onclick="like(this,'${o.w.replace(/'/g,"\\'")}')" ${liked?'disabled':''}>${liked?'❤️ Beğenildin!':'🤍 Beğen'}</button>
+        <span><b class="likecnt">${cnt}</b> beğeni</span>
       </div>
     </div>`;}).join('');
 }
@@ -210,23 +223,34 @@ function filter(q){
   render(allWords().filter(o=>o.w.toLowerCase().includes(q)||o.m.toLowerCase().includes(q)));
 }
 
-function save(){localStorage.setItem(STORE,JSON.stringify(userWords));}
+// --- Supabase: ortak veriyi yükle ---
+async function loadData(){
+  if(!sb) return;
+  try{
+    const [wr, lr] = await Promise.all([
+      sb.from('words').select('w,t,m,ex').order('created_at',{ascending:true}),
+      sb.from('likes').select('key,count')
+    ]);
+    if(wr.data) dbWords = wr.data;
+    if(lr.data) likesMap = Object.fromEntries(lr.data.map(r=>[r.key,r.count]));
+    render(allWords());
+  }catch(e){ console.warn('Supabase yüklenemedi:',e); }
+}
+loadData();
 
-function addWord(){
+async function addWord(){
   const w=document.getElementById('i-word').value.trim();
   const t=document.getElementById('i-type').value.trim()||'emince';
   const m=document.getElementById('i-mean').value.trim();
   const ex=document.getElementById('i-ex').value.trim();
   if(!w||!m){toast('Kelime ve anlamı lazım! 😅');return;}
-  userWords.push({w,t,m,ex:ex?esc(ex):''});
-  save();
+  if(!sb){toast('Bağlantı yok, sonra dene 😅');return;}
+  const {error}=await sb.from('words').insert({w,t,m,ex:ex||null});
+  if(error){toast('Eklenemedi: '+(error.message||'hata'));return;}
+  mineSet.add(w); localStorage.setItem(MINE,JSON.stringify([...mineSet]));
   ['i-word','i-type','i-mean','i-ex'].forEach(id=>document.getElementById(id).value='');
-  render(allWords());
-  toast('"'+w+'" sözlüğe eklendi! 🥜');
-}
-
-function delWord(i){
-  userWords.splice(i,1);save();render(allWords());toast('Silindi 🗑️');
+  await loadData();
+  toast('"'+w+'" herkese eklendi! 🥜');
 }
 
 let lastWord="";
@@ -305,11 +329,17 @@ function speak(){
   toast(cfg.emoji+" "+txt);
 }
 
-function like(btn){
-  const span=btn.nextElementSibling;
-  const n=parseInt(span.textContent)+1;
-  span.textContent=n+" kişi Emince konuşuyor";
-  btn.textContent="❤️ Beğenildi!";
+async function like(btn,key){
+  if(!sb){toast('Bağlantı yok 😅');return;}
+  if(likedSet.has(key)){toast('Zaten beğendin 🙂');return;}
+  btn.disabled=true;
+  const {data,error}=await sb.rpc('add_like',{k:key});
+  if(error){toast('Beğeni gitmedi: '+(error.message||'hata'));btn.disabled=false;return;}
+  likesMap[key]=data;
+  likedSet.add(key); localStorage.setItem(LIKED,JSON.stringify([...likedSet]));
+  const cntEl=btn.parentElement.querySelector('.likecnt');
+  if(cntEl) cntEl.textContent=data;
+  btn.textContent="❤️ Beğenildin!";
   toast("Emince yayılıyor! 🥜");
 }
 
