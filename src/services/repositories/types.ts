@@ -95,10 +95,23 @@ export interface ClaimsRepository {
   reject(id: string): Promise<void>;
 }
 
+export interface BuildingUnit {
+  building: string;
+  total: number;
+}
+
+export interface BuildingUnitsRepository {
+  /** Şirketin bina→toplam daire ayarları. */
+  list(): Promise<BuildingUnit[]>;
+  /** Bir binanın toplam daire sayısını ekle/güncelle. */
+  set(building: string, total: number): Promise<void>;
+}
+
 export interface Repositories {
   contracts: ContractRepository;
   payments: PaymentRepository;
   users: UserRepository;
   company: CompanyRepository;
   claims: ClaimsRepository;
+  buildingUnits: BuildingUnitsRepository;
 }

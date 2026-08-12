@@ -6,6 +6,7 @@ import { useAllPayments } from '@/features/payments/hooks';
 import { derivePaymentStatus, remainingDebt } from '@/lib/utils/payments';
 import { buildingName, foldSearch } from '@/lib/utils/property';
 import { BUILDING_UNITS } from './buildingUnits';
+import { useBuildingUnits } from './buildingUnitsHooks';
 import type { BarDatum } from '@/components/charts/BarChart';
 
 /** Uygulamanın kira takibine başladığı ilk dönem. Aylar bundan öncesine gitmez. */
@@ -49,6 +50,7 @@ interface MonthAgg {
 export function useStats(selectedMonth?: string) {
   const { data: contracts = [], isLoading: lc } = useContracts();
   const { data: payments = [], isLoading: lp } = useAllPayments();
+  const { data: unitOverrides = [] } = useBuildingUnits();
 
   return useMemo(() => {
     const today = new Date();
@@ -175,10 +177,16 @@ export function useStats(selectedMonth?: string) {
       const k = foldSearch(buildingName(c.propertyName));
       occupiedByBuilding.set(k, (occupiedByBuilding.get(k) ?? 0) + 1);
     }
-    const occupancy = BUILDING_UNITS.map(({ name, total }) => {
-      const occupied = Math.min(occupiedByBuilding.get(foldSearch(name)) ?? 0, total);
-      return { building: name, total, occupied, vacant: Math.max(0, total - occupied) };
-    });
+    // Varsayılan toplamlar + kullanıcının girdiği (DB) değerler; DB önceliklidir.
+    const totalsMap = new Map<string, { name: string; total: number }>();
+    for (const b of BUILDING_UNITS) totalsMap.set(foldSearch(b.name), { name: b.name, total: b.total });
+    for (const o of unitOverrides) totalsMap.set(foldSearch(o.building), { name: o.building, total: o.total });
+    const occupancy = [...totalsMap.values()]
+      .map(({ name, total }) => {
+        const occupied = Math.min(occupiedByBuilding.get(foldSearch(name)) ?? 0, total);
+        return { building: name, total, occupied, vacant: Math.max(0, total - occupied) };
+      })
+      .sort((a, b) => b.vacant - a.vacant);
     const unitTotal = occupancy.reduce((s, o) => s + o.total, 0);
     const occupiedTotal = occupancy.reduce((s, o) => s + o.occupied, 0);
     const vacantTotal = occupancy.reduce((s, o) => s + o.vacant, 0);
@@ -221,5 +229,5 @@ export function useStats(selectedMonth?: string) {
       portfolioValue,
       expectedMonthlyIncome,
     };
-  }, [contracts, payments, lc, lp, selectedMonth]);
+  }, [contracts, payments, unitOverrides, lc, lp, selectedMonth]);
 }

@@ -46,6 +46,7 @@ export default function AppLayout() {
         <Stack.Screen name="profile" />
         <Stack.Screen name="company" />
         <Stack.Screen name="excel-import" />
+        <Stack.Screen name="building-units" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
       {enabled ? <DesktopSidebar width={sidebarWidth} /> : null}

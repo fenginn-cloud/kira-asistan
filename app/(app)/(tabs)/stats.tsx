@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TrendingDown, TrendingUp } from 'lucide-react-native';
+import { useRouter, type Href } from 'expo-router';
+import { Pencil, TrendingDown, TrendingUp } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { CardSkeleton } from '@/components/ui/Skeleton';
@@ -40,6 +41,7 @@ function Dot({ color }: { color: string }) {
 }
 
 export default function StatsScreen() {
+  const router = useRouter();
   const [month, setMonth] = useState<string | undefined>(undefined);
   const s = useStats(month);
   const scrollRef = useScrollToTop<ScrollView>('stats');
@@ -273,6 +275,15 @@ export default function StatsScreen() {
                       </View>
                     ))}
                   </View>
+                  <Pressable
+                    onPress={() => router.push('/(app)/building-units' as Href)}
+                    className="mt-3 flex-row items-center justify-center gap-1.5 border-t border-border/60 pt-3 active:opacity-70"
+                  >
+                    <Pencil size={14} color={palette.primary} />
+                    <Text className="text-sm font-semibold text-primary-700">
+                      Daire sayılarını düzenle
+                    </Text>
+                  </Pressable>
                 </Card>
               </>
             ) : null}
