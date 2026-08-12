@@ -4,7 +4,8 @@ import { tr } from 'date-fns/locale';
 import { useContracts } from '@/features/contracts/hooks';
 import { useAllPayments } from '@/features/payments/hooks';
 import { derivePaymentStatus, remainingDebt } from '@/lib/utils/payments';
-import { buildingName } from '@/lib/utils/property';
+import { buildingName, foldSearch } from '@/lib/utils/property';
+import { BUILDING_UNITS } from './buildingUnits';
 import type { BarDatum } from '@/components/charts/BarChart';
 
 /** Uygulamanın kira takibine başladığı ilk dönem. Aylar bundan öncesine gitmez. */
@@ -167,6 +168,21 @@ export function useStats(selectedMonth?: string) {
     }));
     const trendActiveIndex = trendValues.indexOf(activeMonth);
 
+    // Doluluk / boş daire (aya bağlı değil): toplam − dolu(aktif sözleşme).
+    const occupiedByBuilding = new Map<string, number>();
+    for (const c of contracts) {
+      if (c.status !== 'active') continue;
+      const k = foldSearch(buildingName(c.propertyName));
+      occupiedByBuilding.set(k, (occupiedByBuilding.get(k) ?? 0) + 1);
+    }
+    const occupancy = BUILDING_UNITS.map(({ name, total }) => {
+      const occupied = Math.min(occupiedByBuilding.get(foldSearch(name)) ?? 0, total);
+      return { building: name, total, occupied, vacant: Math.max(0, total - occupied) };
+    });
+    const unitTotal = occupancy.reduce((s, o) => s + o.total, 0);
+    const occupiedTotal = occupancy.reduce((s, o) => s + o.occupied, 0);
+    const vacantTotal = occupancy.reduce((s, o) => s + o.vacant, 0);
+
     // Genel bilgi (aya bağlı değil).
     const activeContracts = contracts.filter((c) => c.status === 'active');
     const portfolioValue = activeContracts.reduce((s, c) => s + c.depositAmount, 0);
@@ -195,6 +211,11 @@ export function useStats(selectedMonth?: string) {
       // Bağlam
       trend,
       trendActiveIndex,
+      // Doluluk
+      occupancy,
+      unitTotal,
+      occupiedTotal,
+      vacantTotal,
       // Genel
       activeContractCount: activeContracts.length,
       portfolioValue,

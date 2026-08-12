@@ -239,6 +239,44 @@ export default function StatsScreen() {
               )}
             </Card>
 
+            {/* Boş daireler — toplam − dolu (aktif sözleşme) */}
+            {s.occupancy.length > 0 ? (
+              <>
+                <SectionHeader title="Boş Daireler" />
+                <Card>
+                  <View className="flex-row">
+                    <View className="flex-1 items-center">
+                      <Text className="text-2xl font-extrabold text-warning">{s.vacantTotal}</Text>
+                      <Text className="mt-0.5 text-[11px] text-muted">Boş daire</Text>
+                    </View>
+                    <View className="w-px bg-border/60" />
+                    <View className="flex-1 items-center">
+                      <Text className="text-2xl font-extrabold text-foreground">{s.occupiedTotal}</Text>
+                      <Text className="mt-0.5 text-[11px] text-muted">Dolu</Text>
+                    </View>
+                    <View className="w-px bg-border/60" />
+                    <View className="flex-1 items-center">
+                      <Text className="text-2xl font-extrabold text-foreground">{s.unitTotal}</Text>
+                      <Text className="mt-0.5 text-[11px] text-muted">Toplam</Text>
+                    </View>
+                  </View>
+                  <View className="mt-3 gap-2.5 border-t border-border/60 pt-3">
+                    {s.occupancy.map((o) => (
+                      <View key={o.building} className="flex-row items-center justify-between">
+                        <Text className="flex-1 pr-2 text-sm font-semibold text-foreground" numberOfLines={1}>
+                          {o.building}
+                        </Text>
+                        <Text className="text-xs text-muted">{o.occupied}/{o.total} dolu</Text>
+                        <View className="ml-3 rounded-full bg-warning-soft px-2.5 py-1">
+                          <Text className="text-xs font-bold text-warning">{o.vacant} boş</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </Card>
+              </>
+            ) : null}
+
             {/* Trend — seçili ay vurgulu */}
             <SectionHeader title="Tahsilat Trendi" />
             <Card>
