@@ -69,6 +69,8 @@ export interface Contract {
   rentAmount: number;
   duesAmount: number;
   depositAmount: number;
+  /** Kiracı girişinde alınan komisyon (bir kerelik). Yoksa 0. */
+  commissionAmount?: number;
 
   startDate: string; // ISO date
   endDate: string | null;

@@ -19,6 +19,8 @@ export interface BuildingMonthStat {
   overdue: number;
   paidUnits: number;
   totalUnits: number;
+  /** Bu ay giren kiracılardan alınan komisyon. */
+  commission: number;
   /** 0-100 tahsilat oranı. */
   rate: number;
 }
@@ -112,6 +114,7 @@ export function useStats(selectedMonth?: string) {
       overdue: 0,
       paidUnits: 0,
       totalUnits: 0,
+      commission: 0,
       rate: 0,
     });
     for (const p of payments) {
@@ -129,6 +132,22 @@ export function useStats(selectedMonth?: string) {
       else bs.pending += remainingDebt(p);
       buildingMap.set(b, bs);
     }
+    // Komisyon: kiracı girişinde bir kerelik. Giriş ayına göre atanır.
+    let commissionThisMonth = 0;
+    let commissionTotal = 0;
+    for (const c of contracts) {
+      const com = c.commissionAmount ?? 0;
+      if (com <= 0) continue;
+      commissionTotal += com;
+      if (c.startDate && monthKey(parseISO(c.startDate)) === activeMonth) {
+        commissionThisMonth += com;
+        const b = buildingName(c.propertyName);
+        const bs = buildingMap.get(b) ?? emptyBuilding(b);
+        bs.commission += com;
+        buildingMap.set(b, bs);
+      }
+    }
+
     const byBuilding = [...buildingMap.values()]
       .map((b) => ({ ...b, rate: b.due > 0 ? (b.collected / b.due) * 100 : 0 }))
       // Önce sorunlular: gecikeni olanlar üste, sonra düşük tahsilat oranı.
@@ -170,6 +189,8 @@ export function useStats(selectedMonth?: string) {
       paidContracts: cur.paid,
       totalContracts: cur.count,
       momDeltaPct,
+      commissionThisMonth,
+      commissionTotal,
       byBuilding,
       // Bağlam
       trend,

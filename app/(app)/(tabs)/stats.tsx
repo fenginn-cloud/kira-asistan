@@ -228,6 +228,11 @@ export default function StatsScreen() {
                           <Text className="text-xs font-medium text-success">Tamamlandı ✓</Text>
                         )}
                       </View>
+                      {b.commission > 0 ? (
+                        <Text className="mt-1 text-xs font-semibold text-primary-700">
+                          Komisyon: {formatCurrency(b.commission)}
+                        </Text>
+                      ) : null}
                     </View>
                   ))}
                 </View>
@@ -244,6 +249,34 @@ export default function StatsScreen() {
                 activeIndex={s.trendActiveIndex}
               />
             </Card>
+
+            {/* Komisyon — kiracı girişinde alınan bir kerelik gelir */}
+            {s.commissionTotal > 0 ? (
+              <>
+                <SectionHeader title="Komisyon" />
+                <Card>
+                  <View className="flex-row">
+                    <View className="flex-1 items-center">
+                      <Text className="text-lg font-bold text-foreground" numberOfLines={1}>
+                        {formatCurrency(s.commissionThisMonth)}
+                      </Text>
+                      <Text className="mt-0.5 text-center text-[11px] text-muted">
+                        {s.activeMonthLong} komisyon
+                      </Text>
+                    </View>
+                    <View className="w-px bg-border/60" />
+                    <View className="flex-1 items-center">
+                      <Text className="text-lg font-bold text-foreground" numberOfLines={1}>
+                        {formatCurrency(s.commissionTotal)}
+                      </Text>
+                      <Text className="mt-0.5 text-center text-[11px] text-muted">
+                        Toplam komisyon
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              </>
+            ) : null}
 
             {/* Genel bilgiler — kompakt */}
             <SectionHeader title="Genel" />

@@ -17,6 +17,7 @@ export interface ExtractedContract {
   tenantPhone: string | null; // +90 ... normalize
   rentAmount: number | null;
   depositAmount: number | null;
+  commissionAmount: number | null;
   startDate: string | null; // ISO
   endDate: string | null; // ISO
   paymentDay: number | null;
