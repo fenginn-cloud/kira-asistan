@@ -144,10 +144,10 @@ export function useStats(selectedMonth?: string) {
       commissionTotal += com;
       if (c.startDate && monthKey(parseISO(c.startDate)) === activeMonth) {
         commissionThisMonth += com;
-        const b = buildingName(c.propertyName);
-        const bs = buildingMap.get(b) ?? emptyBuilding(b);
-        bs.commission += com;
-        buildingMap.set(b, bs);
+        // Sadece o ay tahsilat satırı olan binaya ekle; yoksa byBuilding'de
+        // hayalet %0 satır oluşmasın (sorunlu binalar listesini kirletmesin).
+        const bs = buildingMap.get(buildingName(c.propertyName));
+        if (bs) bs.commission += com;
       }
     }
 

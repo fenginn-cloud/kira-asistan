@@ -1,5 +1,3 @@
-import { foldSearch } from '@/lib/utils/property';
-
 /**
  * Her binadaki TOPLAM daire sayısı (mülk sahibinden). Boş daire = toplam − dolu
  * (aktif sözleşme). Bina adı `buildingName()` çıktısıyla eşleştirilir (Türkçe/
@@ -14,9 +12,3 @@ export const BUILDING_UNITS: { name: string; total: number }[] = [
   { name: 'SERDEN GEÇTİ', total: 2 },
 ];
 
-const TOTALS = new Map(BUILDING_UNITS.map((b) => [foldSearch(b.name), b.total]));
-
-/** Bina için tanımlı toplam daire sayısı; tanımsızsa null. */
-export function buildingTotalUnits(building: string): number | null {
-  return TOTALS.get(foldSearch(building)) ?? null;
-}

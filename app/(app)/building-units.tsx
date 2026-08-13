@@ -62,6 +62,9 @@ export default function BuildingUnitsScreen() {
   const onSave = async () => {
     setSaving(true);
     try {
+      // Mevcut kaydın tam yazımını koru (aksi halde farklı harf büyüklüğü —
+      // "Elize Apt" vs "ELİZE APT" — çakışma anahtarını tutturamaz, ikinci satır oluşur).
+      const overrideNameByFold = new Map(overrides.map((o) => [foldSearch(o.building), o.building]));
       let changed = 0;
       for (const row of rows) {
         const k = foldSearch(row.name);
@@ -71,7 +74,7 @@ export default function BuildingUnitsScreen() {
         const n = parseInt(raw, 10);
         if (Number.isNaN(n) || n < 0) continue;
         if (n === row.current) continue;
-        await setUnit.mutateAsync({ building: row.name, total: n });
+        await setUnit.mutateAsync({ building: overrideNameByFold.get(k) ?? row.name, total: n });
         changed++;
       }
       toast.success(changed ? `${changed} bina güncellendi` : 'Değişiklik yok');

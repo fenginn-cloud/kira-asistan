@@ -65,8 +65,10 @@ function buildColMap(headerRow: Row): ColMap {
   headerRow.forEach((cell, c) => {
     const s = String(cell ?? '').trim();
     if (!s) return;
-    // Komisyon (Türkçe İ ve "KOMSİYON" yazım hatası dahil).
-    if (/kom[siı]?[siı]yon/i.test(foldSearch(s))) { commissionCols.push(c); return; }
+    // Komisyon TUTARI (Türkçe İ ve "KOMSİYON" yazım hatası dahil). "Komisyon
+    // Oranı" / "%" gibi oran sütunlarını dışarıda bırak (tutara katılmasın).
+    const fs = foldSearch(s);
+    if (/kom[siı]?[siı]yon/.test(fs) && !/oran|%/.test(fs)) { commissionCols.push(c); return; }
     const f = matchHeader(s);
     if (f && fields[f] == null) { fields[f] = c; return; }
     const mi = matchMonth(s);
@@ -100,6 +102,7 @@ function refineByValues(rows: Row[], hr: number, map: ColMap): void {
     { field: 'paymentDay', re: /her\s*r?ay|pe[sş]in|senet|ayin/i },
   ];
   const monthCols = new Set(map.months.map((m) => m.col));
+  const commissionSet = new Set(map.commissionCols);
   for (const { field, re } of patterns) {
     const cur = map.fields[field];
     // Başlıkla eşlenen sütun değerlere uyuyorsa dokunma.
@@ -112,7 +115,7 @@ function refineByValues(rows: Row[], hr: number, map: ColMap): void {
     );
     let best = -1, bestR = 0.4;
     for (let c = 0; c < ncols; c++) {
-      if (others.has(c) || monthCols.has(c)) continue;
+      if (others.has(c) || monthCols.has(c) || commissionSet.has(c)) continue;
       const rr = ratio(c, re);
       if (rr > bestR) { bestR = rr; best = c; }
     }
