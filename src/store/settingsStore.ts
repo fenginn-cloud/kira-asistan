@@ -18,9 +18,12 @@ interface SettingsState {
   notifications: NotificationPreferences;
   /** Kira günü hatırlatmalarında özel bildirim sesi çalınsın mı (yönetici tercihi). */
   reminderSound: boolean;
+  /** İlk açılış rehberi (coach marks) gösterildi mi. */
+  onboardingSeen: boolean;
   setTheme: (theme: ThemePreference) => void;
   toggleNotification: (key: keyof NotificationPreferences) => void;
   setReminderSound: (on: boolean) => void;
+  setOnboardingSeen: (seen: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -29,8 +32,10 @@ export const useSettingsStore = create<SettingsState>()(
       theme: 'system',
       notifications: defaultNotifications,
       reminderSound: false,
+      onboardingSeen: false,
       setTheme: (theme) => set({ theme }),
       setReminderSound: (on) => set({ reminderSound: on }),
+      setOnboardingSeen: (seen) => set({ onboardingSeen: seen }),
       toggleNotification: (key) =>
         set((state) => ({
           notifications: {
