@@ -17,7 +17,7 @@ export interface LegalDoc {
 }
 
 const UPDATED = 'Haziran 2026';
-const OPERATOR = '[Şirket Unvanı]';
+const OPERATOR = 'FNGN Dijital';
 /** Kurumsal iletişim/destek e-postası (yasal metinler + Ayarlar'da kullanılır). */
 export const SUPPORT_EMAIL = 'kiraasist@fngn.com.tr';
 const CONTACT = SUPPORT_EMAIL;
