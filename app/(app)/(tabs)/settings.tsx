@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
 import {
@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Crown,
   LogOut,
+  Mail,
   Moon,
   FileSpreadsheet,
   ShieldCheck,
@@ -14,7 +15,7 @@ import {
   Volume2,
 } from 'lucide-react-native';
 import { playNotificationSound, unlockNotificationSound } from '@/lib/utils/sound';
-import { LEGAL_LINKS } from '@/content/legal';
+import { LEGAL_LINKS, SUPPORT_EMAIL } from '@/content/legal';
 import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Avatar } from '@/components/ui/Avatar';
@@ -313,6 +314,27 @@ export default function SettingsScreen() {
             })}
           </View>
         </Card>
+
+        {/* İletişim / Destek */}
+        <SectionHeader title="İletişim" />
+        <Pressable
+          onPress={() =>
+            Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Kira Asistan destek')}`)
+          }
+        >
+          <Card>
+            <View className="flex-row items-center gap-3">
+              <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                <Mail size={20} color={palette.primary} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-foreground">Destek / İletişim</Text>
+                <Text className="text-sm text-muted">{SUPPORT_EMAIL}</Text>
+              </View>
+              <ChevronRight size={20} color={palette.muted} />
+            </View>
+          </Card>
+        </Pressable>
 
         {/* Legal */}
         <SectionHeader title="Yasal" />
