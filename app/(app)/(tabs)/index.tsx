@@ -31,8 +31,6 @@ import { formatCurrency } from '@/lib/utils/format';
 import { formatCurrencyTRY, getDashboardFinancialSummary } from '@/lib/ledger/ledger';
 import { expiringContracts } from '@/lib/utils/contractExpiry';
 import { palette } from '@/lib/theme/colors';
-import { useSettingsStore } from '@/store/settingsStore';
-import { CoachOverlay, CoachTarget, type CoachStep } from '@/features/onboarding/coach';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -57,36 +55,6 @@ export default function HomeScreen() {
   const toast = useToast();
   const settlePayment = useSettlePayment();
   const [receiveTarget, setReceiveTarget] = useState<OpenItem | null>(null);
-  const onboardingSeen = useSettingsStore((s) => s.onboardingSeen);
-  const setOnboardingSeen = useSettingsStore((s) => s.setOnboardingSeen);
-
-  // İlk açılış rehberi (bir kez). Personelde "Aylık özet" adımı atlanır.
-  const coachSteps: CoachStep[] = [
-    {
-      title: 'Kira Asistan’a hoş geldin 👋',
-      description: '30 saniyede etrafı gösterelim. İstediğin an “Atla” diyebilirsin.',
-    },
-    {
-      targetId: 'today',
-      title: 'Bugünkü tahsilatlar',
-      description:
-        'Bugün, geciken ve bu hafta ödenecek kiraları buradan takip eder; tek dokunuşla “Alındı” işaretlersin.',
-    },
-    ...(canSeeLedger
-      ? [
-          {
-            targetId: 'summary',
-            title: 'Aylık özet',
-            description: 'Bu ay beklenen, tahsil edilen ve kalan tutarları buradan görürsün.',
-          } as CoachStep,
-        ]
-      : []),
-    {
-      title: 'Sözleşmelerini ekle',
-      description:
-        'Alttaki “Sözleşmeler” sekmesinden tek tek ekleyebilir, ya da “Ayarlar → Excel Aktarımı” ile mevcut Excel’ini toplu yükleyebilirsin. Hazırsın! 🎉',
-    },
-  ];
 
   const confirmReceived = (note: string | null) => {
     const item = receiveTarget;
@@ -165,14 +133,12 @@ export default function HomeScreen() {
           </View>
         ) : !canSeeLedger ? (
           // Personel: sade tahsilat takibi (Ara / WhatsApp)
-          <CoachTarget id="today">
-            <CollectionHome
-              overdue={overdue}
-              upcoming={upcoming}
-              onContractPress={goToContract}
-              showContact
-            />
-          </CoachTarget>
+          <CollectionHome
+            overdue={overdue}
+            upcoming={upcoming}
+            onContractPress={goToContract}
+            showContact
+          />
         ) : (
           <>
             {/* 0 — Tenant-reported payments awaiting approval */}
@@ -207,14 +173,12 @@ export default function HomeScreen() {
             ) : null}
 
             {/* Tahsilat takibi — Bugün / Geciken / Bu hafta (yöneticide "Alındı") */}
-            <CoachTarget id="today">
-              <CollectionHome
-                overdue={overdue}
-                upcoming={upcoming}
-                onContractPress={goToContract}
-                onMarkReceived={(item) => setReceiveTarget(item)}
-              />
-            </CoachTarget>
+            <CollectionHome
+              overdue={overdue}
+              upcoming={upcoming}
+              onContractPress={goToContract}
+              onMarkReceived={(item) => setReceiveTarget(item)}
+            />
 
             {/* Contracts ending soon (renewal / rent-increase opportunity) */}
             {canSeeLedger && expiring.length > 0 ? (
@@ -234,7 +198,7 @@ export default function HomeScreen() {
             {canSeeLedger ? (
             <>
             <SectionHeader title="Aylık Özet" />
-            <CoachTarget id="summary" className="gap-3">
+            <View className="gap-3">
               <View className="flex-row gap-3">
                 <StatCard
                   label="Bu Ay Beklenen"
@@ -263,7 +227,7 @@ export default function HomeScreen() {
                   tone="danger"
                 />
               </View>
-            </CoachTarget>
+            </View>
 
             <SectionHeader title="Cari Hesap" />
             <View className="gap-3">
@@ -308,13 +272,6 @@ export default function HomeScreen() {
         submitting={settlePayment.isPending}
         onClose={() => setReceiveTarget(null)}
         onConfirm={confirmReceived}
-      />
-
-      {/* İlk açılış rehberi — veri yüklendikten sonra, bir kez */}
-      <CoachOverlay
-        steps={coachSteps}
-        visible={!onboardingSeen && !isLoading}
-        onDone={() => setOnboardingSeen(true)}
       />
     </SafeAreaView>
   );
