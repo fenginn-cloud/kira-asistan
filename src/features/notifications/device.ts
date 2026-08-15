@@ -2,7 +2,6 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { ReminderWithRefs } from './reminders';
 import { reminderNotification } from './content';
-import { useSettingsStore } from '@/store/settingsStore';
 
 export type NotifPermission = 'granted' | 'denied' | 'default' | 'unsupported';
 
@@ -15,20 +14,17 @@ export function notificationsSupported(): boolean {
 
 export function configure(): void {
   Notifications.setNotificationHandler({
-    // Ön planda (uygulama açıkken) bildirim gösterimi. SES yalnızca:
-    //  • yönetici "Kira günü bildirim sesi"ni ayarlardan açtıysa, ya da
-    //  • bu bir test bildirimiyse (data.test) çalar.
-    // Aksi halde açılışta gelen "vadesi gelen hatırlatmalar" SESSİZ gösterilir —
-    // aksi halde borçlusu olan kullanıcı her açılışta ses duyar.
+    // Ön planda (uygulama AÇIKKEN) bildirim gösterimi. Uygulamayı açmak asla ses
+    // çıkarmaz: açılışta "vadesi gelen hatırlatmalar" SESSİZ banner olarak görünür.
+    // Ses yalnızca test bildiriminde (data.test) çalar. Gerçek hatırlatmalar
+    // uygulama kapalıyken tetiklenir; onlar sistem/kanal sesiyle zaten çalar.
     handleNotification: async (notification) => {
       const data = (notification.request.content.data ?? {}) as { test?: boolean };
-      const wantSound =
-        data.test === true || useSettingsStore.getState().reminderSound === true;
       return {
         shouldShowAlert: true,
         shouldShowBanner: true,
         shouldShowList: true,
-        shouldPlaySound: wantSound,
+        shouldPlaySound: data.test === true,
         shouldSetBadge: false,
       };
     },
