@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { ReminderWithRefs } from './reminders';
 import { reminderNotification } from './content';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export type NotifPermission = 'granted' | 'denied' | 'default' | 'unsupported';
 
@@ -14,13 +15,23 @@ export function notificationsSupported(): boolean {
 
 export function configure(): void {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+    // Ön planda (uygulama açıkken) bildirim gösterimi. SES yalnızca:
+    //  • yönetici "Kira günü bildirim sesi"ni ayarlardan açtıysa, ya da
+    //  • bu bir test bildirimiyse (data.test) çalar.
+    // Aksi halde açılışta gelen "vadesi gelen hatırlatmalar" SESSİZ gösterilir —
+    // aksi halde borçlusu olan kullanıcı her açılışta ses duyar.
+    handleNotification: async (notification) => {
+      const data = (notification.request.content.data ?? {}) as { test?: boolean };
+      const wantSound =
+        data.test === true || useSettingsStore.getState().reminderSound === true;
+      return {
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: wantSound,
+        shouldSetBadge: false,
+      };
+    },
   });
   if (Platform.OS === 'android') {
     Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
@@ -59,7 +70,7 @@ async function present(title: string, body: string, data: Record<string, unknown
 
 export async function sendTest(): Promise<void> {
   if ((await getPermission()) !== 'granted') return;
-  await present('Kira Asistan', 'Bildirimler başarıyla çalışıyor ✅', { url: '/' });
+  await present('Kira Asistan', 'Bildirimler başarıyla çalışıyor ✅', { url: '/', test: true });
 }
 
 /** Web Push is web-only; native uses Expo's own push channel (future). */

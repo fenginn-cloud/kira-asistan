@@ -1,14 +1,11 @@
 /**
- * Her binadaki TOPLAM daire sayısı (mülk sahibinden). Boş daire = toplam − dolu
- * (aktif sözleşme). Bina adı `buildingName()` çıktısıyla eşleştirilir (Türkçe/
- * aksan duyarsız). Yeni bina eklenince buraya bir satır eklemek yeterli.
+ * Bina bazlı TOPLAM daire sayıları ARTIK koda gömülü DEĞİLDİR — her şirkete özel
+ * olarak veritabanında (building_units tablosu) tutulur ve kullanıcı "Daire
+ * Sayıları" ekranından girer/düzenler. Boş daire = toplam − dolu (aktif sözleşme).
+ *
+ * Bina listesi kullanıcının kendi sözleşmelerinden + kendi girdiği (DB) değerlerden
+ * türetilir. Bu sabit yalnızca geriye dönük uyumluluk için boş bırakılmıştır;
+ * BURAYA ŞİRKETE ÖZEL VERİ EKLEMEYİN (aksi halde tüm kullanıcılara sızar).
  */
-export const BUILDING_UNITS: { name: string; total: number }[] = [
-  { name: 'Dream Rezidans', total: 100 },
-  { name: '42 Evler', total: 34 },
-  { name: 'Yürüyüş Yolu', total: 8 },
-  { name: 'ÖZ APT', total: 5 },
-  { name: 'ELİZE APT', total: 6 },
-  { name: 'SERDEN GEÇTİ', total: 2 },
-];
+export const BUILDING_UNITS: { name: string; total: number }[] = [];
 

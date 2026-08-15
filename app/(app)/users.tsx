@@ -88,7 +88,7 @@ export default function UsersScreen() {
             : `Planınız ${maxUsers} kullanıcı içerir. Daha fazlası için yükseltin.`,
         );
         setDraft(null);
-        router.push('/(app)/paywall');
+        router.push('/(app)/paywall?feature=team');
         return;
       }
       createUser.mutate(
@@ -124,7 +124,7 @@ export default function UsersScreen() {
           <Text className="text-2xl font-bold text-foreground">Kullanıcılar</Text>
         </View>
         <Pressable
-          onPress={() => (seatFull ? router.push('/(app)/paywall') : setDraft(emptyDraft))}
+          onPress={() => (seatFull ? router.push('/(app)/paywall?feature=team') : setDraft(emptyDraft))}
           className="h-11 w-11 items-center justify-center rounded-2xl bg-primary active:opacity-80"
         >
           <Plus size={22} color="#FFFFFF" />

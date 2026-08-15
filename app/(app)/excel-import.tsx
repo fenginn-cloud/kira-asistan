@@ -110,7 +110,7 @@ export default function ExcelImportScreen() {
 
   // Excel import is a Pro/Business feature — redirect Free users to the paywall.
   if (!entitlement.limits.excel) {
-    return <Redirect href="/(app)/paywall" />;
+    return <Redirect href="/(app)/paywall?feature=excel" />;
   }
 
   return (

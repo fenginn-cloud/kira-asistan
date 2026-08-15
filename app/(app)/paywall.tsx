@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Check, ChevronDown, ChevronUp, Crown, Minus } from 'lucide-react-native';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { Card } from '@/components/ui/Card';
@@ -11,14 +11,59 @@ import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { UPGRADE_PLANS, FEATURE_MATRIX, type FeatureRow } from '@/features/subscription/plans';
 
 function Cell({ value }: { value: FeatureRow['free'] }) {
-  if (value === true) return <Check size={16} color={palette.primary} />;
-  if (value === false) return <Minus size={16} color="#9CA3AF" />;
-  return <Text className="text-xs font-medium text-foreground">{value}</Text>;
+  if (value === true) return <Check size={15} color={palette.primary} />;
+  if (value === false) return <Minus size={15} color="#9CA3AF" />;
+  return (
+    <Text className="text-center text-[10px] font-semibold text-foreground">{value}</Text>
+  );
+}
+
+/** Paywall'a hangi özellik/limit için gelindiğine göre başlık ve alt metin. */
+function paywallHeader(
+  feature?: string,
+  reason?: string,
+  plan?: string
+): { title: string; subtitle: string } {
+  switch (feature) {
+    case 'excel':
+      return {
+        title: 'Excel Aktarımı',
+        subtitle: 'Tek tıkla tüm sözleşmelerinizi içeri aktarın. Pro ve Business planlarına dahildir.',
+      };
+    case 'ai':
+      return {
+        title: 'AI Asistan',
+        subtitle:
+          'Kim ödemedi, geciken alacak, aylık tahsilat… Portföyünüz üzerinde anında yanıt. Pro ve Business’a dahildir.',
+      };
+    case 'team':
+      return {
+        title: 'Ekip Yönetimi',
+        subtitle: 'Personel ekleyin, rol ve yetki verin. Business planına dahildir.',
+      };
+    case 'reminders':
+      return {
+        title: 'Gelişmiş Hatırlatmalar',
+        subtitle: '7 / 3 / 1 gün önceden hatırlatmalar Pro ve Business planlarına dahildir.',
+      };
+  }
+  if (reason === 'limit') {
+    return {
+      title: '3 sözleşme sınırına ulaştınız',
+      subtitle: 'Portföyünüzü sınırsız yönetin. Size uygun planı seçin.',
+    };
+  }
+  return {
+    title: plan === 'free' ? 'Planınızı yükseltin' : 'Planınızı yükseltin',
+    subtitle: 'Portföyünüzü büyütün, tüm özelliklerin kilidini açın.',
+  };
 }
 
 export default function PaywallScreen() {
   const router = useRouter();
   const entitlement = useEntitlement();
+  const params = useLocalSearchParams<{ feature?: string; reason?: string }>();
+  const header = paywallHeader(params.feature, params.reason, entitlement.plan);
   const [showTable, setShowTable] = useState(false);
 
   return (
@@ -35,13 +80,9 @@ export default function PaywallScreen() {
             <Crown size={30} color="#FFFFFF" />
           </View>
           <Text className="mt-4 text-center text-2xl font-bold text-foreground">
-            {entitlement.plan === 'free'
-              ? '3 sözleşme sınırına ulaştınız'
-              : 'Planınızı yükseltin'}
+            {header.title}
           </Text>
-          <Text className="mt-2 text-center text-sm text-muted">
-            Portföyünüzü sınırsız yönetin. Size uygun planı seçin.
-          </Text>
+          <Text className="mt-2 text-center text-sm text-muted">{header.subtitle}</Text>
           {entitlement.plan === 'free' && !entitlement.isLegacy ? (
             <View className="mt-3 rounded-full bg-surface px-3 py-1">
               <Text className="text-xs text-muted">
@@ -125,36 +166,34 @@ export default function PaywallScreen() {
 
         {showTable ? (
           <Card>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View>
-                {/* Başlık satırı */}
-                <View className="flex-row border-b border-border pb-2">
-                  <Text className="w-48 text-xs font-semibold text-muted">Özellik</Text>
-                  <Text className="w-20 text-center text-xs font-semibold text-muted">Free</Text>
-                  <Text className="w-20 text-center text-xs font-semibold text-muted">Pro</Text>
-                  <Text className="w-24 text-center text-xs font-semibold text-primary-700">
-                    Business
-                  </Text>
+            {/* Başlık satırı — ekrana sığar (yatay kaydırma yok) */}
+            <View className="flex-row border-b border-border pb-2">
+              <Text className="flex-1 pr-1 text-[11px] font-semibold text-muted">Özellik</Text>
+              <Text className="w-12 text-center text-[11px] font-semibold text-muted">Free</Text>
+              <Text className="w-12 text-center text-[11px] font-semibold text-muted">Pro</Text>
+              <Text className="w-16 text-center text-[11px] font-semibold text-primary-700">
+                Business
+              </Text>
+            </View>
+            {FEATURE_MATRIX.map((row) => (
+              <View
+                key={row.label}
+                className="flex-row items-center border-b border-border/50 py-2.5"
+              >
+                <Text className="flex-1 pr-1 text-[11px] leading-4 text-foreground">
+                  {row.label}
+                </Text>
+                <View className="w-12 items-center">
+                  <Cell value={row.free} />
                 </View>
-                {FEATURE_MATRIX.map((row) => (
-                  <View
-                    key={row.label}
-                    className="flex-row items-center border-b border-border/50 py-2"
-                  >
-                    <Text className="w-48 pr-2 text-xs text-foreground">{row.label}</Text>
-                    <View className="w-20 items-center">
-                      <Cell value={row.free} />
-                    </View>
-                    <View className="w-20 items-center">
-                      <Cell value={row.pro} />
-                    </View>
-                    <View className="w-24 items-center">
-                      <Cell value={row.business} />
-                    </View>
-                  </View>
-                ))}
+                <View className="w-12 items-center">
+                  <Cell value={row.pro} />
+                </View>
+                <View className="w-16 items-center">
+                  <Cell value={row.business} />
+                </View>
               </View>
-            </ScrollView>
+            ))}
           </Card>
         ) : null}
 

@@ -96,7 +96,7 @@ export default function ContractsScreen() {
   const { data: contracts = [], isLoading } = useContracts();
   const gate = useContractGate();
   const onNewContract = () =>
-    router.push(gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall');
+    router.push(gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall?reason=limit');
   const { data: payments = [] } = useAllPayments();
   const [query, setQuery] = useState('');
   const [sortOpen, setSortOpen] = useState(false);
