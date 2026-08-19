@@ -199,6 +199,17 @@ export function useStats(selectedMonth?: string) {
       0
     );
 
+    // Finansal özet (tüm zaman / portföy geneli — aya bağlı değil).
+    // Komisyon sözleşme başına BİR KEZ sayılır (commissionTotal); aylara bölünmez.
+    let totalRentAccrued = 0;
+    let totalCollectedAll = 0;
+    for (const p of payments) {
+      totalRentAccrued += p.amountDue;
+      totalCollectedAll += p.amountPaid;
+    }
+    const totalRemainingAll = Math.max(0, totalRentAccrued - totalCollectedAll);
+    const depositTotal = contracts.reduce((s, c) => s + (c.depositAmount || 0), 0);
+
     return {
       isLoading: lc || lp,
       months,
@@ -215,6 +226,11 @@ export function useStats(selectedMonth?: string) {
       momDeltaPct,
       commissionThisMonth,
       commissionTotal,
+      // Finansal özet (portföy geneli)
+      totalRentAccrued,
+      totalCollectedAll,
+      totalRemainingAll,
+      depositTotal,
       byBuilding,
       // Bağlam
       trend,

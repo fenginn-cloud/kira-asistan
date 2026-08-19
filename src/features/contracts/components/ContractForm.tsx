@@ -1,4 +1,5 @@
-import { Switch, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, Switch, Text, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/Input';
@@ -8,6 +9,8 @@ import { Card } from '@/components/ui/Card';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { MoneyInput } from '@/components/ui/MoneyInput';
 import { DateField } from '@/components/ui/DateField';
+import { useContracts } from '@/features/contracts/hooks';
+import { foldSearch } from '@/lib/utils/property';
 import { contractFormSchema, type ContractFormValues } from '../schema';
 import { palette } from '@/lib/theme/colors';
 
@@ -37,7 +40,7 @@ export function ContractForm({
     <View>
       <SectionHeader title="Mülk" />
       <View className="gap-3">
-        <Field control={control} name="propertyName" label="Mülk Adı *" errors={errors} />
+        <PropertyNameField control={control} errors={errors} />
         <View className="flex-row gap-3">
           <View className="flex-1">
             <Field control={control} name="block" label="Blok" errors={errors} />
@@ -72,6 +75,12 @@ export function ContractForm({
             <MoneyField control={control} name="depositAmount" label="Depozito" errors={errors} />
           </View>
         </View>
+        <MoneyField
+          control={control}
+          name="commissionAmount"
+          label="Komisyon Tutarı (opsiyonel)"
+          errors={errors}
+        />
       </View>
 
       <SectionHeader title="Sözleşme Koşulları" />
@@ -177,6 +186,89 @@ function MoneyField({
           error={errors[name]?.message as string | undefined}
         />
       )}
+    />
+  );
+}
+
+/**
+ * Mülk Adı — geçmiş sözleşmelerdeki mülk isimlerinden autocomplete öneren alan.
+ * Öneriler kullanıcının kendi (RLS ile şirketine ait) sözleşmelerinden gelir;
+ * Türkçe/aksan duyarsız, tekilleştirilmiş, orijinal yazım korunur. Kullanıcı
+ * öneriden seçebilir ya da tamamen yeni bir isim yazabilir.
+ */
+function PropertyNameField({ control, errors }: { control: any; errors: any }) {
+  const { data: contracts = [] } = useContracts();
+  const suggestions = useMemo(() => {
+    const seen = new Map<string, string>(); // foldKey -> orijinal yazım (ilk görülen)
+    for (const c of contracts) {
+      const name = (c.propertyName ?? '').trim();
+      if (!name) continue;
+      const key = foldSearch(name);
+      if (key && !seen.has(key)) seen.set(key, name);
+    }
+    return [...seen.values()];
+  }, [contracts]);
+
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Controller
+      control={control}
+      name="propertyName"
+      render={({ field: { onChange, onBlur, value } }) => {
+        const val = typeof value === 'string' ? value : '';
+        const q = foldSearch(val.trim());
+        const matches =
+          q.length >= 1
+            ? suggestions
+                .filter((s) => {
+                  const k = foldSearch(s);
+                  return k.includes(q) && k !== q; // tam eşleşme zaten yazılmış
+                })
+                .slice(0, 6)
+            : [];
+        const showList = open && matches.length > 0;
+        return (
+          <View style={{ zIndex: 20 }}>
+            <Input
+              label="Mülk Adı *"
+              value={val}
+              onChangeText={(t) => {
+                onChange(t);
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              onBlur={() => {
+                onBlur();
+                // Dokunuşun kaydı için kapanışı hafif geciktir.
+                setTimeout(() => setOpen(false), 150);
+              }}
+              error={errors.propertyName?.message as string | undefined}
+            />
+            {showList ? (
+              <View
+                className="absolute left-0 right-0 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm shadow-black/10"
+                style={{ top: 82, zIndex: 30, elevation: 6 }}
+              >
+                {matches.map((s, i) => (
+                  <Pressable
+                    key={s}
+                    onPress={() => {
+                      onChange(s);
+                      setOpen(false);
+                    }}
+                    className={`px-4 py-3 active:bg-background ${
+                      i > 0 ? 'border-t border-border/60' : ''
+                    }`}
+                  >
+                    <Text className="text-base text-foreground">{s}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        );
+      }}
     />
   );
 }

@@ -299,33 +299,29 @@ export default function StatsScreen() {
               />
             </Card>
 
-            {/* Komisyon — kiracı girişinde alınan bir kerelik gelir */}
-            {s.commissionTotal > 0 ? (
-              <>
-                <SectionHeader title="Komisyon" />
-                <Card>
-                  <View className="flex-row">
-                    <View className="flex-1 items-center">
-                      <Text className="text-lg font-bold text-foreground" numberOfLines={1}>
-                        {formatCurrency(s.commissionThisMonth)}
-                      </Text>
-                      <Text className="mt-0.5 text-center text-[11px] text-muted">
-                        {s.activeMonthLong} komisyon
-                      </Text>
-                    </View>
-                    <View className="w-px bg-border/60" />
-                    <View className="flex-1 items-center">
-                      <Text className="text-lg font-bold text-foreground" numberOfLines={1}>
-                        {formatCurrency(s.commissionTotal)}
-                      </Text>
-                      <Text className="mt-0.5 text-center text-[11px] text-muted">
-                        Toplam komisyon
-                      </Text>
-                    </View>
-                  </View>
-                </Card>
-              </>
-            ) : null}
+            {/* Finansal Özet — portföy geneli (tüm zaman). Komisyon sözleşme
+                başına bir kez sayılır; aylara bölünmez. */}
+            <SectionHeader title="Finansal Özet" />
+            <Card>
+              <SummaryRow label="Toplam Kira" value={formatCurrency(s.totalRentAccrued)} />
+              <SummaryRow
+                label="Tahsil Edilen"
+                value={formatCurrency(s.totalCollectedAll)}
+                tone="success"
+              />
+              <SummaryRow
+                label="Kalan Alacak"
+                value={formatCurrency(s.totalRemainingAll)}
+                tone={s.totalRemainingAll > 0 ? 'danger' : 'muted'}
+              />
+              <SummaryRow label="Toplam Depozito" value={formatCurrency(s.depositTotal)} />
+              <SummaryRow
+                label="Toplam Komisyon"
+                value={formatCurrency(s.commissionTotal)}
+                tone="primary"
+                last
+              />
+            </Card>
 
             {/* Genel bilgiler — kompakt */}
             <SectionHeader title="Genel" />
@@ -345,16 +341,7 @@ export default function StatsScreen() {
                     {formatCurrency(s.expectedMonthlyIncome)}
                   </Text>
                   <Text className="mt-0.5 text-center text-[11px] text-muted">
-                    Beklenen gelir
-                  </Text>
-                </View>
-                <View className="w-px bg-border/60" />
-                <View className="flex-1 items-center">
-                  <Text className="text-lg font-bold text-foreground" numberOfLines={1}>
-                    {formatCurrency(s.portfolioValue)}
-                  </Text>
-                  <Text className="mt-0.5 text-center text-[11px] text-muted">
-                    Toplam depozito
+                    Beklenen aylık gelir
                   </Text>
                 </View>
               </View>
@@ -363,6 +350,42 @@ export default function StatsScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// Finansal Özet satırı: solda etiket, sağda tutar (tona göre renk).
+function SummaryRow({
+  label,
+  value,
+  tone = 'default',
+  last = false,
+}: {
+  label: string;
+  value: string;
+  tone?: 'default' | 'success' | 'danger' | 'primary' | 'muted';
+  last?: boolean;
+}) {
+  const color =
+    tone === 'success'
+      ? 'text-success'
+      : tone === 'danger'
+        ? 'text-danger'
+        : tone === 'primary'
+          ? 'text-primary-700'
+          : tone === 'muted'
+            ? 'text-muted'
+            : 'text-foreground';
+  return (
+    <View
+      className={`flex-row items-center justify-between py-3 ${
+        last ? '' : 'border-b border-border/60'
+      }`}
+    >
+      <Text className="text-sm text-muted">{label}</Text>
+      <Text className={`text-base font-bold ${color}`} numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
   );
 }
 
