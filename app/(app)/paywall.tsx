@@ -51,6 +51,12 @@ function paywallHeader(
         title: 'Gelişmiş Hatırlatmalar',
         subtitle: '7 / 3 / 1 gün önceden hatırlatmalar Pro ve Business planlarına dahildir.',
       };
+    case 'stats':
+      return {
+        title: 'İstatistik & Finansal Özet',
+        subtitle:
+          'Tahsilat oranları, bina bazlı analiz ve finansal toplamlar Pro ve Business planlarına dahildir.',
+      };
   }
   if (reason === 'limit') {
     return {

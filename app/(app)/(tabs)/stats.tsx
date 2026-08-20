@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
-import { Pencil, TrendingDown, TrendingUp } from 'lucide-react-native';
+import { BarChart3, Lock, Pencil, TrendingDown, TrendingUp } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { BarChart } from '@/components/charts/BarChart';
 import { useStats } from '@/features/stats/useStats';
+import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { formatCurrency } from '@/lib/utils/format';
 import { palette } from '@/lib/theme/colors';
@@ -42,9 +43,37 @@ function Dot({ color }: { color: string }) {
 
 export default function StatsScreen() {
   const router = useRouter();
+  const entitlement = useEntitlement();
   const [month, setMonth] = useState<string | undefined>(undefined);
   const s = useStats(month);
   const scrollRef = useScrollToTop<ScrollView>('stats');
+
+  // Free plan: istatistik + Finansal Özet Pro/Business özelliği — kilitli tanıtım.
+  if (!entitlement.limits.stats) {
+    return (
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <View className="flex-1 items-center justify-center px-8">
+          <View className="h-20 w-20 items-center justify-center rounded-3xl bg-primary">
+            <BarChart3 size={36} color="#FFFFFF" />
+          </View>
+          <View className="mt-5 flex-row items-center gap-2">
+            <Lock size={16} color="#9CA3AF" />
+            <Text className="text-lg font-bold text-foreground">İstatistikler</Text>
+          </View>
+          <Text className="mt-2 text-center text-sm text-muted">
+            Tahsilat oranları, bina bazlı analiz ve Finansal Özet (toplam kira, tahsilat,
+            kalan alacak, depozito, komisyon) Pro ve Business planlarına dahildir.
+          </Text>
+          <Pressable
+            onPress={() => router.push('/(app)/paywall?feature=stats')}
+            className="mt-6 rounded-2xl bg-primary px-6 py-3 active:opacity-80"
+          >
+            <Text className="text-base font-semibold text-white">Planları Gör</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>

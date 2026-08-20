@@ -31,6 +31,8 @@ export interface PlanLimits {
   advanceReminders: boolean;
   /** Excel'den sözleşme aktarımı. */
   excel: boolean;
+  /** İstatistikler + Finansal Özet ekranı (Pro/Business). */
+  stats: boolean;
   /** Kiracı ödeme portalı / bildirim linki. */
   tenantPortal: boolean;
 }
@@ -45,6 +47,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     aiDailyLimit: 0,
     advanceReminders: false,
     excel: false,
+    stats: false,
     tenantPortal: false,
   },
   pro: {
@@ -56,6 +59,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     aiDailyLimit: 15,
     advanceReminders: true,
     excel: true,
+    stats: true,
     tenantPortal: true,
   },
   business: {
@@ -67,6 +71,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     aiDailyLimit: null,
     advanceReminders: true,
     excel: true,
+    stats: true,
     tenantPortal: true,
   },
 };
