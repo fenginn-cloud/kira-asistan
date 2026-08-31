@@ -57,6 +57,12 @@ function paywallHeader(
         subtitle:
           'Tahsilat oranları, bina bazlı analiz ve finansal toplamlar Pro ve Business planlarına dahildir.',
       };
+    case 'reports':
+      return {
+        title: 'Gelişmiş Raporlar',
+        subtitle:
+          'Aylık tahsilat, doluluk, kiralama ve komisyon performansı Pro ve Business planlarına dahildir.',
+      };
   }
   if (reason === 'limit') {
     return {

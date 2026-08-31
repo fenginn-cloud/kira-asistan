@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowDownUp, FileSearch, Plus, Search } from 'lucide-react-native';
+import { ArrowDownUp, BarChart3, FileSearch, Plus, Search } from 'lucide-react-native';
 import { ContractCard } from '@/features/contracts/components/ContractCard';
 import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useContracts } from '@/features/contracts/hooks';
@@ -17,6 +17,7 @@ import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
 import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
+import { palette } from '@/lib/theme/colors';
 import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
 import { buildingName, foldSearch } from '@/lib/utils/property';
@@ -317,6 +318,21 @@ export default function ContractsScreen() {
             <Text className="text-sm font-semibold text-foreground">Sırala</Text>
           </Pressable>
         </View>
+
+        {/* Mülk seçiliyken: o mülkün aylık performans raporu (yönetici) */}
+        {canSeeLedger && property !== 'all' ? (
+          <Pressable
+            onPress={() =>
+              router.push(`/(app)/property-report?name=${encodeURIComponent(property)}`)
+            }
+            className="mt-3 flex-row items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary-50 px-4 py-3 active:opacity-80"
+          >
+            <BarChart3 size={18} color={palette.primary} />
+            <Text className="text-sm font-semibold text-primary-700">
+              {property} · Performans Raporu
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {isLoading ? (

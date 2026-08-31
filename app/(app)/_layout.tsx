@@ -47,6 +47,7 @@ export default function AppLayout() {
         <Stack.Screen name="company" />
         <Stack.Screen name="excel-import" />
         <Stack.Screen name="building-units" />
+        <Stack.Screen name="property-report" />
         <Stack.Screen name="notification-settings" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
