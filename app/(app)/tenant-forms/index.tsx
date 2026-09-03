@@ -11,7 +11,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { useTenantForms } from '@/features/tenant-forms/hooks';
-import { STATUS_COLORS, STATUS_LABELS } from '@/features/tenant-forms/config';
+import {
+  RESULT_COLORS,
+  RESULT_LABELS,
+  STATUS_COLORS,
+  STATUS_LABELS,
+} from '@/features/tenant-forms/config';
 import { palette } from '@/lib/theme/colors';
 import type { TenantForm, TenantFormStatus } from '@/types';
 
@@ -108,8 +113,17 @@ function FormCard({ form, onPress }: { form: TenantForm; onPress: () => void }) 
   const status = form.status as TenantFormStatus;
   const c = STATUS_COLORS[status];
   const created = form.createdAt ? format(new Date(form.createdAt), 'd MMM yyyy', { locale: tr }) : '';
+  const result = form.reviewResult && form.reviewResult !== 'unrated' ? form.reviewResult : null;
   return (
     <Card onPress={onPress}>
+      {/* Değerlendirme sonucu — kartın üstünde belirgin rozet */}
+      {result ? (
+        <View className={`mb-2 self-start rounded-full px-3 py-1 ${RESULT_COLORS[result].bg}`}>
+          <Text className={`text-xs font-bold ${RESULT_COLORS[result].text}`}>
+            {RESULT_LABELS[result]}
+          </Text>
+        </View>
+      ) : null}
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
           <Text className="text-base font-bold text-foreground">

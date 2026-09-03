@@ -248,6 +248,8 @@ export interface TenantForm {
   /** Joined for detail view (optional). */
   documents?: TenantFormDocument[];
   review?: TenantFormReview | null;
+  /** Lightweight review result for list cards (joined in list query). */
+  reviewResult?: TenantFormResult | null;
   /** Joined property name if linked to a contract. */
   propertyName?: string | null;
 }

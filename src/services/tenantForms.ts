@@ -30,6 +30,9 @@ function mapForm(row: any): TenantForm {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     propertyName: row.contracts?.property_name ?? null,
+    reviewResult: Array.isArray(row.tenant_form_reviews)
+      ? (row.tenant_form_reviews[0]?.result ?? null)
+      : (row.tenant_form_reviews?.result ?? null),
   };
 }
 
@@ -99,7 +102,7 @@ export async function listForms(): Promise<TenantForm[]> {
   if (!supabase) return mockStore.map(withExpiry);
   const { data, error } = await supabase
     .from('tenant_forms')
-    .select('*, contracts(property_name)')
+    .select('*, contracts(property_name), tenant_form_reviews(result)')
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => withExpiry(mapForm(r)));
@@ -225,7 +228,14 @@ export async function saveReview(formId: string, input: ReviewInput): Promise<Te
       updatedAt: now,
     };
     mockStore = mockStore.map((f) =>
-      f.id === formId ? { ...f, review, status: f.status === 'completed' ? 'reviewed' : f.status } : f
+      f.id === formId
+        ? {
+            ...f,
+            review,
+            reviewResult: input.result,
+            status: f.status === 'completed' ? 'reviewed' : f.status,
+          }
+        : f
     );
     return review;
   }
