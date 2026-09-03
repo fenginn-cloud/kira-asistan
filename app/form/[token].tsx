@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   ScrollView,
   Text,
@@ -36,6 +37,9 @@ import { palette } from '@/lib/theme/colors';
 
 const TOTAL_STEPS = FORM_STEPS.length + 1; // + beyan/onay adımı
 
+const isEmpty = (v: unknown) =>
+  v === undefined || v === null || (typeof v === 'string' && v.trim() === '');
+
 export default function PublicTenantFormScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const [view, setView] = useState<PublicFormView | null>(null);
@@ -49,9 +53,21 @@ export default function PublicTenantFormScreen() {
 
   // Beyan/onay
   const [accepted, setAccepted] = useState(false);
-  const [declarantName, setDeclarantName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  // Doğrulama: eksik alanların anahtarları + sallama animasyonu
+  const [errors, setErrors] = useState<string[]>([]);
+  const shakeX = useRef(new Animated.Value(0)).current;
+  const runShake = () => {
+    Animated.sequence([
+      Animated.timing(shakeX, { toValue: 12, duration: 45, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: -12, duration: 45, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: 8, duration: 45, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: -8, duration: 45, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: 0, duration: 45, useNativeDriver: true }),
+    ]).start();
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -73,14 +89,16 @@ export default function PublicTenantFormScreen() {
             ...(prev.rentalRequest ?? {}),
           },
         }));
-        setDeclarantName(v.prefill.tenant_name ?? '');
       })
       .catch((e) => setError(e?.message ?? 'Bağlantı açılamadı.'))
       .finally(() => setLoading(false));
   }, [token]);
 
-  const setField = (group: string, key: string, value: unknown) =>
+  const setField = (group: string, key: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [group]: { ...(prev[group] ?? {}), [key]: value } }));
+    // Kullanıcı düzeltince o alanın kırmızı işaretini kaldır.
+    setErrors((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : prev));
+  };
 
   const pickDoc = async () => {
     const res = await DocumentPicker.getDocumentAsync({
@@ -113,13 +131,16 @@ export default function PublicTenantFormScreen() {
     }
     setSubmitting(true);
     setError(null);
+    const declName =
+      (view?.prefill.tenant_name ?? '').trim() ||
+      String((values.personal as Record<string, unknown> | undefined)?.fullName ?? '').trim();
     const responses: TenantFormResponses = {
       ...values,
       vehicles,
       hasVehicle: Boolean(values.vehicle?.hasVehicle),
       declaration: {
         accepted: true,
-        declarantName: declarantName.trim(),
+        declarantName: declName,
         date: new Date().toISOString(),
       },
     };
@@ -185,9 +206,44 @@ export default function PublicTenantFormScreen() {
   const isDeclaration = step === FORM_STEPS.length;
   const stepDef = isDeclaration ? null : FORM_STEPS[step]!;
   const groupValues = stepDef ? values[stepDef.key] ?? {} : {};
+  // Beyan adımındaki ad-soyad: baştaki isim (yoksa Adım 1'deki), düzenlenemez.
+  const declarantName =
+    (view.prefill.tenant_name ?? '').trim() ||
+    String((values.personal as Record<string, unknown> | undefined)?.fullName ?? '').trim();
 
-  const next = () => setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
-  const prev = () => setStep((s) => Math.max(s - 1, 0));
+  // Bu adımdaki eksik zorunlu alanları bul.
+  const missingFields = (): string[] => {
+    if (!stepDef) return [];
+    const miss: string[] = [];
+    for (const f of stepDef.fields) {
+      if (f.optional) continue;
+      if (f.showIf && groupValues[f.showIf.key] !== f.showIf.equals) continue;
+      if (isEmpty(groupValues[f.key])) miss.push(f.key);
+    }
+    // Araç adımı: "Evet" seçildiyse en az bir geçerli plaka gerekir.
+    if (stepDef.vehicles && groupValues.hasVehicle === true) {
+      if (!vehicles.some((v) => v.plate.trim() !== '')) miss.push('__vehicles__');
+    }
+    return miss;
+  };
+
+  const next = () => {
+    const miss = missingFields();
+    if (miss.length > 0) {
+      setErrors(miss);
+      setError('Lütfen zorunlu alanları doldurun.');
+      runShake();
+      return;
+    }
+    setErrors([]);
+    setError(null);
+    setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
+  };
+  const prev = () => {
+    setErrors([]);
+    setError(null);
+    setStep((s) => Math.max(s - 1, 0));
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
@@ -220,13 +276,12 @@ export default function PublicTenantFormScreen() {
             accepted={accepted}
             setAccepted={setAccepted}
             declarantName={declarantName}
-            setDeclarantName={setDeclarantName}
           />
         ) : (
           <>
             <Text className="text-2xl font-bold text-foreground">{stepDef!.title}</Text>
 
-            <View className="mt-5 gap-4">
+            <Animated.View className="mt-5 gap-4" style={{ transform: [{ translateX: shakeX }] }}>
               {stepDef!.fields.map((f) => {
                 if (f.showIf && groupValues[f.showIf.key] !== f.showIf.equals) return null;
                 return (
@@ -235,20 +290,28 @@ export default function PublicTenantFormScreen() {
                     field={f}
                     value={groupValues[f.key]}
                     onChange={(v) => setField(stepDef!.key, f.key, v)}
+                    error={errors.includes(f.key)}
                   />
                 );
               })}
 
               {/* Araçlar (Adım 2) */}
               {stepDef!.vehicles && groupValues.hasVehicle === true ? (
-                <VehiclesEditor vehicles={vehicles} setVehicles={setVehicles} />
+                <VehiclesEditor
+                  vehicles={vehicles}
+                  setVehicles={(v) => {
+                    setVehicles(v);
+                    setErrors((prev) => prev.filter((k) => k !== '__vehicles__'));
+                  }}
+                  error={errors.includes('__vehicles__')}
+                />
               ) : null}
 
               {/* Gelir belgesi (Adım 4) */}
               {stepDef!.documents ? (
                 <DocumentsEditor docs={docs} setDocs={setDocs} onPick={pickDoc} />
               ) : null}
-            </View>
+            </Animated.View>
           </>
         )}
 
@@ -289,16 +352,28 @@ export default function PublicTenantFormScreen() {
 function VehiclesEditor({
   vehicles,
   setVehicles,
+  error,
 }: {
   vehicles: TenantFormVehicle[];
   setVehicles: (v: TenantFormVehicle[]) => void;
+  error?: boolean;
 }) {
   const update = (i: number, patch: Partial<TenantFormVehicle>) =>
     setVehicles(vehicles.map((v, idx) => (idx === i ? { ...v, ...patch } : v)));
   return (
     <View className="gap-3">
+      {error ? (
+        <Text className="text-xs font-medium text-danger">
+          En az bir araç plakası girin.
+        </Text>
+      ) : null}
       {vehicles.map((v, i) => (
-        <View key={i} className="gap-3 rounded-2xl border border-border bg-surface p-3">
+        <View
+          key={i}
+          className={`gap-3 rounded-2xl border bg-surface p-3 ${
+            error && v.plate.trim() === '' ? 'border-danger' : 'border-border'
+          }`}
+        >
           <View className="flex-row items-center justify-between">
             <Text className="text-sm font-semibold text-foreground">{i + 1}. Araç</Text>
             <Pressable onPress={() => setVehicles(vehicles.filter((_, idx) => idx !== i))} hitSlop={8}>
@@ -310,6 +385,7 @@ function VehiclesEditor({
             value={v.plate}
             onChangeText={(t) => update(i, { plate: t.toUpperCase() })}
             autoCapitalize="characters"
+            autoCorrect={false}
           />
           <Input
             label="Marka / Model (opsiyonel)"
@@ -373,12 +449,10 @@ function DeclarationStep({
   accepted,
   setAccepted,
   declarantName,
-  setDeclarantName,
 }: {
   accepted: boolean;
   setAccepted: (v: boolean) => void;
   declarantName: string;
-  setDeclarantName: (v: string) => void;
 }) {
   return (
     <View>
@@ -415,8 +489,13 @@ function DeclarationStep({
         </Text>
       </Pressable>
 
-      <View className="mt-5">
-        <Input label="Kiracı Ad Soyad" value={declarantName} onChangeText={setDeclarantName} />
+      <View className="mt-5 gap-1.5">
+        <Text className="text-sm font-medium text-muted">Kiracı Ad Soyad</Text>
+        <View className="h-14 justify-center rounded-2xl border border-border bg-background px-4">
+          <Text className="text-base font-medium text-foreground">
+            {declarantName || '—'}
+          </Text>
+        </View>
       </View>
       <Text className="mt-2 text-xs text-muted">
         Onay tarihi, formu gönderdiğinizde otomatik olarak kaydedilir.

@@ -49,6 +49,8 @@ export interface FieldDef {
   type: FieldType;
   placeholder?: string;
   options?: string[];
+  /** Boş bırakılabilir (doğrulamada zorunlu değil). */
+  optional?: boolean;
   /** Yalnızca başka bir alanın değerine göre gösterilir. */
   showIf?: { key: string; equals: unknown };
 }
@@ -98,8 +100,8 @@ export const FORM_STEPS: StepDef[] = [
       { key: 'fullName', label: 'Ad Soyad', type: 'text' },
       { key: 'relation', label: 'Yakınlık Derecesi', type: 'text' },
       { key: 'phone', label: 'Telefon', type: 'tel' },
-      { key: 'altPhone', label: 'Alternatif Telefon', type: 'tel' },
-      { key: 'address', label: 'Adres', type: 'textarea' },
+      { key: 'altPhone', label: 'Alternatif Telefon', type: 'tel', optional: true },
+      { key: 'address', label: 'Adres', type: 'textarea', optional: true },
     ],
   },
   {
@@ -135,19 +137,11 @@ export const FORM_STEPS: StepDef[] = [
   },
   {
     key: 'moving',
-    title: 'Taşınma ve Referans',
+    title: 'Taşınma Bilgileri',
     fields: [
       { key: 'yearsInCity', label: 'Bu şehirde ne zamandır yaşıyor?', type: 'text' },
+      { key: 'previousCity', label: 'Daha önce nerede yaşıyordu?', type: 'text' },
       { key: 'reasonInCity', label: 'Şehre geliş nedeni', type: 'select', options: MOVE_REASON },
-      { key: 'previousCity', label: 'Önceki Yaşadığı Şehir', type: 'text' },
-      { key: 'movingReason', label: 'Mevcut Evden Taşınma Nedeni', type: 'textarea' },
-      { key: 'refName', label: 'Referans — Ad Soyad', type: 'text' },
-      { key: 'refRelation', label: 'Referans — Yakınlık / İlişki', type: 'text' },
-      { key: 'refPhone', label: 'Referans — Telefon', type: 'tel' },
-      { key: 'refJob', label: 'Referans — Meslek', type: 'text' },
-      { key: 'refAddress', label: 'Referans — Adres', type: 'textarea' },
-      { key: 'refKnownDuration', label: 'Kiracıyı Ne Kadar Zamandır Tanıyor?', type: 'text' },
-      { key: 'refNote', label: 'Referans Açıklaması', type: 'textarea' },
     ],
   },
   {
