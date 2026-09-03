@@ -22,6 +22,7 @@ import { palette } from '@/lib/theme/colors';
 import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
 import { buildingName, foldSearch } from '@/lib/utils/property';
+import { conflictingContractIds } from '@/features/contracts/duplicates';
 import { useDesktopShell } from '@/lib/useDesktopShell';
 import {
   SORT_LABELS,
@@ -42,6 +43,7 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'partial_month', label: 'Bu Ay Eksik' },
   { key: 'unpaid_month', label: 'Bu Ay Ödemeyenler' },
   { key: 'expiring', label: 'Bitişi Yaklaşan' },
+  { key: 'conflicts', label: 'Çakışan' },
 ];
 
 const SORT_ORDER: SortKey[] = [
@@ -191,6 +193,9 @@ export default function ContractsScreen() {
     return map;
   }, [contracts, payments]);
 
+  // Çakışan sözleşmeler (aynı daire aktif ya da aynı isim).
+  const conflictIds = useMemo(() => conflictingContractIds(contracts), [contracts]);
+
   const filtered = useMemo(() => {
     // Türkçe-duyarlı, aksan/büyük-küçük harf duyarsız arama.
     const q = foldSearch(query.trim());
@@ -233,13 +238,15 @@ export default function ContractsScreen() {
           const d = daysUntilEnd(c);
           return d !== null && d <= 30;
         }
+        case 'conflicts':
+          return conflictIds.has(c.id);
         default:
           return true;
       }
     });
 
     return sortContracts(result, sort, balances);
-  }, [contracts, balances, query, status, property, block, isLegacy, sort]);
+  }, [contracts, balances, conflictIds, query, status, property, block, isLegacy, sort]);
 
   // Muhasebe odaklı filtre/sıralamalar yalnızca yöneticide görünür.
   const LEDGER_FILTERS: StatusFilter[] = ['debtor', 'creditor'];
