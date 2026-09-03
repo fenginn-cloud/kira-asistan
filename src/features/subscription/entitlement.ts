@@ -23,10 +23,16 @@ export interface PlanLimits {
   maxUsers: number | null;
   /** Whether the plan includes the AI assistant. */
   ai: boolean;
+  /** Gelişmiş AI (Business): derin analiz, öneri aksiyonları, sınırsız kullanım. */
+  aiAdvanced: boolean;
+  /** Günlük AI soru limiti. `null` = sınırsız, `0` = kapalı. */
+  aiDailyLimit: number | null;
   /** Advance reminders (7/3/1 gün önce). Free only gets due-day + overdue. */
   advanceReminders: boolean;
   /** Excel'den sözleşme aktarımı. */
   excel: boolean;
+  /** İstatistikler + Finansal Özet ekranı (Pro/Business). */
+  stats: boolean;
   /** Kiracı ödeme portalı / bildirim linki. */
   tenantPortal: boolean;
 }
@@ -37,8 +43,11 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     team: false,
     maxUsers: 1,
     ai: false,
+    aiAdvanced: false,
+    aiDailyLimit: 0,
     advanceReminders: false,
     excel: false,
+    stats: false,
     tenantPortal: false,
   },
   pro: {
@@ -46,8 +55,11 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     team: false,
     maxUsers: 1,
     ai: true,
+    aiAdvanced: false,
+    aiDailyLimit: 15,
     advanceReminders: true,
     excel: true,
+    stats: true,
     tenantPortal: true,
   },
   business: {
@@ -55,8 +67,11 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     team: true,
     maxUsers: 5,
     ai: true,
+    aiAdvanced: true,
+    aiDailyLimit: null,
     advanceReminders: true,
     excel: true,
+    stats: true,
     tenantPortal: true,
   },
 };

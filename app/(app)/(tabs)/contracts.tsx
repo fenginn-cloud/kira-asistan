@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowDownUp, FileSearch, Plus, Search } from 'lucide-react-native';
+import { ArrowDownUp, BarChart3, FileSearch, Plus, Search } from 'lucide-react-native';
 import { ContractCard } from '@/features/contracts/components/ContractCard';
 import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useContracts } from '@/features/contracts/hooks';
 import { useContractGate } from '@/features/subscription/useContractGate';
+import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { useAllPayments, useMarkReceived } from '@/features/payments/hooks';
 import { notifyTeamPaymentReceived } from '@/services/notifyTeam';
 import { useToast } from '@/components/ui/Toast';
@@ -17,6 +18,7 @@ import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
 import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
+import { palette } from '@/lib/theme/colors';
 import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
 import { buildingName, foldSearch } from '@/lib/utils/property';
@@ -95,10 +97,13 @@ export default function ContractsScreen() {
   const listRef = useScrollToTop<FlatList>('contracts');
   const { data: contracts = [], isLoading } = useContracts();
   const gate = useContractGate();
+  // Blok bazlı filtre yalnızca legacy profiller için.
+  const isLegacy = useEntitlement().isLegacy;
   const onNewContract = () =>
-    router.push(gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall');
+    router.push(gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall?reason=limit');
   const { data: payments = [] } = useAllPayments();
   const [query, setQuery] = useState('');
+  const [block, setBlock] = useState('all');
   const [sortOpen, setSortOpen] = useState(false);
   const [receiveTarget, setReceiveTarget] = useState<Contract | null>(null);
   const toast = useToast();
@@ -147,6 +152,26 @@ export default function ContractsScreen() {
     return ['all', ...names];
   }, [contracts]);
 
+  // Seçili mülkün blokları (blok filtresi yalnızca legacy'de gösterilir).
+  const blockOptions = useMemo(() => {
+    if (property === 'all') return [] as string[];
+    const blocks = [
+      ...new Set(
+        contracts
+          .filter((c) => buildingName(c.propertyName) === property)
+          .map((c) => (c.block ?? '').trim())
+          .filter(Boolean)
+      ),
+    ];
+    blocks.sort((a, b) => a.localeCompare(b, 'tr'));
+    return blocks.length ? ['all', ...blocks] : [];
+  }, [contracts, property]);
+
+  // Mülk değişince blok filtresini sıfırla.
+  useEffect(() => {
+    setBlock('all');
+  }, [property]);
+
   // Per-contract cari hesap balances, computed once from all payments.
   const balances = useMemo(() => {
     const byContract = new Map<string, Payment[]>();
@@ -177,6 +202,9 @@ export default function ContractsScreen() {
       }
       // Bina filtresi (mülk adının bina kısmına göre)
       if (property !== 'all' && buildingName(c.propertyName) !== property) return false;
+      // Blok filtresi (yalnızca legacy + mülk seçiliyken)
+      if (isLegacy && property !== 'all' && block !== 'all' && (c.block ?? '').trim() !== block)
+        return false;
 
       // Status / cari hesap filter
       const bal = balances.get(c.id);
@@ -207,7 +235,7 @@ export default function ContractsScreen() {
     });
 
     return sortContracts(result, sort, balances);
-  }, [contracts, balances, query, status, property, sort]);
+  }, [contracts, balances, query, status, property, block, isLegacy, sort]);
 
   // Muhasebe odaklı filtre/sıralamalar yalnızca yöneticide görünür.
   const LEDGER_FILTERS: StatusFilter[] = ['debtor', 'creditor'];
@@ -304,6 +332,34 @@ export default function ContractsScreen() {
           />
         ) : null}
 
+        {/* Blok filtreleri — yalnızca legacy + bir mülk seçiliyken */}
+        {isLegacy && blockOptions.length > 1 ? (
+          <FlatList
+            horizontal
+            data={blockOptions}
+            keyExtractor={(b) => b}
+            showsHorizontalScrollIndicator={false}
+            className="mt-2"
+            contentContainerStyle={{ gap: 8 }}
+            renderItem={({ item }) => {
+              const active = block === item;
+              const label = item === 'all' ? 'Tüm Bloklar' : `Blok ${item}`;
+              return (
+                <Pressable
+                  onPress={() => setBlock(item)}
+                  className={`rounded-full px-4 py-2 ${
+                    active ? 'bg-primary' : 'bg-surface border border-border'
+                  }`}
+                >
+                  <Text className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            }}
+          />
+        ) : null}
+
         {/* Summary + sort */}
         <View className="mt-3 flex-row items-center justify-between">
           <Text className="flex-1 pr-3 text-xs text-muted" numberOfLines={1}>
@@ -317,6 +373,21 @@ export default function ContractsScreen() {
             <Text className="text-sm font-semibold text-foreground">Sırala</Text>
           </Pressable>
         </View>
+
+        {/* Mülk seçiliyken: o mülkün aylık performans raporu (yönetici) */}
+        {canSeeLedger && property !== 'all' ? (
+          <Pressable
+            onPress={() =>
+              router.push(`/(app)/property-report?name=${encodeURIComponent(property)}`)
+            }
+            className="mt-3 flex-row items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary-50 px-4 py-3 active:opacity-80"
+          >
+            <BarChart3 size={18} color={palette.primary} />
+            <Text className="text-sm font-semibold text-primary-700">
+              {property} · Performans Raporu
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {isLoading ? (

@@ -482,4 +482,28 @@ export const supabaseRepositories: Repositories = {
       return toCompany(data);
     },
   },
+
+  buildingUnits: {
+    async list() {
+      const { data, error } = await db()
+        .from('building_units')
+        .select('building, total_units');
+      if (error) {
+        // Tablo henüz yoksa (migration 0011 uygulanmadıysa) sessizce boş dön.
+        if ((error as { code?: string }).code === '42P01') return [];
+        throw error;
+      }
+      return (data ?? []).map((r) => ({ building: r.building as string, total: Number(r.total_units) }));
+    },
+    async set(building, total) {
+      const company_id = await currentCompanyId();
+      const { error } = await db()
+        .from('building_units')
+        .upsert(
+          { company_id, building, total_units: total, updated_at: new Date().toISOString() },
+          { onConflict: 'company_id,building' }
+        );
+      if (error) throw error;
+    },
+  },
 };

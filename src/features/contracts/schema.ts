@@ -20,6 +20,7 @@ export const contractFormSchema = z.object({
   rentAmount: numberFromInput('Geçerli bir kira bedeli girin'),
   duesAmount: numberFromInput('Geçerli bir aidat girin'),
   depositAmount: numberFromInput('Geçerli bir depozito girin'),
+  commissionAmount: numberFromInput('Geçerli bir komisyon girin').default(0),
 
   startDate: requiredString('Başlangıç tarihi zorunludur'),
   endDate: z.string().trim().optional().default(''),

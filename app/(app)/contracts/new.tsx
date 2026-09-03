@@ -50,7 +50,7 @@ export default function NewContractScreen() {
                   onError: (e) => {
                     // Server-side plan limit backstop (migration 0012).
                     if (e instanceof Error && e.message === 'CONTRACT_LIMIT_REACHED') {
-                      router.replace('/(app)/paywall');
+                      router.replace('/(app)/paywall?reason=limit');
                       return;
                     }
                     toast.error('Sözleşme oluşturulamadı');

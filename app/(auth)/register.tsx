@@ -14,8 +14,53 @@ import { fgColor } from '@/lib/theme/useThemeColors';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
+import {
+  PORTFOLIO_OPTIONS,
+  REFERRAL_OPTIONS,
+  ROLE_OPTIONS,
+  useSignupSurveyStore,
+} from '@/features/onboarding/signupSurvey';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Tek seçimli küçük chip grubu (opsiyonel anket alanları için). */
+function ChipGroup({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: string[];
+  value: string | null;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <View className="gap-2">
+      <Text className="text-sm font-medium text-muted">{label}</Text>
+      <View className="flex-row flex-wrap gap-2">
+        {options.map((opt) => {
+          const active = value === opt;
+          return (
+            <Pressable
+              key={opt}
+              onPress={() => onChange(opt)}
+              className={`rounded-full px-3.5 py-2 ${
+                active ? 'bg-primary' : 'border border-border bg-surface'
+              }`}
+            >
+              <Text
+                className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}
+              >
+                {opt}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -24,6 +69,9 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [role, setRole] = useState<string | null>(null);
+  const [portfolio, setPortfolio] = useState<string | null>(null);
+  const [referral, setReferral] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -47,6 +95,8 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
+      // Anketi taşınmak üzere sakla (hesap kurulunca yazılır).
+      useSignupSurveyStore.getState().set({ role, portfolioSize: portfolio, referral });
       const mail = email.trim().toLowerCase();
       await signUp(fullName, mail, password);
       router.push({ pathname: '/(auth)/verify-otp', params: { email: mail } });
@@ -114,6 +164,26 @@ export default function RegisterScreen() {
               secureTextEntry
               placeholder="••••••••"
             />
+
+            {/* Kısa tanışma anketi (opsiyonel) */}
+            <View className="mt-1 gap-4 rounded-2xl border border-border/60 bg-surface p-4">
+              <Text className="text-xs text-muted">
+                Sizi daha iyi tanıyalım (opsiyonel)
+              </Text>
+              <ChipGroup label="Rolünüz" options={ROLE_OPTIONS} value={role} onChange={setRole} />
+              <ChipGroup
+                label="Kaç daire/sözleşme takip ediyorsunuz?"
+                options={PORTFOLIO_OPTIONS}
+                value={portfolio}
+                onChange={setPortfolio}
+              />
+              <ChipGroup
+                label="Bizi nereden duydunuz?"
+                options={REFERRAL_OPTIONS}
+                value={referral}
+                onChange={setReferral}
+              />
+            </View>
 
             {error ? <Text className="text-sm text-danger">{error}</Text> : null}
 

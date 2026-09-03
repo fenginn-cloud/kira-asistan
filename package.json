@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
@@ -60,7 +61,9 @@
     "esbuild": "^0.24.0",
     "eslint": "^9.13.0",
     "eslint-config-expo": "~10.0.0",
+    "patch-package": "^8.0.1",
     "prettier": "^3.3.3",
+    "sharp": "^0.35.3",
     "typescript": "~5.9.2"
   },
   "private": true

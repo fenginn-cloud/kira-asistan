@@ -19,6 +19,7 @@ import type { Repositories } from '../types';
 // In-memory stores (cloned so we can mutate without touching the seed data).
 let contracts: Contract[] = structuredClone(mockContracts);
 let payments: Payment[] = structuredClone(mockPayments);
+let buildingUnits: { building: string; total: number }[] = [];
 let transactions: PaymentTransaction[] = structuredClone(mockTransactions);
 let users: AppUser[] = structuredClone(mockUsers);
 let company: Company = structuredClone(mockCompany);
@@ -236,6 +237,16 @@ export const mockRepositories: Repositories = {
     update: (patch) => {
       company = { ...company, ...patch };
       return delay(structuredClone(company));
+    },
+  },
+
+  buildingUnits: {
+    list: () => delay(buildingUnits.map((b) => ({ ...b }))),
+    set: (building, total) => {
+      const i = buildingUnits.findIndex((b) => b.building === building);
+      if (i >= 0) buildingUnits[i] = { building, total };
+      else buildingUnits.push({ building, total });
+      return delay(undefined);
     },
   },
 };

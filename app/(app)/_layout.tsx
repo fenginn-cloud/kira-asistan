@@ -49,6 +49,9 @@ export default function AppLayout() {
         <Stack.Screen name="tenant-forms/index" />
         <Stack.Screen name="tenant-forms/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="tenant-forms/[id]" />
+        <Stack.Screen name="building-units" />
+        <Stack.Screen name="property-report" />
+        <Stack.Screen name="notification-settings" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
       {enabled ? <DesktopSidebar width={sidebarWidth} /> : null}

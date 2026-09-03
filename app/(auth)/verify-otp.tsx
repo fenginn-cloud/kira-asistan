@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { submitSignupSurvey } from '@/features/onboarding/signupSurvey';
 import { ArrowLeft, MailCheck } from 'lucide-react-native';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { Input } from '@/components/ui/Input';
@@ -69,6 +70,8 @@ export default function VerifyOtpScreen() {
     }
     try {
       await verifyOtp(email, code.trim());
+      // Hesap kuruldu → kayıt anketini yaz (en iyi çaba, akışı bloklamaz).
+      await submitSignupSurvey();
       router.replace('/(app)/(tabs)');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Doğrulama başarısız.');

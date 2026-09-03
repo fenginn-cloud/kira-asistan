@@ -18,6 +18,8 @@ import { useToast } from '@/components/ui/Toast';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { useContracts } from '@/features/contracts/hooks';
 import { askAssistant, isAIAvailable } from '@/services/aiAssistant';
+import { useEntitlement } from '@/features/subscription/useEntitlement';
+import { useAiUsageStore } from '@/features/subscription/aiUsage';
 import { openWhatsApp } from '@/lib/utils/contact';
 import { formatCurrency } from '@/lib/utils/format';
 import { formatMonthTR } from '@/lib/ledger/ledger';
@@ -45,6 +47,10 @@ export function AIAssistantChat() {
   const colors = useThemeColors();
   const scrollRef = useRef<ScrollView>(null);
   const { data: contracts = [] } = useContracts();
+  const entitlement = useEntitlement();
+  const dailyLimit = entitlement.limits.aiDailyLimit;
+  const usage = useAiUsageStore();
+  const remaining = dailyLimit === null ? null : Math.max(0, dailyLimit - usage.usedToday());
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -53,12 +59,29 @@ export function AIAssistantChat() {
   const send = async (text: string) => {
     const q = text.trim();
     if (!q || loading) return;
+    // Pro planı: günlük soru limiti (Business sınırsız — dailyLimit null).
+    if (dailyLimit !== null && !usage.canAsk(dailyLimit)) {
+      setInput('');
+      setMessages((m) => [
+        ...m,
+        { id: nextId(), role: 'user', text: q },
+        {
+          id: nextId(),
+          role: 'assistant',
+          text: `Bugünkü ${dailyLimit} soruluk Pro sınırına ulaştınız. Sınırsız ve gelişmiş AI için Business planına geçebilirsiniz.`,
+          error: true,
+        },
+      ]);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 60);
+      return;
+    }
     setInput('');
     setMessages((m) => [...m, { id: nextId(), role: 'user', text: q }]);
     setLoading(true);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     try {
       const response = await askAssistant(q);
+      usage.record();
       setMessages((m) => [...m, { id: nextId(), role: 'assistant', response }]);
     } catch (e) {
       setMessages((m) => [
@@ -135,6 +158,11 @@ ${loc} için ${ay} ayına ait ${tutar} kira ödemeniz beklenmektedir.
               <Text className="mt-1 text-sm text-muted">
                 Sözleşme, ödeme ve cari hesap verilerinize göre yanıtlarım.
               </Text>
+              {remaining !== null ? (
+                <Text className="mt-1 text-xs font-medium text-primary-700">
+                  Bugün kalan soru: {remaining}/{dailyLimit}
+                </Text>
+              ) : null}
               <View className="mt-4 gap-2">
                 {AI_QUICK_QUESTIONS.map((qq) => (
                   <Pressable

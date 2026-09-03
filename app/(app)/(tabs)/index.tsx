@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Inbox,
+  Lock,
   TimerReset,
   Wallet,
 } from 'lucide-react-native';
@@ -16,6 +17,7 @@ import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
 import { CollectionHome } from '@/features/dashboard/CollectionHome';
 import { useContractGate } from '@/features/subscription/useContractGate';
+import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useContracts } from '@/features/contracts/hooks';
@@ -35,6 +37,7 @@ import { palette } from '@/lib/theme/colors';
 export default function HomeScreen() {
   const router = useRouter();
   const gate = useContractGate();
+  const entitlement = useEntitlement();
   const showLimitStrip =
     gate.plan === 'free' &&
     !gate.isLegacy &&
@@ -111,7 +114,7 @@ export default function HomeScreen() {
 
         {showLimitStrip ? (
           <Pressable
-            onPress={() => router.push('/(app)/paywall')}
+            onPress={() => router.push('/(app)/paywall?reason=limit')}
             className="mt-4 flex-row items-center justify-between rounded-2xl border border-primary/30 bg-primary-50 px-4 py-3 active:opacity-80"
           >
             <View className="flex-1 pr-3">
@@ -194,8 +197,9 @@ export default function HomeScreen() {
               </>
             ) : null}
 
-            {/* 4 — Aylık özet + cari hesap: yalnızca yönetici */}
-            {canSeeLedger ? (
+            {/* 4 — Aylık özet + cari hesap: yalnızca yönetici + Pro/Business.
+                   Free yöneticide kilitli teaser gösterilir (içerik sezdirilir). */}
+            {canSeeLedger && entitlement.limits.stats ? (
             <>
             <SectionHeader title="Aylık Özet" />
             <View className="gap-3">
@@ -261,6 +265,10 @@ export default function HomeScreen() {
               </View>
             </View>
             </>
+            ) : canSeeLedger ? (
+              <LockedFinancialTeaser
+                onUpgrade={() => router.push('/(app)/paywall?feature=stats')}
+              />
             ) : null}
           </>
         )}
@@ -274,5 +282,47 @@ export default function HomeScreen() {
         onConfirm={confirmReceived}
       />
     </SafeAreaView>
+  );
+}
+
+/**
+ * Free planda yöneticiye gösterilen kilitli finansal teaser. Gerçek rakamlar
+ * yerine soluk örnek kartlar + üstte kilit ve "Planları Gör" CTA — kullanıcı
+ * içeriğin varlığını görür ama değerleri Pro/Business'ta açılır.
+ */
+function LockedFinancialTeaser({ onUpgrade }: { onUpgrade: () => void }) {
+  return (
+    <>
+      <SectionHeader title="Aylık Özet & Cari Hesap" />
+      <View className="relative">
+        <View className="gap-3 opacity-40" pointerEvents="none">
+          <View className="flex-row gap-3">
+            <StatCard label="Bu Ay Beklenen" value="••••₺" icon={Wallet} tone="primary" />
+            <StatCard label="Bu Ay Tahsil Edilen" value="••••₺" icon={CheckCircle2} tone="success" />
+          </View>
+          <View className="flex-row gap-3">
+            <StatCard label="Net Bakiye" value="••••₺" icon={Wallet} tone="success" />
+            <StatCard label="Kalan Alacak" value="••••₺" icon={TimerReset} tone="warning" />
+          </View>
+        </View>
+        <View className="absolute inset-0 items-center justify-center px-4">
+          <Pressable
+            onPress={onUpgrade}
+            className="items-center rounded-3xl border border-border bg-surface px-6 py-5 shadow-sm shadow-black/10 active:opacity-90"
+          >
+            <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary-50">
+              <Lock size={22} color={palette.primary} />
+            </View>
+            <Text className="mt-3 text-base font-bold text-foreground">Finansal Özet kilitli</Text>
+            <Text className="mt-1 text-center text-xs text-muted">
+              Aylık özet, cari hesap ve istatistikler Pro planına dahildir.
+            </Text>
+            <View className="mt-3 rounded-2xl bg-primary px-5 py-2.5">
+              <Text className="text-sm font-semibold text-white">Planları Gör</Text>
+            </View>
+          </Pressable>
+        </View>
+      </View>
+    </>
   );
 }

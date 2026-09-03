@@ -21,6 +21,7 @@ const FIELDS: {
   { key: 'tenantPhone', label: 'Telefon', norm: (v) => parsePhone(v) },
   { key: 'rentAmount', label: 'Kira Bedeli' },
   { key: 'depositAmount', label: 'Depozito' },
+  { key: 'commissionAmount', label: 'Komisyon' },
   { key: 'startDate', label: 'Başlangıç Tarihi' },
   { key: 'endDate', label: 'Bitiş Tarihi' },
   { key: 'paymentDay', label: 'Ödeme Günü' },

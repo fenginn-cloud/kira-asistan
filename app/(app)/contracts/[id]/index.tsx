@@ -562,7 +562,12 @@ export default function ContractDetailScreen() {
             <Card>
               <InfoRow label="Kira Bedeli" value={formatCurrency(contract.rentAmount)} />
               <InfoRow label="Aidat" value={formatCurrency(contract.duesAmount)} />
-              <InfoRow label="Depozito" value={formatCurrency(contract.depositAmount)} last />
+              <InfoRow label="Depozito" value={formatCurrency(contract.depositAmount)} />
+              <InfoRow
+                label="Komisyon"
+                value={formatCurrency(contract.commissionAmount ?? 0)}
+                last
+              />
             </Card>
 
             <SectionHeader title="Sözleşme" />

@@ -29,7 +29,7 @@ export default function AIScreen() {
           portföyünüz üzerinde yanıtlar. Pro ve Business planlarına dahildir.
         </Text>
         <Pressable
-          onPress={() => router.push('/(app)/paywall')}
+          onPress={() => router.push('/(app)/paywall?feature=ai')}
           className="mt-6 rounded-2xl bg-primary px-6 py-3 active:opacity-80"
         >
           <Text className="text-base font-semibold text-white">Planları Gör</Text>

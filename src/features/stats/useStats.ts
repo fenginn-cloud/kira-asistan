@@ -4,7 +4,9 @@ import { tr } from 'date-fns/locale';
 import { useContracts } from '@/features/contracts/hooks';
 import { useAllPayments } from '@/features/payments/hooks';
 import { derivePaymentStatus, remainingDebt } from '@/lib/utils/payments';
-import { buildingName } from '@/lib/utils/property';
+import { buildingName, foldSearch } from '@/lib/utils/property';
+import { BUILDING_UNITS } from './buildingUnits';
+import { useBuildingUnits } from './buildingUnitsHooks';
 import type { BarDatum } from '@/components/charts/BarChart';
 
 /** Uygulamanın kira takibine başladığı ilk dönem. Aylar bundan öncesine gitmez. */
@@ -19,6 +21,8 @@ export interface BuildingMonthStat {
   overdue: number;
   paidUnits: number;
   totalUnits: number;
+  /** Bu ay giren kiracılardan alınan komisyon. */
+  commission: number;
   /** 0-100 tahsilat oranı. */
   rate: number;
 }
@@ -46,6 +50,7 @@ interface MonthAgg {
 export function useStats(selectedMonth?: string) {
   const { data: contracts = [], isLoading: lc } = useContracts();
   const { data: payments = [], isLoading: lp } = useAllPayments();
+  const { data: unitOverrides = [] } = useBuildingUnits();
 
   return useMemo(() => {
     const today = new Date();
@@ -112,6 +117,7 @@ export function useStats(selectedMonth?: string) {
       overdue: 0,
       paidUnits: 0,
       totalUnits: 0,
+      commission: 0,
       rate: 0,
     });
     for (const p of payments) {
@@ -129,6 +135,22 @@ export function useStats(selectedMonth?: string) {
       else bs.pending += remainingDebt(p);
       buildingMap.set(b, bs);
     }
+    // Komisyon: kiracı girişinde bir kerelik. Giriş ayına göre atanır.
+    let commissionThisMonth = 0;
+    let commissionTotal = 0;
+    for (const c of contracts) {
+      const com = c.commissionAmount ?? 0;
+      if (com <= 0) continue;
+      commissionTotal += com;
+      if (c.startDate && monthKey(parseISO(c.startDate)) === activeMonth) {
+        commissionThisMonth += com;
+        // Sadece o ay tahsilat satırı olan binaya ekle; yoksa byBuilding'de
+        // hayalet %0 satır oluşmasın (sorunlu binalar listesini kirletmesin).
+        const bs = buildingMap.get(buildingName(c.propertyName));
+        if (bs) bs.commission += com;
+      }
+    }
+
     const byBuilding = [...buildingMap.values()]
       .map((b) => ({ ...b, rate: b.due > 0 ? (b.collected / b.due) * 100 : 0 }))
       // Önce sorunlular: gecikeni olanlar üste, sonra düşük tahsilat oranı.
@@ -148,6 +170,27 @@ export function useStats(selectedMonth?: string) {
     }));
     const trendActiveIndex = trendValues.indexOf(activeMonth);
 
+    // Doluluk / boş daire (aya bağlı değil): toplam − dolu(aktif sözleşme).
+    const occupiedByBuilding = new Map<string, number>();
+    for (const c of contracts) {
+      if (c.status !== 'active') continue;
+      const k = foldSearch(buildingName(c.propertyName));
+      occupiedByBuilding.set(k, (occupiedByBuilding.get(k) ?? 0) + 1);
+    }
+    // Varsayılan toplamlar + kullanıcının girdiği (DB) değerler; DB önceliklidir.
+    const totalsMap = new Map<string, { name: string; total: number }>();
+    for (const b of BUILDING_UNITS) totalsMap.set(foldSearch(b.name), { name: b.name, total: b.total });
+    for (const o of unitOverrides) totalsMap.set(foldSearch(o.building), { name: o.building, total: o.total });
+    const occupancy = [...totalsMap.values()]
+      .map(({ name, total }) => {
+        const occupied = Math.min(occupiedByBuilding.get(foldSearch(name)) ?? 0, total);
+        return { building: name, total, occupied, vacant: Math.max(0, total - occupied) };
+      })
+      .sort((a, b) => b.vacant - a.vacant);
+    const unitTotal = occupancy.reduce((s, o) => s + o.total, 0);
+    const occupiedTotal = occupancy.reduce((s, o) => s + o.occupied, 0);
+    const vacantTotal = occupancy.reduce((s, o) => s + o.vacant, 0);
+
     // Genel bilgi (aya bağlı değil).
     const activeContracts = contracts.filter((c) => c.status === 'active');
     const portfolioValue = activeContracts.reduce((s, c) => s + c.depositAmount, 0);
@@ -155,6 +198,17 @@ export function useStats(selectedMonth?: string) {
       (s, c) => s + c.rentAmount + c.duesAmount,
       0
     );
+
+    // Finansal özet (tüm zaman / portföy geneli — aya bağlı değil).
+    // Komisyon sözleşme başına BİR KEZ sayılır (commissionTotal); aylara bölünmez.
+    let totalRentAccrued = 0;
+    let totalCollectedAll = 0;
+    for (const p of payments) {
+      totalRentAccrued += p.amountDue;
+      totalCollectedAll += p.amountPaid;
+    }
+    const totalRemainingAll = Math.max(0, totalRentAccrued - totalCollectedAll);
+    const depositTotal = contracts.reduce((s, c) => s + (c.depositAmount || 0), 0);
 
     return {
       isLoading: lc || lp,
@@ -170,14 +224,26 @@ export function useStats(selectedMonth?: string) {
       paidContracts: cur.paid,
       totalContracts: cur.count,
       momDeltaPct,
+      commissionThisMonth,
+      commissionTotal,
+      // Finansal özet (portföy geneli)
+      totalRentAccrued,
+      totalCollectedAll,
+      totalRemainingAll,
+      depositTotal,
       byBuilding,
       // Bağlam
       trend,
       trendActiveIndex,
+      // Doluluk
+      occupancy,
+      unitTotal,
+      occupiedTotal,
+      vacantTotal,
       // Genel
       activeContractCount: activeContracts.length,
       portfolioValue,
       expectedMonthlyIncome,
     };
-  }, [contracts, payments, lc, lp, selectedMonth]);
+  }, [contracts, payments, unitOverrides, lc, lp, selectedMonth]);
 }

@@ -24,8 +24,11 @@
       "package": "com.kiraasistan.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      }
+        "backgroundColor": "#1E5FF0"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -63,7 +66,12 @@
     },
     "extra": {
       "supabaseUrl": "",
-      "supabaseAnonKey": ""
-    }
+      "supabaseAnonKey": "",
+      "router": {},
+      "eas": {
+        "projectId": "15c079a1-8752-494e-b6d9-b20c799173ad"
+      }
+    },
+    "owner": "fenginn"
   }
 }

@@ -12,7 +12,7 @@ import type {
 } from '@/types';
 
 export const contractColumns =
-  'id, company_id, assigned_user_id, property_name, block, unit, tenant_name, tenant_phone, tenant_national_id, owner_name, owner_phone, rent_amount, dues_amount, deposit_amount, start_date, end_date, payment_day, notes, status, document_url, notify_owner, notify_tenant, notify_staff, created_at';
+  'id, company_id, assigned_user_id, property_name, block, unit, tenant_name, tenant_phone, tenant_national_id, owner_name, owner_phone, rent_amount, dues_amount, deposit_amount, commission_amount, start_date, end_date, payment_day, notes, status, document_url, notify_owner, notify_tenant, notify_staff, created_at';
 
 export function toContract(r: any): Contract {
   return {
@@ -30,6 +30,7 @@ export function toContract(r: any): Contract {
     rentAmount: Number(r.rent_amount),
     duesAmount: Number(r.dues_amount),
     depositAmount: Number(r.deposit_amount),
+    commissionAmount: Number(r.commission_amount ?? 0),
     startDate: r.start_date,
     endDate: r.end_date,
     paymentDay: r.payment_day,
@@ -77,6 +78,7 @@ export function fromContract(c: Partial<Contract>): Record<string, unknown> {
   set('rent_amount', c.rentAmount);
   set('dues_amount', c.duesAmount);
   set('deposit_amount', c.depositAmount);
+  set('commission_amount', c.commissionAmount);
   set('start_date', c.startDate);
   set('end_date', c.endDate);
   set('payment_day', c.paymentDay);

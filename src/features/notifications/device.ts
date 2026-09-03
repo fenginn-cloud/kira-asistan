@@ -14,13 +14,20 @@ export function notificationsSupported(): boolean {
 
 export function configure(): void {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+    // Ön planda (uygulama AÇIKKEN) bildirim gösterimi. Uygulamayı açmak asla ses
+    // çıkarmaz: açılışta "vadesi gelen hatırlatmalar" SESSİZ banner olarak görünür.
+    // Ses yalnızca test bildiriminde (data.test) çalar. Gerçek hatırlatmalar
+    // uygulama kapalıyken tetiklenir; onlar sistem/kanal sesiyle zaten çalar.
+    handleNotification: async (notification) => {
+      const data = (notification.request.content.data ?? {}) as { test?: boolean };
+      return {
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: data.test === true,
+        shouldSetBadge: false,
+      };
+    },
   });
   if (Platform.OS === 'android') {
     Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
@@ -59,7 +66,7 @@ async function present(title: string, body: string, data: Record<string, unknown
 
 export async function sendTest(): Promise<void> {
   if ((await getPermission()) !== 'granted') return;
-  await present('Kira Asistan', 'Bildirimler başarıyla çalışıyor ✅', { url: '/' });
+  await present('Kira Asistan', 'Bildirimler başarıyla çalışıyor ✅', { url: '/', test: true });
 }
 
 /** Web Push is web-only; native uses Expo's own push channel (future). */

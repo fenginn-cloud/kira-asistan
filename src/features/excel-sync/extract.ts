@@ -54,20 +54,27 @@ function findHeaderRow(rows: Row[]): number {
 interface ColMap {
   fields: Partial<Record<CanonField, number>>;
   months: { col: number; monthIndex: number }[];
+  /** Komisyon sütun(lar)ı — toplanır (aylık komisyon sütunları olabilir). */
+  commissionCols: number[];
 }
 
 function buildColMap(headerRow: Row): ColMap {
   const fields: Partial<Record<CanonField, number>> = {};
   const months: { col: number; monthIndex: number }[] = [];
+  const commissionCols: number[] = [];
   headerRow.forEach((cell, c) => {
     const s = String(cell ?? '').trim();
     if (!s) return;
+    // Komisyon TUTARI (Türkçe İ ve "KOMSİYON" yazım hatası dahil). "Komisyon
+    // Oranı" / "%" gibi oran sütunlarını dışarıda bırak (tutara katılmasın).
+    const fs = foldSearch(s);
+    if (/kom[siı]?[siı]yon/.test(fs) && !/oran|%/.test(fs)) { commissionCols.push(c); return; }
     const f = matchHeader(s);
     if (f && fields[f] == null) { fields[f] = c; return; }
     const mi = matchMonth(s);
     if (mi != null) months.push({ col: c, monthIndex: mi });
   });
-  return { fields, months };
+  return { fields, months, commissionCols };
 }
 
 /**
@@ -95,6 +102,7 @@ function refineByValues(rows: Row[], hr: number, map: ColMap): void {
     { field: 'paymentDay', re: /her\s*r?ay|pe[sş]in|senet|ayin/i },
   ];
   const monthCols = new Set(map.months.map((m) => m.col));
+  const commissionSet = new Set(map.commissionCols);
   for (const { field, re } of patterns) {
     const cur = map.fields[field];
     // Başlıkla eşlenen sütun değerlere uyuyorsa dokunma.
@@ -107,7 +115,7 @@ function refineByValues(rows: Row[], hr: number, map: ColMap): void {
     );
     let best = -1, bestR = 0.4;
     for (let c = 0; c < ncols; c++) {
-      if (others.has(c) || monthCols.has(c)) continue;
+      if (others.has(c) || monthCols.has(c) || commissionSet.has(c)) continue;
       const rr = ratio(c, re);
       if (rr > bestR) { bestR = rr; best = c; }
     }
@@ -165,7 +173,7 @@ export function extractWorkbook(
 
     const colMap = buildColMap(rows[hr] ?? []);
     refineByValues(rows, hr, colMap);
-    const { fields, months } = colMap;
+    const { fields, months, commissionCols } = colMap;
     const base = sheetProperty(sheetName);
     const hasUnit = fields.unit != null;
     const hasProp = fields.propertyName != null;
@@ -190,6 +198,7 @@ export function extractWorkbook(
       const monthsList = monthsOf(ws, r, months, year);
       const rent = parseMoney(get('rentAmount')) ??
         (monthsList.length ? monthsList[monthsList.length - 1]!.amountDue : null);
+      const commission = commissionCols.reduce((sum, c) => sum + (parseMoney(row[c]) ?? 0), 0) || null;
       const phone = parsePhone(get('tenantPhone'));
       const vacant = !tenant || /^(bo[şs]|hazir|temizlenecek|tadilat|geci[cç])/i.test(foldSearch(tenant));
       // Sözleşme satırı sayılması için: kiracı VE (mülk veya telefon) olmalı.
@@ -203,9 +212,10 @@ export function extractWorkbook(
         block,
         unit,
         tenantName: tenant || null,
-        tenantPhone: parsePhone(get('tenantPhone')),
+        tenantPhone: phone,
         rentAmount: rent,
         depositAmount: parseMoney(get('depositAmount')),
+        commissionAmount: commission,
         startDate: parseDate(get('startDate')),
         endDate: parseDate(get('endDate')),
         paymentDay: parsePaymentDay(get('paymentDay')),
@@ -246,6 +256,7 @@ function extractFixed(
       tenantPhone: parsePhone(phone),
       rentAmount: null,
       depositAmount: null,
+      commissionAmount: null,
       startDate: parseDate(row[6]),
       endDate: parseDate(row[7]),
       paymentDay: null,

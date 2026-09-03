@@ -79,6 +79,7 @@ export async function applyPlan(plan: ImportPlan, ctx: ApplyContext): Promise<Ap
           rentAmount: e.rentAmount ?? 0,
           duesAmount: 0,
           depositAmount: e.depositAmount ?? 0,
+          commissionAmount: e.commissionAmount ?? 0,
           startDate: e.startDate ?? new Date().toISOString().slice(0, 10),
           endDate: e.endDate,
           paymentDay: e.paymentDay ?? 1,
