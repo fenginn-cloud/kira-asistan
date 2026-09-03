@@ -721,7 +721,9 @@ export default function ContractDetailScreen() {
                             {f.tenantName || 'Kiracı formu'}
                           </Text>
                           <Text className="mt-0.5 text-sm text-muted">
-                            {f.review ? RESULT_LABELS[f.review.result] : STATUS_LABELS[f.status]}
+                            {f.reviewResult && f.reviewResult !== 'unrated'
+                              ? RESULT_LABELS[f.reviewResult]
+                              : STATUS_LABELS[f.status]}
                           </Text>
                         </View>
                         <View className={`rounded-full px-3 py-1 ${sc.bg}`}>
