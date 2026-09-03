@@ -24,9 +24,25 @@ function rowLabel(row: DiffRow): string {
   return `${[e.propertyName, e.block, e.unit].filter(Boolean).join(' ')} — ${e.tenantName ?? ''}`.trim();
 }
 
-async function settleMonths(contractId: string, row: DiffRow, res: ApplyResult): Promise<void> {
+/** "2026-06-01" → "2026-06" ay anahtarı (dönem-dışı ay filtresi için). */
+function monthKey(iso: string): string {
+  return iso.slice(0, 7);
+}
+
+async function settleMonths(
+  contractId: string,
+  row: DiffRow,
+  res: ApplyResult,
+  range: { startDate?: string | null; endDate?: string | null }
+): Promise<void> {
+  const startKey = range.startDate ? monthKey(range.startDate) : null;
+  const endKey = range.endDate ? monthKey(range.endDate) : null;
   for (const m of row.extracted.months) {
     if (!m.paid) continue; // güvenlik: yalnızca "ödendi" işlenir, asla geri alınmaz
+    // Sözleşme başlangıcından önceki / bitişinden sonraki ayları asla işleme.
+    const key = monthKey(m.periodMonth);
+    if (startKey && key < startKey) continue;
+    if (endKey && key > endKey) continue;
     try {
       await repositories.payments.syncPaidMonth({
         contractId,
@@ -62,7 +78,10 @@ export async function applyPlan(plan: ImportPlan, ctx: ApplyContext): Promise<Ap
           res.updated++;
           changeLog.push({ label: rowLabel(row), changes: row.changes });
         }
-        await settleMonths(row.matchedId, row, res);
+        await settleMonths(row.matchedId, row, res, {
+          startDate: row.extracted.startDate,
+          endDate: row.extracted.endDate,
+        });
       } else if (row.kind === 'new') {
         const e = row.extracted;
         const created = await repositories.contracts.create({
@@ -91,7 +110,10 @@ export async function applyPlan(plan: ImportPlan, ctx: ApplyContext): Promise<Ap
           notifyStaff: true,
         });
         res.created++;
-        await settleMonths(created.id, row, res);
+        await settleMonths(created.id, row, res, {
+          startDate: created.startDate,
+          endDate: created.endDate,
+        });
       }
     } catch (err) {
       res.errors.push({ label: rowLabel(row), error: err instanceof Error ? err.message : String(err) });
