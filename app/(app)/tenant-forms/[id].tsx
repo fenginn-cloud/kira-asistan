@@ -35,7 +35,7 @@ import { documentUrl, publicFormLinkFor } from '@/services/tenantForms';
 import { copyText, openWhatsApp } from '@/lib/utils/contact';
 import { formatCurrency } from '@/lib/utils/format';
 import { errorMessage } from '@/lib/utils/error';
-import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
+import { ContractPicker } from '@/features/tenant-forms/components/ContractPicker';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
 import type { FieldDef } from '@/features/tenant-forms/config';
@@ -105,13 +105,6 @@ export default function TenantFormDetailScreen() {
     void openWhatsApp(form.tenantPhone ?? '', msg);
   };
 
-  const contractItems: ActionSheetItem[] = [
-    { label: 'Bağlantıyı kaldır', onPress: () => doLink(null) },
-    ...contracts.map((c) => ({
-      label: [c.propertyName, c.block, c.unit].filter(Boolean).join(' ') + ` — ${c.tenantName}`,
-      onPress: () => doLink(c.id),
-    })),
-  ];
   function doLink(contractId: string | null) {
     linkMut.mutate(
       { id: form!.id, contractId },
@@ -356,11 +349,13 @@ export default function TenantFormDetailScreen() {
         onCancel={() => setConfirmDelete(false)}
       />
 
-      <ActionSheet
+      <ContractPicker
         visible={contractPickerOpen}
+        contracts={contracts}
         onClose={() => setContractPickerOpen(false)}
-        title="Sözleşme Seç"
-        items={contractItems}
+        onSelect={(c) => doLink(c?.id ?? null)}
+        allowNone
+        noneLabel="Bağlantıyı kaldır"
       />
     </SafeAreaView>
   );

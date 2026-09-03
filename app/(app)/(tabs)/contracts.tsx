@@ -72,9 +72,13 @@ function sortContracts(
     case 'date_asc':
       return arr.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     case 'name_asc':
-      return arr.sort((a, b) => contractName(a).localeCompare(contractName(b), 'tr'));
+      return arr.sort((a, b) =>
+        contractName(a).localeCompare(contractName(b), 'tr', { numeric: true })
+      );
     case 'name_desc':
-      return arr.sort((a, b) => contractName(b).localeCompare(contractName(a), 'tr'));
+      return arr.sort((a, b) =>
+        contractName(b).localeCompare(contractName(a), 'tr', { numeric: true })
+      );
     case 'rent_desc':
       return arr.sort((a, b) => b.rentAmount - a.rentAmount);
     case 'rent_asc':
