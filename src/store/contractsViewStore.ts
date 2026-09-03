@@ -12,7 +12,8 @@ export type StatusFilter =
   | 'partial_month'
   | 'unpaid_month'
   | 'overdue'
-  | 'expiring';
+  | 'expiring'
+  | 'conflicts';
 
 export type SortKey =
   | 'date_desc'
