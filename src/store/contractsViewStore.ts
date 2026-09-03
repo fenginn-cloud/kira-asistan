@@ -41,7 +41,7 @@ export const useContractsViewStore = create<ContractsViewState>()(
     (set) => ({
       status: 'all',
       property: 'all',
-      sort: 'date_desc',
+      sort: 'name_asc',
       setStatus: (status) => set({ status }),
       setProperty: (property) => set({ property }),
       setSort: (sort) => set({ sort }),
@@ -49,6 +49,16 @@ export const useContractsViewStore = create<ContractsViewState>()(
     {
       name: 'kira-asistan-contracts-view',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      // Eski kurulumlarda varsayılan "Yeni → Eski" idi; onu alfabetik sıraya
+      // taşı (kullanıcı bilerek başka bir sıralama seçtiyse ona dokunma).
+      migrate: (persisted, fromVersion) => {
+        const s = persisted as Partial<ContractsViewState> | undefined;
+        if (s && fromVersion < 1 && s.sort === 'date_desc') {
+          return { ...s, sort: 'name_asc' } as ContractsViewState;
+        }
+        return s as ContractsViewState;
+      },
     }
   )
 );

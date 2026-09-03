@@ -13,8 +13,8 @@ import {
 import { Input } from '@/components/ui/Input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Button } from '@/components/ui/Button';
-import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
 import { useToast } from '@/components/ui/Toast';
+import { ContractPicker } from '@/features/tenant-forms/components/ContractPicker';
 import { useContracts } from '@/features/contracts/hooks';
 import { useCreateTenantForm } from '@/features/tenant-forms/hooks';
 import { publicFormLinkFor } from '@/services/tenantForms';
@@ -22,7 +22,7 @@ import { copyText, openWhatsApp } from '@/lib/utils/contact';
 import { errorMessage } from '@/lib/utils/error';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
-import type { TenantForm } from '@/types';
+import type { Contract, TenantForm } from '@/types';
 
 const VALIDITY: { label: string; days: number | null }[] = [
   { label: '3 gün', days: 3 },
@@ -52,20 +52,13 @@ export default function NewTenantFormScreen() {
     [contracts, contractId]
   );
 
-  const contractItems: ActionSheetItem[] = useMemo(
-    () => [
-      { label: 'Sözleşme seçilmedi', onPress: () => setContractId(null) },
-      ...contracts.map((c) => ({
-        label: [c.propertyName, c.block, c.unit].filter(Boolean).join(' ') + ` — ${c.tenantName}`,
-        onPress: () => {
-          setContractId(c.id);
-          if (!name) setName(c.tenantName);
-          if (!phone) setPhone(c.tenantPhone);
-        },
-      })),
-    ],
-    [contracts, name, phone]
-  );
+  const onPickContract = (c: Contract | null) => {
+    setContractId(c?.id ?? null);
+    if (c) {
+      if (!name) setName(c.tenantName);
+      if (!phone) setPhone(c.tenantPhone);
+    }
+  };
 
   const onCreate = () => {
     const v = VALIDITY[validityIdx]!;
@@ -212,11 +205,12 @@ export default function NewTenantFormScreen() {
         </View>
       </ScrollView>
 
-      <ActionSheet
+      <ContractPicker
         visible={contractPickerOpen}
+        contracts={contracts}
         onClose={() => setContractPickerOpen(false)}
-        title="Sözleşme Seç"
-        items={contractItems}
+        onSelect={onPickContract}
+        allowNone
       />
     </SafeAreaView>
   );
