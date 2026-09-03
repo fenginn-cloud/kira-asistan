@@ -103,12 +103,15 @@ function isFutureMonth(periodMonth: string, today: Date): boolean {
 
 /**
  * Bir tahakkukun borç olarak sayılıp sayılmayacağı:
- *   - ödeme (vade) tarihi geldiyse/geçtiyse, VEYA
+ *   - ödeme (vade) tarihi GEÇTİYSE (gün olarak), VEYA
  *   - o aya kısmi/tam ödeme yapıldıysa (ödemeyle mahsuplaşmak için).
- * Vadesi gelmemiş ve hiç ödenmemiş ay borç sayılmaz (upcoming/Bekliyor).
+ * Vadesi gelmemiş VEYA tam bugün olan (henüz geçmemiş) ve hiç ödenmemiş ay
+ * borç sayılmaz (upcoming/Bekliyor). Bu, getPaymentStatus'taki "gecikmiş"
+ * kuralıyla (daysToDue < 0) BİREBİR aynıdır; aksi halde kart "Bekliyor" derken
+ * özet "Borçlu" gösteriyordu.
  */
 function isAccrued(p: Payment, today: Date): boolean {
-  return differenceInCalendarDays(parseISO(p.dueDate), today) <= 0 || p.amountPaid > 0;
+  return differenceInCalendarDays(parseISO(p.dueDate), today) < 0 || p.amountPaid > 0;
 }
 
 /**
