@@ -46,6 +46,9 @@ export default function AppLayout() {
         <Stack.Screen name="profile" />
         <Stack.Screen name="company" />
         <Stack.Screen name="excel-import" />
+        <Stack.Screen name="tenant-forms/index" />
+        <Stack.Screen name="tenant-forms/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="tenant-forms/[id]" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
       {enabled ? <DesktopSidebar width={sidebarWidth} /> : null}

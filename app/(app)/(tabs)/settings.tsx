@@ -5,6 +5,7 @@ import {
   Bell,
   Building,
   ChevronRight,
+  ClipboardList,
   Crown,
   LogOut,
   Moon,
@@ -223,6 +224,24 @@ export default function SettingsScreen() {
             </Card>
           </Pressable>
         ) : null}
+
+        {/* Tenant information forms (all plans, all roles) */}
+        <Pressable className="mt-3" onPress={() => router.push('/(app)/tenant-forms')}>
+          <Card>
+            <View className="flex-row items-center gap-3">
+              <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                <ClipboardList size={20} color={palette.primary} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-semibold text-foreground">Kiracı Formları</Text>
+                <Text className="text-sm text-muted">
+                  Kiracı adayına doldurması için güvenli bilgi formu gönder
+                </Text>
+              </View>
+              <ChevronRight size={20} color={palette.muted} />
+            </View>
+          </Card>
+        </Pressable>
 
         {/* Notifications */}
         <SectionHeader title="Bildirim Ayarları" />

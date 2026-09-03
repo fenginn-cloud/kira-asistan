@@ -173,3 +173,79 @@ export interface Reminder {
 }
 
 export type MessageKind = 'upcoming' | 'overdue';
+
+// ---------------------------------------------------------------------------
+// Kiracı Bilgi Formu (tenant information form)
+// ---------------------------------------------------------------------------
+
+export type TenantFormStatus = 'pending' | 'completed' | 'reviewed' | 'expired';
+export type TenantFormResult = 'suitable' | 'need_docs' | 'unsuitable' | 'unrated';
+
+/** One vehicle the tenant declares (step 2). */
+export interface TenantFormVehicle {
+  plate: string;
+  brandModel?: string;
+}
+
+/**
+ * All answers the tenant fills in on the public form, grouped by step.
+ * Stored as JSONB so the form structure can evolve without a migration.
+ */
+export interface TenantFormResponses {
+  personal?: Record<string, unknown>;
+  hasVehicle?: boolean;
+  vehicles?: TenantFormVehicle[];
+  emergency?: Record<string, unknown>;
+  employment?: Record<string, unknown>;
+  previousRental?: Record<string, unknown>;
+  moving?: Record<string, unknown>;
+  reference?: Record<string, unknown>;
+  rentalRequest?: Record<string, unknown>;
+  declaration?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface TenantFormDocument {
+  id: string;
+  formId: string;
+  documentType: string | null;
+  fileName: string | null;
+  storagePath: string;
+  createdAt: string;
+}
+
+export interface TenantFormReview {
+  id: string;
+  formId: string;
+  reviewerId: string | null;
+  generalNote: string | null;
+  incomeRentRatio: number | null;
+  landlordReference: string | null;
+  incomeVerification: string | null;
+  additionalNotes: string | null;
+  result: TenantFormResult;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TenantForm {
+  id: string;
+  companyId: string;
+  contractId: string | null;
+  createdBy: string | null;
+  token: string;
+  status: TenantFormStatus;
+  expiresAt: string | null;
+  submittedAt: string | null;
+  tenantName: string | null;
+  tenantPhone: string | null;
+  tenantEmail: string | null;
+  responses: TenantFormResponses;
+  createdAt: string;
+  updatedAt: string;
+  /** Joined for detail view (optional). */
+  documents?: TenantFormDocument[];
+  review?: TenantFormReview | null;
+  /** Joined property name if linked to a contract. */
+  propertyName?: string | null;
+}
