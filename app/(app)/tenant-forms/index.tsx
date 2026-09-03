@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { ArrowLeft, ClipboardList, Phone, Plus } from 'lucide-react-native';
+import { ArrowLeft, ClipboardList, Phone, Plus, Search } from 'lucide-react-native';
+import { foldSearch } from '@/lib/utils/property';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -35,12 +36,38 @@ function matches(form: TenantForm, filter: Filter): boolean {
   return form.status === filter;
 }
 
+/** Aranabilir metin: isim, telefon, taşınmaz/konum, araç plakaları, adres. */
+function searchHaystack(form: TenantForm): string {
+  const personal = (form.responses?.personal ?? {}) as Record<string, unknown>;
+  const vehicles = Array.isArray(form.responses?.vehicles) ? form.responses.vehicles : [];
+  const plates = vehicles.map((v) => `${v?.plate ?? ''} ${v?.brandModel ?? ''}`).join(' ');
+  return foldSearch(
+    [
+      form.tenantName,
+      form.tenantPhone,
+      form.tenantEmail,
+      form.propertyName,
+      personal.currentAddress,
+      personal.fullName,
+      plates,
+    ]
+      .filter(Boolean)
+      .join(' ')
+  );
+}
+
 export default function TenantFormsScreen() {
   const router = useRouter();
   const { data: forms = [], isLoading } = useTenantForms();
   const [filter, setFilter] = useState<Filter>('all');
+  const [query, setQuery] = useState('');
 
-  const filtered = useMemo(() => forms.filter((f) => matches(f, filter)), [forms, filter]);
+  const filtered = useMemo(() => {
+    const q = foldSearch(query.trim());
+    return forms.filter(
+      (f) => matches(f, filter) && (q === '' || searchHaystack(f).includes(q))
+    );
+  }, [forms, filter, query]);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -58,8 +85,24 @@ export default function TenantFormsScreen() {
         </Pressable>
       </View>
 
+      {/* Search */}
+      <View className="mt-4 px-5">
+        <View className="h-12 flex-row items-center gap-2 rounded-2xl border border-border bg-surface px-3.5">
+          <Search size={18} color={palette.muted} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="İsim, taşınmaz veya plaka ara"
+            placeholderTextColor="#9CA3AF"
+            autoCapitalize="none"
+            autoCorrect={false}
+            className="flex-1 text-base text-foreground"
+          />
+        </View>
+      </View>
+
       {/* Filters */}
-      <View className="mt-4 flex-row flex-wrap gap-2 px-5">
+      <View className="mt-3 flex-row flex-wrap gap-2 px-5">
         {FILTERS.map((f) => {
           const active = filter === f.key;
           return (

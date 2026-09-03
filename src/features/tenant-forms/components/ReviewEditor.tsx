@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -48,6 +49,7 @@ function Field({
 
 export function ReviewEditor({ form, incomeRatio }: Props) {
   const toast = useToast();
+  const router = useRouter();
   const save = useSaveReview(form.id);
   const r = form.review;
 
@@ -68,7 +70,10 @@ export function ReviewEditor({ form, incomeRatio }: Props) {
         result,
       },
       {
-        onSuccess: () => toast.success('Değerlendirme kaydedildi'),
+        onSuccess: () => {
+          toast.success('Değerlendirme kaydedildi');
+          router.replace('/(app)/tenant-forms');
+        },
         onError: (e) => toast.error(errorMessage(e, 'Kaydedilemedi')),
       }
     );
