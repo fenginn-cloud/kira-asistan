@@ -119,10 +119,12 @@ Deno.serve(async (req) => {
     let total = 0;
     let curDue = 0, curPaid = 0, curDueDate = '';
     const rows = (payments ?? []).map((p) => {
-      const isFuture = p.period_month.slice(0, 7) > curKey;
       const due = num(p.amount_due);
       const paid = num(p.amount_paid);
-      total += paid - (isFuture ? 0 : due);
+      // Bir tahakkuk ancak vadesi GEÇTİYSE (ya da ödeme yapıldıysa) borç sayılır;
+      // vadesi gelmemiş/bugün olan ay borç değildir (uygulama tarafıyla aynı kural).
+      const accrued = p.due_date < today || paid > 0;
+      total += paid - (accrued ? due : 0);
       if (p.period_month.slice(0, 7) === curKey) { curDue = due; curPaid = paid; curDueDate = p.due_date; }
       return {
         period_month: p.period_month,
