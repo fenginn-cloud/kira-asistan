@@ -5,6 +5,7 @@ import {
   BellRing,
   Building,
   ChevronRight,
+  ClipboardList,
   Crown,
   LogOut,
   Mail,
@@ -190,6 +191,14 @@ export default function SettingsScreen() {
             }
           />
         ) : null}
+
+        {/* Kiracı bilgi formları (tüm planlar, tüm roller) */}
+        <NavCard
+          icon={ClipboardList}
+          title="Kiracı Formları"
+          subtitle="Kiracı adayına doldurması için güvenli bilgi formu gönder"
+          onPress={() => router.push('/(app)/tenant-forms')}
+        />
 
         {/* Hatırlatma bildirimleri (ayrı ekran) */}
         <NavCard

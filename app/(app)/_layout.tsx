@@ -46,6 +46,9 @@ export default function AppLayout() {
         <Stack.Screen name="profile" />
         <Stack.Screen name="company" />
         <Stack.Screen name="excel-import" />
+        <Stack.Screen name="tenant-forms/index" />
+        <Stack.Screen name="tenant-forms/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="tenant-forms/[id]" />
         <Stack.Screen name="building-units" />
         <Stack.Screen name="property-report" />
         <Stack.Screen name="notification-settings" />

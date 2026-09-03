@@ -70,6 +70,8 @@ import {
 import { buildMessage } from '@/lib/utils/message';
 import { callPhone, copyText, openWhatsApp } from '@/lib/utils/contact';
 import { tenantLinkFor } from '@/services/tenantPortal';
+import { useTenantForms } from '@/features/tenant-forms/hooks';
+import { STATUS_COLORS, STATUS_LABELS, RESULT_LABELS } from '@/features/tenant-forms/config';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { errorMessage } from '@/lib/utils/error';
 import { formatCurrency, formatMonth, formatShortDate } from '@/lib/utils/format';
@@ -99,6 +101,8 @@ export default function ContractDetailScreen() {
 
   const { data: contract, isLoading } = useContract(id);
   const { data: publicToken } = useContractToken(id);
+  const { data: allForms = [] } = useTenantForms();
+  const contractForms = allForms.filter((f) => f.contractId === id);
   const entitlement = useEntitlement();
   const { data: payments = [] } = usePaymentsByContract(id);
   const { data: transactions = [] } = useContractTransactions(id);
@@ -679,6 +683,58 @@ export default function ContractDetailScreen() {
                 </>
               ) : null}
             </Card>
+
+            {/* Kiracı Bilgi Formu */}
+            <SectionHeader
+              title="Kiracı Bilgi Formu"
+              action={
+                <Pressable onPress={() => router.push('/(app)/tenant-forms/new')}>
+                  <Text className="text-sm font-semibold text-primary-700">+ Yeni Form</Text>
+                </Pressable>
+              }
+            />
+            {contractForms.length === 0 ? (
+              <Card onPress={() => router.push('/(app)/tenant-forms/new')}>
+                <View className="flex-row items-center gap-3">
+                  <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                    <FileText size={20} color={palette.primary} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-foreground">
+                      Bilgi formu gönder
+                    </Text>
+                    <Text className="text-sm text-muted">
+                      Kiracıya doldurması için güvenli form linki oluştur
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            ) : (
+              <View className="gap-2">
+                {contractForms.map((f) => {
+                  const sc = STATUS_COLORS[f.status];
+                  return (
+                    <Card key={f.id} onPress={() => router.push(`/(app)/tenant-forms/${f.id}`)}>
+                      <View className="flex-row items-center justify-between gap-3">
+                        <View className="flex-1">
+                          <Text className="text-base font-semibold text-foreground" numberOfLines={1}>
+                            {f.tenantName || 'Kiracı formu'}
+                          </Text>
+                          <Text className="mt-0.5 text-sm text-muted">
+                            {f.review ? RESULT_LABELS[f.review.result] : STATUS_LABELS[f.status]}
+                          </Text>
+                        </View>
+                        <View className={`rounded-full px-3 py-1 ${sc.bg}`}>
+                          <Text className={`text-xs font-semibold ${sc.text}`}>
+                            {STATUS_LABELS[f.status]}
+                          </Text>
+                        </View>
+                      </View>
+                    </Card>
+                  );
+                })}
+              </View>
+            )}
           </>
         ) : null}
 

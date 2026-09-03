@@ -19,4 +19,6 @@ export const queryKeys = {
   transactions: (paymentId: string) => ['transactions', paymentId] as const,
   users: ['users'] as const,
   company: ['company'] as const,
+  tenantForms: ['tenant-forms'] as const,
+  tenantForm: (id: string) => ['tenant-forms', id] as const,
 };
