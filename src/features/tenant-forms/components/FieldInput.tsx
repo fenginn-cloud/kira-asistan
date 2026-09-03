@@ -11,10 +11,15 @@ interface Props {
   field: FieldDef;
   value: unknown;
   onChange: (value: unknown) => void;
+  error?: boolean;
 }
 
 /** Renders a single tenant-form field using the app's design primitives. */
-export function FieldInput({ field, value, onChange }: Props) {
+export function FieldInput({ field, value, onChange, error }: Props) {
+  const labelCls = `text-sm font-medium ${error ? 'text-danger' : 'text-muted'}`;
+  const borderCls = error ? 'border-danger' : 'border-border';
+  const errorProp = error ? 'Zorunlu' : undefined; // kırmızı sınır + kısa uyarı
+
   switch (field.type) {
     case 'money':
       return (
@@ -22,6 +27,7 @@ export function FieldInput({ field, value, onChange }: Props) {
           label={field.label}
           value={typeof value === 'number' ? value : 0}
           onChangeNumber={onChange}
+          error={errorProp}
         />
       );
     case 'tel':
@@ -30,6 +36,7 @@ export function FieldInput({ field, value, onChange }: Props) {
           label={field.label}
           value={typeof value === 'string' ? value : ''}
           onChange={onChange}
+          error={errorProp}
         />
       );
     case 'date':
@@ -39,27 +46,29 @@ export function FieldInput({ field, value, onChange }: Props) {
           value={typeof value === 'string' ? value : ''}
           onChange={onChange}
           optional
+          error={errorProp}
         />
       );
     case 'textarea':
       return (
         <View className="gap-1.5">
-          <Text className="text-sm font-medium text-muted">{field.label}</Text>
+          <Text className={labelCls}>{field.label}</Text>
           <TextInput
             value={typeof value === 'string' ? value : ''}
             onChangeText={onChange}
             placeholder={field.placeholder}
             placeholderTextColor="#9CA3AF"
             multiline
-            className="min-h-[92px] rounded-2xl border border-border bg-surface px-4 py-3 text-base text-foreground"
+            className={`min-h-[92px] rounded-2xl border ${borderCls} bg-surface px-4 py-3 text-base text-foreground`}
             textAlignVertical="top"
           />
+          {error ? <Text className="text-xs text-danger">Zorunlu</Text> : null}
         </View>
       );
     case 'bool':
       return (
         <View className="gap-1.5">
-          <Text className="text-sm font-medium text-muted">{field.label}</Text>
+          <Text className={labelCls}>{field.label}</Text>
           <View className="flex-row gap-2">
             {[
               { v: true, l: 'Evet' },
@@ -71,7 +80,7 @@ export function FieldInput({ field, value, onChange }: Props) {
                   key={opt.l}
                   onPress={() => onChange(opt.v)}
                   className={`flex-1 items-center rounded-2xl border py-3 ${
-                    active ? 'border-primary bg-primary-50' : 'border-border bg-surface'
+                    active ? 'border-primary bg-primary-50' : `${borderCls} bg-surface`
                   }`}
                 >
                   <Text className={`text-sm font-semibold ${active ? 'text-primary-700' : 'text-muted'}`}>
@@ -81,12 +90,13 @@ export function FieldInput({ field, value, onChange }: Props) {
               );
             })}
           </View>
+          {error ? <Text className="text-xs text-danger">Zorunlu</Text> : null}
         </View>
       );
     case 'select':
       return (
         <View className="gap-1.5">
-          <Text className="text-sm font-medium text-muted">{field.label}</Text>
+          <Text className={labelCls}>{field.label}</Text>
           <View className="flex-row flex-wrap gap-2">
             {(field.options ?? []).map((opt) => {
               const active = value === opt;
@@ -95,7 +105,7 @@ export function FieldInput({ field, value, onChange }: Props) {
                   key={opt}
                   onPress={() => onChange(opt)}
                   className={`flex-row items-center gap-1.5 rounded-2xl border px-3.5 py-2.5 ${
-                    active ? 'border-primary bg-primary-50' : 'border-border bg-surface'
+                    active ? 'border-primary bg-primary-50' : `${borderCls} bg-surface`
                   }`}
                 >
                   {active ? <Check size={14} color={palette.primary} /> : null}
@@ -106,12 +116,13 @@ export function FieldInput({ field, value, onChange }: Props) {
               );
             })}
           </View>
+          {error ? <Text className="text-xs text-danger">Zorunlu</Text> : null}
         </View>
       );
     case 'number':
       return (
         <View className="gap-1.5">
-          <Text className="text-sm font-medium text-muted">{field.label}</Text>
+          <Text className={labelCls}>{field.label}</Text>
           <TextInput
             value={value === undefined || value === null || value === '' ? '' : String(value)}
             onChangeText={(t) => {
@@ -121,8 +132,9 @@ export function FieldInput({ field, value, onChange }: Props) {
             keyboardType="number-pad"
             placeholder={field.placeholder}
             placeholderTextColor="#9CA3AF"
-            className="h-14 rounded-2xl border border-border bg-surface px-4 text-base text-foreground"
+            className={`h-14 rounded-2xl border ${borderCls} bg-surface px-4 text-base text-foreground`}
           />
+          {error ? <Text className="text-xs text-danger">Zorunlu</Text> : null}
         </View>
       );
     case 'email':
@@ -134,6 +146,7 @@ export function FieldInput({ field, value, onChange }: Props) {
           placeholder={field.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
+          error={errorProp}
         />
       );
     default:
@@ -143,6 +156,7 @@ export function FieldInput({ field, value, onChange }: Props) {
           value={typeof value === 'string' ? value : ''}
           onChangeText={onChange}
           placeholder={field.placeholder}
+          error={errorProp}
         />
       );
   }
