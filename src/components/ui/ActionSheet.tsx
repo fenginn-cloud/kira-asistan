@@ -1,4 +1,4 @@
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { palette } from '@/lib/theme/colors';
 
@@ -17,6 +17,9 @@ interface ActionSheetProps {
 }
 
 export function ActionSheet({ visible, title, items, onClose }: ActionSheetProps) {
+  const { height } = useWindowDimensions();
+  // Uzun listelerde tabaka ekranı taşmasın; içerik kayabilsin.
+  const maxListHeight = Math.max(height * 0.6, 240);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} className="flex-1 justify-end bg-black/40">
@@ -27,31 +30,38 @@ export function ActionSheet({ visible, title, items, onClose }: ActionSheetProps
                 {title}
               </Text>
             ) : null}
-            {items.map((item, idx) => {
-              const Icon = item.icon;
-              const color = item.destructive ? palette.danger : palette.primary;
-              return (
-                <Pressable
-                  key={item.label}
-                  onPress={() => {
-                    onClose();
-                    item.onPress();
-                  }}
-                  className={`flex-row items-center gap-3 px-5 py-4 active:bg-background ${
-                    idx > 0 ? 'border-t border-border/60' : ''
-                  }`}
-                >
-                  {Icon ? <Icon size={20} color={color} /> : null}
-                  <Text
-                    className={`text-base font-medium ${
-                      item.destructive ? 'text-danger' : 'text-foreground'
+            <ScrollView
+              style={{ maxHeight: maxListHeight }}
+              bounces={false}
+              showsVerticalScrollIndicator
+              contentContainerStyle={{ flexGrow: 1 }}
+            >
+              {items.map((item, idx) => {
+                const Icon = item.icon;
+                const color = item.destructive ? palette.danger : palette.primary;
+                return (
+                  <Pressable
+                    key={`${item.label}-${idx}`}
+                    onPress={() => {
+                      onClose();
+                      item.onPress();
+                    }}
+                    className={`flex-row items-center gap-3 px-5 py-4 active:bg-background ${
+                      idx > 0 ? 'border-t border-border/60' : ''
                     }`}
                   >
-                    {item.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                    {Icon ? <Icon size={20} color={color} /> : null}
+                    <Text
+                      className={`text-base font-medium ${
+                        item.destructive ? 'text-danger' : 'text-foreground'
+                      }`}
+                    >
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
           <Pressable
             onPress={onClose}
