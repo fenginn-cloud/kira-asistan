@@ -12,7 +12,7 @@ import type {
 } from '@/types';
 
 export const contractColumns =
-  'id, company_id, assigned_user_id, property_name, block, unit, tenant_name, tenant_phone, tenant_national_id, owner_name, owner_phone, rent_amount, dues_amount, deposit_amount, commission_amount, start_date, end_date, payment_day, notes, status, document_url, notify_owner, notify_tenant, notify_staff, created_at';
+  'id, company_id, assigned_user_id, property_name, block, unit, tenant_name, tenant_phone, tenant_national_id, owner_name, owner_phone, rent_amount, dues_amount, deposit_amount, commission_amount, start_date, end_date, payment_day, notes, status, document_url, notify_owner, notify_tenant, notify_staff, card_note, created_at';
 
 export function toContract(r: any): Contract {
   return {
@@ -41,6 +41,7 @@ export function toContract(r: any): Contract {
     notifyTenant: r.notify_tenant,
     notifyStaff: r.notify_staff,
     publicToken: r.public_token ?? null,
+    cardNote: r.card_note ?? null,
     createdAt: r.created_at,
   };
 }
@@ -88,6 +89,7 @@ export function fromContract(c: Partial<Contract>): Record<string, unknown> {
   set('notify_owner', c.notifyOwner);
   set('notify_tenant', c.notifyTenant);
   set('notify_staff', c.notifyStaff);
+  set('card_note', c.cardNote);
   return out;
 }
 
