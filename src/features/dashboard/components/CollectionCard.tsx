@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { CheckCircle2, MessageCircle, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
+import { CardNote } from '@/features/contracts/components/CardNote';
 import { formatCurrency } from '@/lib/utils/format';
 import { remainingDebt } from '@/lib/utils/payments';
 import { callPhone, openWhatsApp } from '@/lib/utils/contact';
@@ -85,6 +86,9 @@ export function CollectionCard({ item, onPress, showContact, onMarkReceived }: P
           ) : null}
         </View>
       ) : null}
+
+      {/* Kart notu — detaya girmeden yazılır/görünür */}
+      <CardNote contract={contract} />
     </Card>
   );
 }

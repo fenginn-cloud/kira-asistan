@@ -88,6 +88,9 @@ export interface Contract {
   /** Tenant self-service link token (/k/<token>). Absent in mock mode. */
   publicToken?: string | null;
 
+  /** Kısa hızlı not — kartlarda görünür (ör. "10 gün sonra ödeyecek"). */
+  cardNote?: string | null;
+
   createdAt: string;
 }
 

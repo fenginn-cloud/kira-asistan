@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { Building2, CalendarDays, CheckCircle2, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
+import { CardNote } from '@/features/contracts/components/CardNote';
 import { BalanceBadge, ContractBadge, LedgerBadge } from '@/components/ui/StatusBadge';
 import { formatCurrency, paymentDayLabel } from '@/lib/utils/format';
 import { formatCurrencyTRY, type ContractBalance } from '@/lib/ledger/ledger';
@@ -135,6 +136,9 @@ export function ContractCard({
           </Pressable>
         )
       ) : null}
+
+      {/* Kart notu — detaya girmeden yazılır/görünür */}
+      <CardNote contract={contract} />
     </Card>
   );
 }
