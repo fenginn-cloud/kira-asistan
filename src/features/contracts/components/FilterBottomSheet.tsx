@@ -12,6 +12,10 @@ interface Props {
   propertyOptions: string[];
   property: string;
   onProperty: (p: string) => void;
+  /** Seçili mülkün blokları ('all' + blok adları). Boşsa blok bölümü gizlenir. */
+  blockOptions: string[];
+  block: string;
+  onBlock: (b: string) => void;
   sortOrder: SortKey[];
   sort: SortKey;
   sortLabels: Record<SortKey, string>;
@@ -32,6 +36,9 @@ export function FilterBottomSheet({
   propertyOptions,
   property,
   onProperty,
+  blockOptions,
+  block,
+  onBlock,
   sortOrder,
   sort,
   sortLabels,
@@ -110,6 +117,25 @@ export function FilterBottomSheet({
                         active={property === p}
                         label={p === 'all' ? 'Tüm Mülkler' : p}
                         onPress={() => onProperty(p)}
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : null}
+
+              {/* Blok — yalnızca bir mülk seçiliyken ve o mülkün blokları varsa */}
+              {property !== 'all' && blockOptions.length > 1 ? (
+                <>
+                  <Text className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-muted">
+                    Blok
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {blockOptions.map((b) => (
+                      <Chip
+                        key={b}
+                        active={block === b}
+                        label={b === 'all' ? 'Tüm Bloklar' : `Blok ${b}`}
+                        onPress={() => onBlock(b)}
                       />
                     ))}
                   </View>
