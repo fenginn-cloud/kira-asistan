@@ -29,6 +29,7 @@ import {
 } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ContractBadge, LedgerBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -154,6 +155,17 @@ export default function ContractDetailScreen() {
     return payments
       .filter((p) => p.periodMonth >= cutoff && p.periodMonth.slice(0, 7) <= currentKey)
       .sort((a, b) => b.periodMonth.localeCompare(a.periodMonth));
+  }, [payments]);
+
+  // Sözleşme geneli tahsilat performansı (yıllık hero için) — gerçek toplamlar.
+  const perf = useMemo(() => {
+    let collected = 0;
+    let expected = 0;
+    for (const p of payments) {
+      expected += p.amountDue;
+      collected += p.amountPaid;
+    }
+    return { collected, expected };
   }, [payments]);
 
   // Cari hesap: full ledger (chronological) + derived balance summary.
@@ -419,34 +431,56 @@ export default function ContractDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      {/* Header */}
+      {/* Header — geri + başlık + işlemler (Stitch) */}
       <View className="flex-row items-center justify-between px-5 pt-2">
-        <Pressable onPress={() => router.back()} className="h-10 w-10 justify-center">
-          <ArrowLeft size={24} color={fgColor()} />
+        <Pressable
+          onPress={() => router.back()}
+          className="h-10 w-10 items-center justify-center rounded-full bg-surface"
+        >
+          <ArrowLeft size={22} color={fgColor()} />
         </Pressable>
-        <View className="flex-row items-center gap-2">
-          <ContractBadge status={contract.status} />
-          <Pressable
-            onPress={() => setActionsOpen(true)}
-            className="h-10 w-10 items-center justify-center rounded-full bg-surface"
-          >
-            <MoreHorizontal size={22} color={fgColor()} />
-          </Pressable>
-        </View>
+        <Text className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Sözleşme Detayı
+        </Text>
+        <Pressable
+          onPress={() => setActionsOpen(true)}
+          className="h-10 w-10 items-center justify-center rounded-full bg-surface"
+        >
+          <MoreHorizontal size={22} color={fgColor()} />
+        </Pressable>
       </View>
 
       <ScrollView
         contentContainerClassName="px-5 pb-10"
         showsVerticalScrollIndicator={false}
       >
-        <View className="mt-2">
-          <Text className="text-2xl font-bold text-foreground">
-            {contract.propertyName}
-          </Text>
-          <Text className="text-base text-muted">
-            {location ? `${location} • ` : ''}
-            {formatCurrency(contract.rentAmount)} / ay
-          </Text>
+        {/* Kiracı hero kartı (Stitch) — avatar + isim + durum + konum + TC + tarih */}
+        <View className="mt-3 rounded-[26px] border border-border/60 bg-surface p-4 shadow-sm shadow-black/5">
+          <View className="flex-row items-center gap-3">
+            <Avatar name={contract.tenantName} size={52} />
+            <View className="flex-1">
+              <View className="flex-row items-center gap-2">
+                <Text className="flex-shrink text-lg font-bold text-foreground" numberOfLines={1}>
+                  {contract.tenantName}
+                </Text>
+                <ContractBadge status={contract.status} />
+              </View>
+              <Text className="mt-0.5 text-sm text-muted" numberOfLines={1}>
+                {contract.propertyName}
+                {location ? ` · ${location}` : ''}
+              </Text>
+            </View>
+          </View>
+          <View className="mt-3 flex-row flex-wrap items-center gap-x-2 gap-y-1 border-t border-border/60 pt-3">
+            {contract.tenantNationalId ? (
+              <Text className="text-xs text-muted">TC: {contract.tenantNationalId}</Text>
+            ) : null}
+            {contract.tenantNationalId ? <Text className="text-xs text-muted">·</Text> : null}
+            <Text className="text-xs text-muted">
+              {formatShortDate(contract.startDate)}
+              {contract.endDate ? ` – ${formatShortDate(contract.endDate)}` : ''}
+            </Text>
+          </View>
         </View>
 
         {/* Quick actions */}
@@ -517,7 +551,15 @@ export default function ContractDetailScreen() {
         {/* Cari hesap özeti — yalnızca yönetici */}
         {balance && canSeeLedger ? (
           <View className="mt-5">
-            <ContractBalanceCard balance={balance} />
+            <ContractBalanceCard
+              balance={balance}
+              deposit={contract.depositAmount}
+              paymentDay={contract.paymentDay}
+              collected={perf.collected}
+              expected={perf.expected}
+              onRecord={() => openPaymentSheet(outstanding ?? null)}
+              onStatement={() => setTab('cari')}
+            />
           </View>
         ) : null}
 
