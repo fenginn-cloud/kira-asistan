@@ -7,7 +7,6 @@ import { ContractCard } from '@/features/contracts/components/ContractCard';
 import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useContracts } from '@/features/contracts/hooks';
 import { useContractGate } from '@/features/subscription/useContractGate';
-import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { useAllPayments, useMarkReceived } from '@/features/payments/hooks';
 import { notifyTeamPaymentReceived } from '@/services/notifyTeam';
 import { useToast } from '@/components/ui/Toast';
@@ -104,8 +103,6 @@ export default function ContractsScreen() {
   const listRef = useScrollToTop<FlatList>('contracts');
   const { data: contracts = [], isLoading } = useContracts();
   const gate = useContractGate();
-  // Blok bazlı filtre yalnızca legacy profiller için.
-  const isLegacy = useEntitlement().isLegacy;
   const onNewContract = () =>
     router.push(gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall?reason=limit');
   const { data: payments = [] } = useAllPayments();
@@ -218,12 +215,6 @@ export default function ContractsScreen() {
     return { all: contracts.length, active, monthlyVolume, overdueAmount, overdueCount };
   }, [contracts, balances]);
 
-  const filterCount: Partial<Record<StatusFilter, number>> = {
-    all: headerStats.all,
-    active: headerStats.active,
-    overdue: headerStats.overdueCount,
-  };
-
   const filtered = useMemo(() => {
     // Türkçe-duyarlı, aksan/büyük-küçük harf duyarsız arama.
     const q = foldSearch(query.trim());
@@ -239,8 +230,8 @@ export default function ContractsScreen() {
       }
       // Bina filtresi (mülk adının bina kısmına göre)
       if (property !== 'all' && buildingName(c.propertyName) !== property) return false;
-      // Blok filtresi (yalnızca legacy + mülk seçiliyken)
-      if (isLegacy && property !== 'all' && block !== 'all' && (c.block ?? '').trim() !== block)
+      // Blok filtresi (bir mülk seçiliyken; filtre sheet'inden)
+      if (property !== 'all' && block !== 'all' && (c.block ?? '').trim() !== block)
         return false;
 
       // Status / cari hesap filter
@@ -274,7 +265,7 @@ export default function ContractsScreen() {
     });
 
     return sortContracts(result, sort, balances);
-  }, [contracts, balances, conflictIds, query, status, property, block, isLegacy, sort]);
+  }, [contracts, balances, conflictIds, query, status, property, block, sort]);
 
   // Muhasebe odaklı filtre/sıralamalar yalnızca yöneticide görünür.
   const LEDGER_FILTERS: StatusFilter[] = ['debtor', 'creditor'];
@@ -295,10 +286,14 @@ export default function ContractsScreen() {
 
   // Filtre bottom sheet için aktif (varsayılandan farklı) filtre sayısı.
   const activeFilterCount =
-    (status !== 'all' ? 1 : 0) + (property !== 'all' ? 1 : 0) + (sort !== 'name_asc' ? 1 : 0);
+    (status !== 'all' ? 1 : 0) +
+    (property !== 'all' ? 1 : 0) +
+    (property !== 'all' && block !== 'all' ? 1 : 0) +
+    (sort !== 'name_asc' ? 1 : 0);
   const clearFilters = () => {
     setStatus('all');
     setProperty('all');
+    setBlock('all');
     setSort('name_asc');
   };
 
@@ -380,93 +375,6 @@ export default function ContractsScreen() {
             ) : null}
           </Pressable>
         </View>
-
-        {/* Status filters */}
-        <FlatList
-          horizontal
-          data={statusFilters}
-          keyExtractor={(f) => f.key}
-          showsHorizontalScrollIndicator={false}
-          className="mt-3"
-          contentContainerStyle={{ gap: 8 }}
-          renderItem={({ item }) => {
-            const active = status === item.key;
-            const count = filterCount[item.key];
-            return (
-              <Pressable
-                onPress={() => setStatus(item.key)}
-                className={`flex-row items-center gap-1.5 rounded-full px-4 py-2 ${
-                  active ? 'bg-primary' : 'bg-surface border border-border'
-                }`}
-              >
-                <Text className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}>
-                  {item.label}
-                </Text>
-                {count !== undefined ? (
-                  <Text className={`text-xs font-bold ${active ? 'text-white/80' : 'text-muted/70'}`}>
-                    {count}
-                  </Text>
-                ) : null}
-              </Pressable>
-            );
-          }}
-        />
-
-        {/* Property filters (auto-generated) */}
-        {propertyOptions.length > 2 ? (
-          <FlatList
-            horizontal
-            data={propertyOptions}
-            keyExtractor={(p) => p}
-            showsHorizontalScrollIndicator={false}
-            className="mt-2"
-            contentContainerStyle={{ gap: 8 }}
-            renderItem={({ item }) => {
-              const active = property === item;
-              const label = item === 'all' ? 'Tüm Mülkler' : item;
-              return (
-                <Pressable
-                  onPress={() => setProperty(item)}
-                  className={`rounded-full px-4 py-2 ${
-                    active ? 'bg-primary-700' : 'bg-surface border border-border'
-                  }`}
-                >
-                  <Text className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            }}
-          />
-        ) : null}
-
-        {/* Blok filtreleri — yalnızca legacy + bir mülk seçiliyken */}
-        {isLegacy && blockOptions.length > 1 ? (
-          <FlatList
-            horizontal
-            data={blockOptions}
-            keyExtractor={(b) => b}
-            showsHorizontalScrollIndicator={false}
-            className="mt-2"
-            contentContainerStyle={{ gap: 8 }}
-            renderItem={({ item }) => {
-              const active = block === item;
-              const label = item === 'all' ? 'Tüm Bloklar' : `Blok ${item}`;
-              return (
-                <Pressable
-                  onPress={() => setBlock(item)}
-                  className={`rounded-full px-4 py-2 ${
-                    active ? 'bg-primary' : 'bg-surface border border-border'
-                  }`}
-                >
-                  <Text className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            }}
-          />
-        ) : null}
 
         {/* Summary + sort */}
         <View className="mt-3 flex-row items-center justify-between">
@@ -554,6 +462,9 @@ export default function ContractsScreen() {
         propertyOptions={propertyOptions}
         property={property}
         onProperty={setProperty}
+        blockOptions={blockOptions}
+        block={block}
+        onBlock={setBlock}
         sortOrder={sortOrder}
         sort={sort}
         sortLabels={SORT_LABELS}
