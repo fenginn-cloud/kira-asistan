@@ -518,21 +518,21 @@ export default function ContractDetailScreen() {
           </View>
         ) : null}
 
-        {/* Tabs */}
+        {/* Tabs — Stitch segmented control (açık track, beyaz aktif segment) */}
         {visibleTabs.length > 1 ? (
-          <View className="mt-5 flex-row rounded-2xl bg-surface p-1">
+          <View className="mt-5 flex-row rounded-full bg-background p-1">
             {visibleTabs.map((t) => {
               const active = activeTab === t.key;
               return (
                 <Pressable
                   key={t.key}
                   onPress={() => setTab(t.key)}
-                  className={`flex-1 items-center rounded-xl py-2.5 ${
-                    active ? 'bg-primary' : ''
+                  className={`flex-1 items-center rounded-full py-2.5 ${
+                    active ? 'bg-surface shadow-sm shadow-black/5' : ''
                   }`}
                 >
                   <Text
-                    className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}
+                    className={`text-sm font-semibold ${active ? 'text-primary-700' : 'text-muted'}`}
                   >
                     {t.label}
                   </Text>
