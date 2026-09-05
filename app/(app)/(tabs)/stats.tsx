@@ -399,21 +399,10 @@ export default function StatsScreen() {
               />
             </Card>
 
-            {/* Finansal Özet — portföy geneli (tüm zaman). Komisyon sözleşme
-                başına bir kez sayılır; aylara bölünmez. */}
+            {/* Portföy toplamları — depozito ve komisyon (sözleşme alanlarının
+                gerçek toplamı; kümülatif aylık tahsilat satırları kaldırıldı). */}
             <SectionHeader title="Finansal Özet" />
             <Card>
-              <SummaryRow label="Toplam Kira" value={formatCurrency(s.totalRentAccrued)} />
-              <SummaryRow
-                label="Tahsil Edilen"
-                value={formatCurrency(s.totalCollectedAll)}
-                tone="success"
-              />
-              <SummaryRow
-                label="Kalan Alacak"
-                value={formatCurrency(s.totalRemainingAll)}
-                tone={s.totalRemainingAll > 0 ? 'danger' : 'muted'}
-              />
               <SummaryRow label="Toplam Depozito" value={formatCurrency(s.depositTotal)} />
               <SummaryRow
                 label="Toplam Komisyon"
