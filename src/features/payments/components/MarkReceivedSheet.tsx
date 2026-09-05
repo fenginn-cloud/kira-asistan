@@ -47,10 +47,17 @@ export function MarkReceivedSheet({ contract, submitting, onClose, onConfirm }: 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1 justify-end bg-black/40"
       >
-        <View className="rounded-t-3xl bg-surface p-5 pb-8">
+        <View className="rounded-t-[28px] bg-surface p-5 pb-8">
+          {/* Tutma çubuğu (Stitch) */}
+          <View className="mb-3 items-center">
+            <View className="h-1.5 w-10 rounded-full bg-border" />
+          </View>
+
           <View className="mb-4 flex-row items-center justify-between">
             <View className="flex-row items-center gap-2">
-              <CheckCircle2 size={22} color={palette.success} />
+              <View className="h-9 w-9 items-center justify-center rounded-2xl bg-success-soft">
+                <CheckCircle2 size={18} color={palette.success} />
+              </View>
               <Text className="text-lg font-bold text-foreground">Kira Alındı</Text>
             </View>
             <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center">
@@ -59,12 +66,13 @@ export function MarkReceivedSheet({ contract, submitting, onClose, onConfirm }: 
           </View>
 
           {contract ? (
-            <View className="mb-4 rounded-2xl bg-background p-3">
+            <View className="mb-4 rounded-2xl bg-background p-4">
               <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>
                 {loc} • {contract.tenantName}
               </Text>
-              <Text className="mt-0.5 text-sm capitalize text-muted">
-                {month} • {formatCurrency(contract.rentAmount + contract.duesAmount)}
+              <Text className="mt-0.5 text-xs capitalize text-muted">{month}</Text>
+              <Text className="mt-2 text-2xl font-extrabold text-foreground">
+                {formatCurrency(contract.rentAmount + contract.duesAmount)}
               </Text>
             </View>
           ) : null}
