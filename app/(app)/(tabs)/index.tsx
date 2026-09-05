@@ -12,9 +12,9 @@ import {
 } from 'lucide-react-native';
 import { StatCard } from '@/components/ui/StatCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
+import { HeroSummaryCard } from '@/features/dashboard/components/HeroSummaryCard';
 import { CollectionHome } from '@/features/dashboard/CollectionHome';
 import { useContractGate } from '@/features/subscription/useContractGate';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
@@ -201,28 +201,21 @@ export default function HomeScreen() {
                    Free yöneticide kilitli teaser gösterilir (içerik sezdirilir). */}
             {canSeeLedger && entitlement.limits.stats ? (
             <>
-            <SectionHeader title="Aylık Özet" />
+            {/* Stitch Hero — bu ayın tahsilat özeti (beklenen/tahsil/kalan + oran) */}
+            <HeroSummaryCard
+              expected={finance.expectedThisMonth}
+              collected={finance.collectedThisMonth}
+              remaining={finance.remainingThisMonth}
+            />
+
+            <SectionHeader title="Cari Hesap" />
             <View className="gap-3">
               <View className="flex-row gap-3">
                 <StatCard
-                  label="Bu Ay Beklenen"
-                  value={formatCurrencyTRY(finance.expectedThisMonth)}
+                  label="Net Bakiye"
+                  value={formatCurrencyTRY(finance.netBalance)}
                   icon={Wallet}
-                  tone="primary"
-                />
-                <StatCard
-                  label="Bu Ay Tahsil Edilen"
-                  value={formatCurrencyTRY(finance.collectedThisMonth)}
-                  icon={CheckCircle2}
-                  tone="success"
-                />
-              </View>
-              <View className="flex-row gap-3">
-                <StatCard
-                  label="Bu Ay Kalan"
-                  value={formatCurrencyTRY(finance.remainingThisMonth)}
-                  icon={TimerReset}
-                  tone="warning"
+                  tone={finance.netBalance < 0 ? 'danger' : 'success'}
                 />
                 <StatCard
                   label="Geciken Sözleşme"
@@ -231,10 +224,6 @@ export default function HomeScreen() {
                   tone="danger"
                 />
               </View>
-            </View>
-
-            <SectionHeader title="Cari Hesap" />
-            <View className="gap-3">
               <View className="flex-row gap-3">
                 <StatCard
                   label="Toplam Eksik Ödeme"
@@ -251,17 +240,12 @@ export default function HomeScreen() {
               </View>
               <View className="flex-row gap-3">
                 <StatCard
-                  label="Net Bakiye"
-                  value={formatCurrencyTRY(finance.netBalance)}
-                  icon={Wallet}
-                  tone={finance.netBalance < 0 ? 'danger' : 'success'}
-                />
-                <StatCard
                   label="Kısmi Ödeyen"
                   value={`${finance.partialContracts}`}
                   icon={Wallet}
                   tone="warning"
                 />
+                <View className="flex-1" />
               </View>
             </View>
             </>

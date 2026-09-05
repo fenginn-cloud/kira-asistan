@@ -1,7 +1,8 @@
 import { Pressable, Text, View } from 'react-native';
-import { CheckCircle2, MessageCircle, Phone } from 'lucide-react-native';
+import { Building2, CheckCircle2, MessageCircle, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { CardNote } from '@/features/contracts/components/CardNote';
+import { StatusPill, type PillTone } from '@/features/dashboard/components/StatusPill';
 import { formatCurrency } from '@/lib/utils/format';
 import { remainingDebt } from '@/lib/utils/payments';
 import { callPhone, openWhatsApp } from '@/lib/utils/contact';
@@ -9,10 +10,10 @@ import { buildMessage } from '@/lib/utils/message';
 import { palette } from '@/lib/theme/colors';
 import type { OpenItem } from '@/features/notifications/reminders';
 
-function statusLabel(days: number): { text: string; tone: string } {
-  if (days < 0) return { text: `${Math.abs(days)} gün gecikti`, tone: 'text-danger' };
-  if (days === 0) return { text: 'Bugün ödeme günü', tone: 'text-warning' };
-  return { text: `${days} gün kaldı`, tone: 'text-primary-700' };
+function statusPill(days: number): { tone: PillTone; label: string } {
+  if (days < 0) return { tone: 'overdue', label: `${Math.abs(days)} gün gecikti` };
+  if (days === 0) return { tone: 'pending', label: 'Bugün ödeme günü' };
+  return { tone: 'info', label: `${days} gün kaldı` };
 }
 
 interface Props {
@@ -32,7 +33,7 @@ export function CollectionCard({ item, onPress, showContact, onMarkReceived }: P
   const subtitle = location
     ? `${contract.propertyName} • ${contract.tenantName}`
     : contract.tenantName;
-  const st = statusLabel(daysUntil);
+  const st = statusPill(daysUntil);
 
   const message = () =>
     openWhatsApp(
@@ -43,16 +44,28 @@ export function CollectionCard({ item, onPress, showContact, onMarkReceived }: P
   const hasActions = showContact || !!onMarkReceived;
 
   return (
-    <Card onPress={onPress} className="mb-2">
-      <View className="flex-row items-start justify-between">
-        <View className="flex-1 pr-3">
-          <Text className="text-base font-bold text-foreground">{title}</Text>
-          <Text className="mt-0.5 text-sm text-muted">{subtitle}</Text>
-          <Text className={`mt-1 text-xs font-semibold ${st.tone}`}>{st.text}</Text>
+    <Card onPress={onPress} className="mb-2.5">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="flex-1 flex-row items-start gap-3">
+          {/* Mülk rozeti (44px) */}
+          <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+            <Building2 size={20} color={palette.primary} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-base font-bold text-foreground" numberOfLines={1}>
+              {title}
+            </Text>
+            <Text className="mt-0.5 text-sm text-muted" numberOfLines={1}>
+              {subtitle}
+            </Text>
+          </View>
         </View>
-        <Text className="text-base font-bold text-foreground">
-          {formatCurrency(remainingDebt(payment))}
-        </Text>
+        <View className="items-end gap-1.5">
+          <Text className="text-base font-bold text-foreground">
+            {formatCurrency(remainingDebt(payment))}
+          </Text>
+          <StatusPill tone={st.tone} label={st.label} />
+        </View>
       </View>
 
       {hasActions ? (

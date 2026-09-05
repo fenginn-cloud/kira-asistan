@@ -73,9 +73,9 @@ export function CollectionHome({
   return (
     <View className="mt-4">
       <View className="flex-row gap-3">
-        <SummaryTile icon={CalendarCheck} color="#D97706" label="Bugün" value={todayList.length} tone="text-warning" />
-        <SummaryTile icon={TimerReset} color="#DC2626" label="Geciken" value={overdueList.length} tone="text-danger" />
-        <SummaryTile icon={CalendarClock} color="#2563EB" label="Bu hafta" value={upcomingList.length} tone="text-primary-700" />
+        <SummaryTile icon={CalendarCheck} color="#D97706" chip="bg-warning-soft" label="Bugün" value={todayList.length} tone="text-warning" />
+        <SummaryTile icon={TimerReset} color="#DC2626" chip="bg-danger-soft" label="Geciken" value={overdueList.length} tone="text-danger" />
+        <SummaryTile icon={CalendarClock} color="#2563EB" chip="bg-primary-50" label="Bu hafta" value={upcomingList.length} tone="text-primary-700" />
       </View>
 
       {nothing ? (
@@ -98,23 +98,25 @@ export function CollectionHome({
 function SummaryTile({
   icon: Icon,
   color,
+  chip,
   label,
   value,
   tone,
 }: {
   icon: typeof TimerReset;
   color: string;
+  chip: string;
   label: string;
   value: number;
   tone: string;
 }) {
   return (
-    <View className="flex-1 rounded-2xl border border-border bg-surface p-4">
-      <View className="flex-row items-center gap-1.5">
+    <View className="flex-1 rounded-3xl border border-border/60 bg-surface p-3.5 shadow-sm shadow-black/5">
+      <View className={`h-8 w-8 items-center justify-center rounded-2xl ${chip}`}>
         <Icon size={16} color={color} />
-        <Text className="text-xs text-muted">{label}</Text>
       </View>
-      <Text className={`mt-1 text-2xl font-bold ${tone}`}>{value}</Text>
+      <Text className={`mt-2.5 text-2xl font-extrabold ${tone}`}>{value}</Text>
+      <Text className="mt-0.5 text-xs font-medium text-muted">{label}</Text>
     </View>
   );
 }
