@@ -30,7 +30,15 @@ const HEAD_TAGS = `
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Kira Asistan" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />`;
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <!-- Stitch tasarım fontu — Plus Jakarta Sans (web PWA) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root { --app-font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+      html, body, #root, div, span, p, a, button, input, textarea, select { font-family: var(--app-font); }
+    </style>`;
 
 if (!html.includes('rel="manifest"')) {
   html = html.replace('</head>', `${HEAD_TAGS}\n  </head>`);
