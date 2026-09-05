@@ -2,8 +2,10 @@ import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
 import {
+  BadgeCheck,
   BellRing,
   Building,
+  Check,
   ChevronRight,
   ClipboardList,
   Crown,
@@ -20,9 +22,12 @@ import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useCompany } from '@/features/users/hooks';
+import { useContracts } from '@/features/contracts/hooks';
+import { useStats } from '@/features/stats/useStats';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { PLAN_LABELS } from '@/features/subscription/entitlement';
 import { useScrollToTop } from '@/lib/scrollToTop';
+import { formatCurrency } from '@/lib/utils/format';
 import type { ThemePreference } from '@/types';
 import { palette } from '@/lib/theme/colors';
 
@@ -92,11 +97,30 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuthStore();
   const { theme, setTheme } = useSettingsStore();
   const { data: company } = useCompany();
+  const { data: contracts = [] } = useContracts();
   const entitlement = useEntitlement();
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
   const canUpgrade = !entitlement.isLegacy && entitlement.plan !== 'business';
+
+  // Profil başlığındaki 3 metrik + plan kotası yalnızca yönetici için (finansal).
+  const stats = useStats();
+  const occupancyPct =
+    stats.unitTotal > 0 ? Math.round((stats.occupiedTotal / stats.unitTotal) * 100) : null;
+  const contractCount = contracts.length;
+  const maxContracts = entitlement.limits.maxContracts;
+  const quotaPct =
+    maxContracts && maxContracts > 0
+      ? Math.min(100, Math.round((contractCount / maxContracts) * 100))
+      : null;
+
+  const planFeatures: { label: string; on: boolean }[] = [
+    { label: 'Otomatik Ödeme Hatırlatmaları', on: true },
+    { label: 'Excel & Toplu Aktarım', on: entitlement.limits.excel },
+    { label: 'Finansal Analiz & Raporlar', on: entitlement.limits.stats },
+    { label: 'Ekip & Kullanıcı Yönetimi', on: entitlement.limits.team },
+  ];
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -122,50 +146,124 @@ export default function SettingsScreen() {
               </View>
               <ChevronRight size={18} color={palette.muted} />
             </View>
-            <View className="mt-3 flex-row flex-wrap gap-2">
-              <View className="rounded-full bg-primary-50 px-3 py-1">
-                <Text className="text-xs font-semibold text-primary-700">
-                  {user?.role === 'admin'
-                    ? 'Yönetici'
-                    : user?.role === 'super_admin'
-                      ? 'Süper Admin'
-                      : 'Personel'}
-                </Text>
-              </View>
-              <View className="rounded-full bg-success-soft px-3 py-1">
-                <Text className="text-xs font-semibold text-success">
-                  {PLAN_LABELS[entitlement.plan]}
-                  {entitlement.isLegacy ? ' · Legacy' : ''}
-                </Text>
-              </View>
+            <View className="mt-3 flex-row items-center gap-1.5">
+              <BadgeCheck size={15} color={palette.primary} />
+              <Text className="text-xs font-semibold text-primary-700">
+                {user?.role === 'admin'
+                  ? 'Yönetici (Admin)'
+                  : user?.role === 'super_admin'
+                    ? 'Süper Admin'
+                    : 'Personel'}
+              </Text>
               {company?.name ? (
-                <View className="rounded-full bg-background px-3 py-1">
-                  <Text className="text-xs font-semibold text-muted" numberOfLines={1}>
-                    {company.name}
-                  </Text>
-                </View>
+                <Text className="text-xs text-muted" numberOfLines={1}>
+                  · {company.name}
+                </Text>
               ) : null}
             </View>
+
+            {/* 3 metrik (Stitch) — Aktif Mülk / Doluluk / Aylık Kira. Finansal
+                olduğundan yalnızca yöneticide + Pro/Business açıkken gösterilir. */}
+            {isAdmin && entitlement.limits.stats ? (
+              <View className="mt-4 flex-row border-t border-border/60 pt-3">
+                <View className="flex-1 items-center">
+                  <Text className="text-lg font-extrabold text-foreground">
+                    {stats.occupiedTotal || stats.activeContractCount}
+                  </Text>
+                  <Text className="mt-0.5 text-[11px] text-muted">Aktif Mülk</Text>
+                </View>
+                <View className="w-px bg-border/60" />
+                <View className="flex-1 items-center">
+                  <Text className="text-lg font-extrabold text-foreground">
+                    {occupancyPct !== null ? `%${occupancyPct}` : '—'}
+                  </Text>
+                  <Text className="mt-0.5 text-[11px] text-muted">Doluluk</Text>
+                </View>
+                <View className="w-px bg-border/60" />
+                <View className="flex-1 items-center">
+                  <Text className="text-lg font-extrabold text-foreground" numberOfLines={1}>
+                    {formatCurrency(stats.expectedMonthlyIncome)}
+                  </Text>
+                  <Text className="mt-0.5 text-[11px] text-muted">Aylık Kira</Text>
+                </View>
+              </View>
+            ) : null}
           </Card>
         </Pressable>
 
         {/* HESAP */}
         <SectionLabel>Hesap</SectionLabel>
 
-        {/* Plan */}
-        <NavCard
-          icon={Crown}
-          title={`${PLAN_LABELS[entitlement.plan]} Plan`}
-          subtitle={
-            entitlement.isLegacy
-              ? 'Erken kullanıcı — ömür boyu ücretsiz'
-              : entitlement.limits.maxContracts === null
-                ? 'Sınırsız sözleşme'
-                : `${entitlement.limits.maxContracts} sözleşmeye kadar`
-          }
-          badge={entitlement.isLegacy ? 'Legacy' : canUpgrade ? 'Yükselt' : undefined}
-          onPress={canUpgrade ? () => router.push('/(app)/paywall') : undefined}
-        />
+        {/* Plan kartı (Stitch) — kota çubuğu + özellik listesi */}
+        <View className="mt-3">
+          <Card>
+            <View className="flex-row items-center gap-3">
+              <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
+                <Crown size={20} color={palette.primary} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-base font-bold text-foreground">
+                  {PLAN_LABELS[entitlement.plan]} Plan
+                </Text>
+                <Text className="text-xs text-muted">
+                  {entitlement.isLegacy
+                    ? 'Erken kullanıcı — ömür boyu ücretsiz'
+                    : 'Aktif abonelik'}
+                </Text>
+              </View>
+              {entitlement.isLegacy ? (
+                <View className="rounded-full bg-success-soft px-3 py-1">
+                  <Text className="text-xs font-semibold text-success">Legacy</Text>
+                </View>
+              ) : canUpgrade ? (
+                <Pressable
+                  onPress={() => router.push('/(app)/paywall')}
+                  className="rounded-full bg-primary px-3.5 py-1.5 active:opacity-80"
+                >
+                  <Text className="text-xs font-semibold text-white">Yükselt</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            {/* Sözleşme kotası */}
+            <View className="mt-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-xs font-medium text-muted">Sözleşme Kotası</Text>
+                <Text className="text-xs font-semibold text-foreground">
+                  {maxContracts === null
+                    ? `${contractCount} · Sınırsız`
+                    : `${contractCount} / ${maxContracts}`}
+                </Text>
+              </View>
+              <View className="mt-1.5 h-2 overflow-hidden rounded-full bg-background">
+                <View
+                  className="h-2 rounded-full bg-primary"
+                  style={{ width: `${quotaPct ?? 100}%` }}
+                />
+              </View>
+            </View>
+
+            {/* Özellik listesi */}
+            <View className="mt-4 gap-2 border-t border-border/60 pt-3">
+              {planFeatures.map((f) => (
+                <View key={f.label} className="flex-row items-center gap-2">
+                  <View
+                    className={`h-5 w-5 items-center justify-center rounded-full ${
+                      f.on ? 'bg-success-soft' : 'bg-background'
+                    }`}
+                  >
+                    <Check size={12} color={f.on ? palette.success : palette.muted} />
+                  </View>
+                  <Text
+                    className={`text-sm ${f.on ? 'text-foreground' : 'text-muted line-through'}`}
+                  >
+                    {f.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        </View>
 
         {/* Şirket (yalnızca süper admin) */}
         {isSuperAdmin ? (
