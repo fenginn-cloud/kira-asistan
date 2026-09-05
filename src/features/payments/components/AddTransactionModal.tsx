@@ -159,7 +159,11 @@ export function AddTransactionModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1 justify-end bg-black/40"
       >
-        <View className="max-h-[88%] rounded-t-3xl bg-surface p-5 pb-8">
+        <View className="max-h-[88%] rounded-t-[28px] bg-surface p-5 pb-8">
+          {/* Tutma çubuğu (Stitch) */}
+          <View className="mb-3 items-center">
+            <View className="h-1.5 w-10 rounded-full bg-border" />
+          </View>
           <View className="mb-4 flex-row items-center justify-between">
             <Text className="text-lg font-bold text-foreground">Ödeme Ekle</Text>
             <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center">
