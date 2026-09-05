@@ -118,42 +118,88 @@ export default function TenantPortalScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView contentContainerClassName="px-5 pb-12" showsVerticalScrollIndicator={false}>
-        {/* Brand header */}
-        <View className="mt-3 flex-row items-center gap-2">
-          <View className="h-9 w-9 items-center justify-center rounded-2xl bg-primary">
-            <Building2 size={18} color="#FFFFFF" />
+        {/* Brand header + güven rozeti */}
+        <View className="mt-3 flex-row items-center justify-between">
+          <View className="flex-row items-center gap-2.5">
+            <View className="h-10 w-10 items-center justify-center rounded-2xl bg-primary">
+              <Building2 size={20} color="#FFFFFF" />
+            </View>
+            <View>
+              <View className="flex-row items-center gap-1.5">
+                <Text className="text-base font-bold text-foreground">Kira Asistan</Text>
+                <View className="rounded-full bg-primary-50 px-1.5 py-0.5">
+                  <Text className="text-[9px] font-bold tracking-wide text-primary-700">PORTAL</Text>
+                </View>
+              </View>
+              <Text className="text-[11px] text-muted">Güvenli Kiracı Ödeme Ekranı</Text>
+            </View>
           </View>
-          <Text className="text-base font-bold text-foreground">{view.company_name}</Text>
+          <View className="flex-row items-center gap-1 rounded-full bg-success-soft px-2.5 py-1">
+            <ShieldCheck size={12} color={palette.success} />
+            <Text className="text-[10px] font-bold text-success">Güvenli</Text>
+          </View>
         </View>
 
-        <Text className="mt-5 text-sm text-muted">Sayın {view.tenant_name},</Text>
-        <Text className="text-2xl font-bold text-foreground">{view.property_name}</Text>
-        {view.location ? (
-          <Text className="text-base text-muted">{view.location}</Text>
-        ) : null}
+        {/* Doğrulanmış kiracı kartı */}
+        <View className="mt-4 rounded-3xl border border-border/60 bg-surface p-4 shadow-sm shadow-black/5">
+          <Text className="text-[11px] font-bold uppercase tracking-wide text-primary-700">
+            Doğrulanmış Kiracı
+          </Text>
+          <Text className="mt-1 text-xl font-bold text-foreground">Sn. {view.tenant_name}</Text>
+          <View className="mt-1 flex-row items-center gap-1.5">
+            <Building2 size={13} color={palette.muted} />
+            <Text className="flex-1 text-sm text-muted" numberOfLines={1}>
+              {[view.property_name, view.location].filter(Boolean).join(' · ')}
+            </Text>
+          </View>
+          <View className="mt-3 flex-row items-center justify-between border-t border-border/50 pt-3">
+            <Text className="text-xs text-muted">Yönetici / Mülk Sahibi</Text>
+            <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>
+              {view.company_name}
+            </Text>
+          </View>
+        </View>
 
-        {/* Balance hero */}
+        {/* Cobalt bakiye hero — ödenmesi gereken tutar */}
         <View
-          className={`mt-5 rounded-3xl p-5 ${owes ? 'bg-danger-soft' : 'bg-success-soft'}`}
+          className="mt-4 rounded-[26px] bg-primary p-5"
+          style={{
+            shadowColor: '#2563EB',
+            shadowOpacity: 0.28,
+            shadowRadius: 22,
+            shadowOffset: { width: 0, height: 10 },
+            elevation: 8,
+          }}
         >
-          <Text className="text-sm font-medium text-muted">
-            {owes ? 'Toplam Borcunuz' : view.total_balance > 0 ? 'Alacağınız' : 'Hesap Durumu'}
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1">
+              <View
+                style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: owes ? '#FBBF24' : '#4ADE80' }}
+              />
+              <Text className="text-xs font-bold text-white">{view.current_month.label} Kirası</Text>
+            </View>
+            <Text className="text-xs font-semibold text-white/80">
+              {owes ? 'Ödeme bekleniyor' : 'Güncel'}
+            </Text>
+          </View>
+
+          <Text className="mt-3 text-xs font-semibold uppercase tracking-wide text-white/60">
+            Ödenmesi Gereken Tutar
           </Text>
-          <Text className={`mt-1 text-3xl font-bold ${owes ? 'text-danger' : 'text-success'}`}>
-            {owes ? view.total_balance_text.replace('-', '') : view.total_balance === 0 ? 'Güncel' : view.total_balance_text}
+          <Text className="mt-0.5 text-4xl font-extrabold text-white" numberOfLines={1}>
+            {view.current_month.remaining > 0
+              ? view.current_month.remaining_text
+              : view.current_month.due_text}
           </Text>
-          <View className="mt-3 flex-row justify-between border-t border-border/40 pt-3">
+
+          <View className="mt-4 flex-row items-center justify-between border-t border-white/15 pt-3">
             <View>
-              <Text className="text-xs text-muted">{view.current_month.label} kirası</Text>
-              <Text className="text-sm font-semibold text-foreground">
-                {view.current_month.due_text}
-              </Text>
+              <Text className="text-[11px] text-white/60">Bu ay ödenen</Text>
+              <Text className="text-sm font-bold text-white">{view.current_month.paid_text}</Text>
             </View>
             <View className="items-end">
-              <Text className="text-xs text-muted">Bu ay kalan</Text>
-              <Text className="text-sm font-bold text-foreground">
-                {view.current_month.remaining_text}
-              </Text>
+              <Text className="text-[11px] text-white/60">Toplam kira</Text>
+              <Text className="text-sm font-bold text-white">{view.current_month.due_text}</Text>
             </View>
           </View>
         </View>
