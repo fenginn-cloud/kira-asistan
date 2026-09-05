@@ -107,27 +107,44 @@ export default function SettingsScreen() {
       >
         <Text className="pt-2 text-2xl font-bold text-foreground">Profil</Text>
 
-        {/* Profil kartı */}
+        {/* Profil başlığı (Stitch) — avatar + ad + rol/plan/şirket rozetleri */}
         <Pressable className="mt-5" onPress={() => router.push('/(app)/profile')}>
           <Card>
-            <View className="flex-row items-center gap-3">
-              <Avatar name={user?.fullName ?? 'K'} />
+            <View className="flex-row items-center gap-4">
+              <Avatar name={user?.fullName ?? 'K'} size={60} />
               <View className="flex-1">
-                <Text className="text-base font-semibold text-foreground">{user?.fullName}</Text>
-                <Text className="text-sm text-muted">{user?.email}</Text>
+                <Text className="text-lg font-bold text-foreground" numberOfLines={1}>
+                  {user?.fullName}
+                </Text>
+                <Text className="text-sm text-muted" numberOfLines={1}>
+                  {user?.email}
+                </Text>
               </View>
-              <View className="items-end gap-1">
-                <View className="rounded-full bg-primary-50 px-3 py-1">
-                  <Text className="text-xs font-semibold text-primary-700">
-                    {user?.role === 'admin'
-                      ? 'Yönetici'
-                      : user?.role === 'super_admin'
-                        ? 'Süper Admin'
-                        : 'Personel'}
+              <ChevronRight size={18} color={palette.muted} />
+            </View>
+            <View className="mt-3 flex-row flex-wrap gap-2">
+              <View className="rounded-full bg-primary-50 px-3 py-1">
+                <Text className="text-xs font-semibold text-primary-700">
+                  {user?.role === 'admin'
+                    ? 'Yönetici'
+                    : user?.role === 'super_admin'
+                      ? 'Süper Admin'
+                      : 'Personel'}
+                </Text>
+              </View>
+              <View className="rounded-full bg-success-soft px-3 py-1">
+                <Text className="text-xs font-semibold text-success">
+                  {PLAN_LABELS[entitlement.plan]}
+                  {entitlement.isLegacy ? ' · Legacy' : ''}
+                </Text>
+              </View>
+              {company?.name ? (
+                <View className="rounded-full bg-background px-3 py-1">
+                  <Text className="text-xs font-semibold text-muted" numberOfLines={1}>
+                    {company.name}
                   </Text>
                 </View>
-                <ChevronRight size={16} color={palette.muted} />
-              </View>
+              ) : null}
             </View>
           </Card>
         </Pressable>

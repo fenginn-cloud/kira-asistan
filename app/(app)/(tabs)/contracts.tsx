@@ -19,7 +19,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
-import { getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
+import { formatCurrencyTRY, getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
 import { buildingName, foldSearch } from '@/lib/utils/property';
 import { conflictingContractIds } from '@/features/contracts/duplicates';
@@ -196,6 +196,32 @@ export default function ContractsScreen() {
   // Çakışan sözleşmeler (aynı daire aktif ya da aynı isim).
   const conflictIds = useMemo(() => conflictingContractIds(contracts), [contracts]);
 
+  // Header özeti (Stitch): aktif sayısı, aylık hacim, geciken tutar/adet.
+  const headerStats = useMemo(() => {
+    let active = 0;
+    let monthlyVolume = 0;
+    let overdueAmount = 0;
+    let overdueCount = 0;
+    for (const c of contracts) {
+      if (c.status === 'active') {
+        active += 1;
+        monthlyVolume += c.rentAmount + c.duesAmount;
+      }
+      const b = balances.get(c.id);
+      if (b?.hasOverdue) {
+        overdueCount += 1;
+        overdueAmount += b.totalDebt;
+      }
+    }
+    return { all: contracts.length, active, monthlyVolume, overdueAmount, overdueCount };
+  }, [contracts, balances]);
+
+  const filterCount: Partial<Record<StatusFilter, number>> = {
+    all: headerStats.all,
+    active: headerStats.active,
+    overdue: headerStats.overdueCount,
+  };
+
   const filtered = useMemo(() => {
     // Türkçe-duyarlı, aksan/büyük-küçük harf duyarsız arama.
     const q = foldSearch(query.trim());
@@ -269,14 +295,54 @@ export default function ContractsScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="px-5 pt-2">
         <View className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-foreground">Sözleşmeler</Text>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-2xl font-bold text-foreground">Sözleşmeler</Text>
+            <View className="rounded-full bg-primary-50 px-2.5 py-1">
+              <Text className="text-xs font-bold text-primary-700">{headerStats.active} Aktif</Text>
+            </View>
+          </View>
           <Pressable
             onPress={onNewContract}
-            className="h-11 w-11 items-center justify-center rounded-2xl bg-primary active:opacity-80"
+            className="h-11 flex-row items-center gap-1.5 rounded-2xl bg-primary px-4 active:opacity-80"
           >
-            <Plus size={22} color="#FFFFFF" />
+            <Plus size={18} color="#FFFFFF" />
+            <Text className="text-sm font-bold text-white">Yeni Ekle</Text>
           </Pressable>
         </View>
+
+        {/* Özet şeridi (Stitch) — yalnızca yönetici */}
+        {canSeeLedger ? (
+          <View className="mt-4 flex-row rounded-3xl bg-[#131B2E] p-4">
+            <View className="flex-1">
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-white/50">
+                Aylık Hacim
+              </Text>
+              <Text className="mt-1 text-lg font-extrabold text-white" numberOfLines={1}>
+                {formatCurrencyTRY(headerStats.monthlyVolume)}
+              </Text>
+            </View>
+            <View className="mx-3 w-px bg-white/10" />
+            <View className="flex-1">
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-white/50">
+                Geciken
+              </Text>
+              <Text className="mt-1 text-lg font-extrabold text-danger" numberOfLines={1}>
+                {formatCurrencyTRY(headerStats.overdueAmount)}
+              </Text>
+              <Text className="text-[11px] text-white/50">{headerStats.overdueCount} sözleşme</Text>
+            </View>
+            <View className="mx-3 w-px bg-white/10" />
+            <View className="flex-1">
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-white/50">
+                Aktif
+              </Text>
+              <Text className="mt-1 text-lg font-extrabold text-success" numberOfLines={1}>
+                {headerStats.active}
+              </Text>
+              <Text className="text-[11px] text-white/50">/ {headerStats.all} toplam</Text>
+            </View>
+          </View>
+        ) : null}
 
         {/* Search */}
         <View className="mt-4 flex-row items-center gap-2 rounded-2xl border border-border bg-surface px-4">
@@ -300,16 +366,22 @@ export default function ContractsScreen() {
           contentContainerStyle={{ gap: 8 }}
           renderItem={({ item }) => {
             const active = status === item.key;
+            const count = filterCount[item.key];
             return (
               <Pressable
                 onPress={() => setStatus(item.key)}
-                className={`rounded-full px-4 py-2 ${
+                className={`flex-row items-center gap-1.5 rounded-full px-4 py-2 ${
                   active ? 'bg-primary' : 'bg-surface border border-border'
                 }`}
               >
                 <Text className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}>
                   {item.label}
                 </Text>
+                {count !== undefined ? (
+                  <Text className={`text-xs font-bold ${active ? 'text-white/80' : 'text-muted/70'}`}>
+                    {count}
+                  </Text>
+                ) : null}
               </Pressable>
             );
           }}
