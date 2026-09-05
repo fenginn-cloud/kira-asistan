@@ -17,12 +17,15 @@ import {
   MessageSquareText,
   MoreHorizontal,
   PauseCircle,
+  Home,
   Pencil,
   Phone,
   Plus,
   RefreshCw,
   Trash2,
   Upload,
+  User,
+  Wallet,
 } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -545,20 +548,20 @@ export default function ContractDetailScreen() {
         {/* --- GENEL --- */}
         {activeTab === 'genel' ? (
           <>
-            <SectionHeader title="Kiracı" />
+            <SectionHeader title="Kiracı" icon={User} />
             <Card>
               <InfoRow label="Ad Soyad" value={contract.tenantName} />
               <InfoRow label="Telefon" value={contract.tenantPhone} />
               <InfoRow label="TC Kimlik" value={contract.tenantNationalId ?? '—'} last />
             </Card>
 
-            <SectionHeader title="Mülk Sahibi" />
+            <SectionHeader title="Mülk Sahibi" icon={Home} />
             <Card>
               <InfoRow label="Ad Soyad" value={contract.ownerName} />
               <InfoRow label="Telefon" value={contract.ownerPhone} last />
             </Card>
 
-            <SectionHeader title="Finansal" />
+            <SectionHeader title="Finansal" icon={Wallet} />
             <Card>
               <InfoRow label="Kira Bedeli" value={formatCurrency(contract.rentAmount)} />
               <InfoRow label="Aidat" value={formatCurrency(contract.duesAmount)} />
@@ -570,7 +573,7 @@ export default function ContractDetailScreen() {
               />
             </Card>
 
-            <SectionHeader title="Sözleşme" />
+            <SectionHeader title="Sözleşme" icon={FileText} />
             <Card>
               <InfoRow label="Başlangıç" value={formatShortDate(contract.startDate)} />
               <InfoRow
@@ -581,7 +584,7 @@ export default function ContractDetailScreen() {
               <InfoRow label="Notlar" value={contract.notes ?? '—'} last />
             </Card>
 
-            <SectionHeader title="Sözleşme Dosyası" />
+            <SectionHeader title="Sözleşme Dosyası" icon={Upload} />
             <Card>
               <View className="flex-row items-center gap-3">
                 <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
