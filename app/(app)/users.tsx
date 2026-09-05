@@ -175,12 +175,16 @@ export default function UsersScreen() {
       <Modal visible={draft !== null} transparent animationType="slide" onRequestClose={() => setDraft(null)}>
         <View className="flex-1 justify-end bg-black/40">
           <View className="rounded-t-3xl bg-surface p-5 pb-10">
+            {/* Tutma çubuğu (Stitch) */}
+            <View className="mb-3 items-center">
+              <View className="h-1.5 w-10 rounded-full bg-border" />
+            </View>
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-lg font-bold text-foreground">
                 {draft?.id ? 'Kullanıcıyı Düzenle' : 'Kullanıcı Ekle'}
               </Text>
               <Pressable onPress={() => setDraft(null)} className="h-8 w-8 items-center justify-center">
-                <X size={22} color="#6B7280" />
+                <X size={22} color={palette.muted} />
               </Pressable>
             </View>
             {draft ? (
