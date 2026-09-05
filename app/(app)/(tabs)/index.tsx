@@ -21,6 +21,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
 import { HeroSummaryCard } from '@/features/dashboard/components/HeroSummaryCard';
+import { FinancialInsight } from '@/features/dashboard/components/FinancialInsight';
 import { QuickActions, type QuickAction } from '@/features/dashboard/components/QuickActions';
 import { CollectionHome } from '@/features/dashboard/CollectionHome';
 import { useContractGate } from '@/features/subscription/useContractGate';
@@ -243,6 +244,17 @@ export default function HomeScreen() {
 
             {/* Hızlı İşlemler (Stitch) — bağımsız AI Danışman kaldırıldı */}
             <QuickActions actions={quickActions} />
+
+            {/* Finansal Öngörü (Stitch) — bağlamsal içgörü, gerçek veriden.
+                Yalnızca Pro/Business finansal özet açıkken gösterilir. */}
+            {entitlement.limits.stats ? (
+              <FinancialInsight
+                finance={finance}
+                overdue={overdue}
+                upcoming={upcoming}
+                onPress={() => router.push('/stats')}
+              />
+            ) : null}
 
             {/* Tahsilat takibi — Bugün / Geciken / Bu hafta (yöneticide "Alındı") */}
             <CollectionHome
