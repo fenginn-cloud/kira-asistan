@@ -1,89 +1,139 @@
-import { Text, View } from 'react-native';
-import { BalanceBadge } from '@/components/ui/StatusBadge';
+import { Pressable, Text, View } from 'react-native';
+import { Download, Plus, ShieldCheck } from 'lucide-react-native';
 import { formatCurrencyTRY, type ContractBalance } from '@/lib/ledger/ledger';
 
-function balanceColor(n: number): string {
-  if (n < 0) return 'text-danger';
-  if (n > 0) return 'text-success';
-  return 'text-foreground';
+interface Props {
+  balance: ContractBalance;
+  deposit: number;
+  paymentDay: number;
+  /** Sözleşme geneli tahsil edilen / beklenen (yıllık performans için). */
+  collected: number;
+  expected: number;
+  onRecord?: () => void;
+  onStatement?: () => void;
 }
 
-/** Top summary card on the contract detail screen. */
-export function ContractBalanceCard({ balance }: { balance: ContractBalance }) {
-  const { currentMonth, totalBalance } = balance;
-  const progress = currentMonth.due > 0 ? Math.min(currentMonth.paid / currentMonth.due, 1) : currentMonth.paid > 0 ? 1 : 0;
-  const barTone =
-    currentMonth.status === 'overdue'
-      ? 'bg-danger'
-      : currentMonth.remaining > 0
-        ? 'bg-primary'
-        : 'bg-success';
-  return (
-    <View className="rounded-3xl border border-border/60 bg-surface p-4 shadow-sm shadow-black/5">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-semibold text-muted">Cari Hesap Özeti</Text>
-        <BalanceBadge status={balance.status} />
-      </View>
+/**
+ * Sözleşme detayı — Cari Hesap Bakiyesi (Stitch mavi hero). Kalan borç,
+ * yıllık tahsilat performansı, Aylık Kira ve Teminat Depozitosu alt kartları.
+ * Tüm değerler gerçek ledger verisinden.
+ */
+export function ContractBalanceCard({
+  balance,
+  deposit,
+  paymentDay,
+  collected,
+  expected,
+  onRecord,
+  onStatement,
+}: Props) {
+  const { totalBalance, monthlyRent } = balance;
+  // Kiracının borcu = negatif bakiye; alacağı/fazlası = pozitif bakiye.
+  const debt = totalBalance < 0 ? Math.abs(totalBalance) : 0;
+  const credit = totalBalance > 0 ? totalBalance : 0;
+  const perfPct = expected > 0 ? Math.round((collected / expected) * 100) : 100;
 
-      {/* Genel bakiye — öne çıkan */}
-      <View className="mt-2 flex-row items-end justify-between">
-        <View>
-          <Text className="text-xs text-muted">Genel Bakiye</Text>
-          <Text className={`mt-0.5 text-3xl font-extrabold ${balanceColor(totalBalance)}`}>
-            {formatCurrencyTRY(totalBalance)}
+  return (
+    <View
+      className="overflow-hidden rounded-[26px] bg-primary p-5"
+      style={{
+        shadowColor: '#2563EB',
+        shadowOpacity: 0.28,
+        shadowRadius: 22,
+        shadowOffset: { width: 0, height: 10 },
+        elevation: 8,
+      }}
+    >
+      <View className="flex-row items-center justify-between">
+        <Text className="text-sm font-medium text-white/80">Cari Hesap Bakiyesi</Text>
+        <View className="flex-row items-center gap-1.5 rounded-full bg-white/15 px-3 py-1">
+          <View
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: debt > 0 ? '#F87171' : '#4ADE80' }}
+          />
+          <Text className="text-xs font-semibold text-white">
+            {debt > 0
+              ? `${formatCurrencyTRY(debt)} Kalan Borç`
+              : credit > 0
+                ? `${formatCurrencyTRY(credit)} Alacak`
+                : 'Güncel'}
           </Text>
         </View>
       </View>
 
-      {/* Bu ay ilerlemesi */}
-      <View className="mt-3 h-2 overflow-hidden rounded-full bg-background">
-        <View className={`h-2 rounded-full ${barTone}`} style={{ width: `${Math.round(progress * 100)}%` }} />
-      </View>
-
-      <View className="mt-3 gap-2 border-t border-border/60 pt-3">
-        <Row label="Aylık kira" value={formatCurrencyTRY(balance.monthlyRent)} />
-        <Row label="Bu ay ödenmesi gereken" value={formatCurrencyTRY(currentMonth.due)} />
-        <Row label="Bu ay ödenen" value={formatCurrencyTRY(currentMonth.paid)} />
-        <Row
-          label="Bu ay kalan"
-          value={formatCurrencyTRY(currentMonth.remaining)}
-          valueClass={
-            currentMonth.status === 'overdue'
-              ? 'text-danger'
-              : currentMonth.remaining > 0
-                ? 'text-foreground'
-                : 'text-success'
-          }
-        />
-      </View>
-      {totalBalance !== 0 ? (
-        <Text className="mt-1 text-xs text-muted">
-          {totalBalance < 0
-            ? `Kiracının ${formatCurrencyTRY(Math.abs(totalBalance))} borcu var.`
-            : `Kiracının ${formatCurrencyTRY(totalBalance)} alacağı / fazla ödemesi var.`}
+      <View className="mt-1 flex-row items-end gap-2">
+        <Text className="text-4xl font-extrabold text-white">
+          {formatCurrencyTRY(debt > 0 ? debt : credit)}
         </Text>
-      ) : (
-        <Text className="mt-1 text-xs text-muted">Hesap güncel, borç yok.</Text>
-      )}
-    </View>
-  );
-}
+        <Text className="pb-1.5 text-sm font-medium text-white/70">
+          {debt > 0 ? 'Geciken / Kalan' : credit > 0 ? 'Fazla Ödeme' : 'Borç Yok'}
+        </Text>
+      </View>
 
-function Row({
-  label,
-  value,
-  valueClass,
-}: {
-  label: string;
-  value: string;
-  valueClass?: string;
-}) {
-  return (
-    <View className="flex-row items-center justify-between">
-      <Text className="text-sm text-muted">{label}</Text>
-      <Text className={`text-sm font-semibold ${valueClass ?? 'text-foreground'}`}>
-        {value}
-      </Text>
+      {/* Yıllık tahsilat performansı */}
+      <View className="mt-3">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-xs text-white/70">Tahsilat Performansı</Text>
+          <Text className="text-xs font-semibold text-white">
+            %{perfPct} ({formatCurrencyTRY(collected)} / {formatCurrencyTRY(expected)})
+          </Text>
+        </View>
+        <View className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/20">
+          <View
+            className="h-2 rounded-full"
+            style={{ width: `${Math.min(perfPct, 100)}%`, backgroundColor: '#4ADE80' }}
+          />
+        </View>
+      </View>
+
+      {/* Aylık Kira / Teminat Depozitosu */}
+      <View className="mt-4 flex-row gap-3">
+        <View className="flex-1 rounded-2xl bg-white/10 p-3">
+          <Text className="text-[11px] font-medium uppercase tracking-wide text-white/60">
+            Aylık Kira
+          </Text>
+          <Text className="mt-1 text-lg font-extrabold text-white" numberOfLines={1}>
+            {formatCurrencyTRY(monthlyRent)}
+          </Text>
+          <Text className="text-[11px] text-white/60">{`Her ayın ${paymentDay}'i`}</Text>
+        </View>
+        <View className="flex-1 rounded-2xl bg-white/10 p-3">
+          <Text className="text-[11px] font-medium uppercase tracking-wide text-white/60">
+            Teminat Depozitosu
+          </Text>
+          <Text className="mt-1 text-lg font-extrabold text-white" numberOfLines={1}>
+            {formatCurrencyTRY(deposit)}
+          </Text>
+          <View className="flex-row items-center gap-1">
+            <ShieldCheck size={11} color="#4ADE80" />
+            <Text className="text-[11px] text-white/60">Kasada Güvende</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Aksiyonlar */}
+      {onRecord || onStatement ? (
+        <View className="mt-4 flex-row gap-3">
+          {onRecord ? (
+            <Pressable
+              onPress={onRecord}
+              className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-white py-3 active:opacity-90"
+            >
+              <Plus size={17} color="#2563EB" />
+              <Text className="text-sm font-bold text-primary">Tahsilat Gir</Text>
+            </Pressable>
+          ) : null}
+          {onStatement ? (
+            <Pressable
+              onPress={onStatement}
+              className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-white/15 py-3 active:opacity-80"
+            >
+              <Download size={17} color="#FFFFFF" />
+              <Text className="text-sm font-bold text-white">Ekstre</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
