@@ -105,7 +105,7 @@ export default function SettingsScreen() {
         contentContainerClassName="px-5 pb-10"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="pt-2 text-2xl font-bold text-foreground">Ayarlar</Text>
+        <Text className="pt-2 text-2xl font-bold text-foreground">Profil</Text>
 
         {/* Profil kartı */}
         <Pressable className="mt-5" onPress={() => router.push('/(app)/profile')}>

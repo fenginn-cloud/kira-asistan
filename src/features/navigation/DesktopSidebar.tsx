@@ -2,18 +2,18 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import {
   BarChart3,
+  Building2,
   FileText,
-  LayoutGrid,
+  Home,
   Plus,
-  Settings,
-  Sparkles,
+  User,
 } from 'lucide-react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
 import { useContractGate } from '@/features/subscription/useContractGate';
 import { palette } from '@/lib/theme/colors';
 
-type IconType = typeof LayoutGrid;
+type IconType = typeof Home;
 
 interface NavItem {
   key: string;
@@ -29,7 +29,7 @@ const NAV: NavItem[] = [
     key: 'index',
     label: 'Ana Sayfa',
     href: '/',
-    icon: LayoutGrid,
+    icon: Home,
     match: (p) => p === '/',
   },
   {
@@ -40,24 +40,24 @@ const NAV: NavItem[] = [
     match: (p) => p.startsWith('/contracts'),
   },
   {
+    key: 'properties',
+    label: 'Mülkler',
+    href: '/properties',
+    icon: Building2,
+    match: (p) => p.startsWith('/properties'),
+  },
+  {
     key: 'stats',
-    label: 'İstatistik',
+    label: 'Analiz',
     href: '/stats',
     icon: BarChart3,
     match: (p) => p.startsWith('/stats'),
   },
   {
-    key: 'ai',
-    label: 'AI Asistan',
-    href: '/ai',
-    icon: Sparkles,
-    match: (p) => p.startsWith('/ai'),
-  },
-  {
     key: 'settings',
-    label: 'Ayarlar',
+    label: 'Profil',
     href: '/settings',
-    icon: Settings,
+    icon: User,
     match: (p) => p.startsWith('/settings'),
   },
 ];

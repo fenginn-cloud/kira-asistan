@@ -58,7 +58,7 @@ export default function StatsScreen() {
           </View>
           <View className="mt-5 flex-row items-center gap-2">
             <Lock size={16} color="#9CA3AF" />
-            <Text className="text-lg font-bold text-foreground">İstatistikler</Text>
+            <Text className="text-lg font-bold text-foreground">Analiz</Text>
           </View>
           <Text className="mt-2 text-center text-sm text-muted">
             Tahsilat oranları, bina bazlı analiz ve Finansal Özet (toplam kira, tahsilat,
@@ -82,7 +82,7 @@ export default function StatsScreen() {
         contentContainerClassName="px-5 pb-10"
         showsVerticalScrollIndicator={false}
       >
-        <Text className="pt-2 text-2xl font-bold text-foreground">İstatistikler</Text>
+        <Text className="pt-2 text-2xl font-bold text-foreground">Analiz</Text>
 
         {s.isLoading ? (
           <View className="mt-5 gap-3">

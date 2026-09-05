@@ -4,17 +4,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  Bell,
+  Building2,
   CheckCircle2,
+  FilePlus2,
   Inbox,
   Lock,
+  Search,
+  Send,
   TimerReset,
   Wallet,
 } from 'lucide-react-native';
+import { Avatar } from '@/components/ui/Avatar';
 import { StatCard } from '@/components/ui/StatCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
 import { HeroSummaryCard } from '@/features/dashboard/components/HeroSummaryCard';
+import { QuickActions, type QuickAction } from '@/features/dashboard/components/QuickActions';
 import { CollectionHome } from '@/features/dashboard/CollectionHome';
 import { useContractGate } from '@/features/subscription/useContractGate';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
@@ -90,6 +97,42 @@ export default function HomeScreen() {
 
   const goToContract = (id: string) => router.push(`/(app)/contracts/${id}`);
 
+  // Hızlı İşlemler — yalnızca gerçek ürün akışları (bağımsız AI Danışman YOK).
+  const quickActions: QuickAction[] = [
+    {
+      key: 'collect',
+      label: 'Tahsilat',
+      icon: Wallet,
+      color: '#2563EB',
+      chip: 'bg-primary-50',
+      onPress: () => router.push('/contracts'),
+    },
+    {
+      key: 'new',
+      label: 'Yeni Sözleşme',
+      icon: FilePlus2,
+      color: '#16A34A',
+      chip: 'bg-success-soft',
+      onPress: () => router.push(gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall'),
+    },
+    {
+      key: 'form',
+      label: 'Form Paylaş',
+      icon: Send,
+      color: '#D97706',
+      chip: 'bg-warning-soft',
+      onPress: () => router.push('/(app)/tenant-forms/new'),
+    },
+    {
+      key: 'properties',
+      label: 'Mülkler',
+      icon: Building2,
+      color: '#2563EB',
+      chip: 'bg-primary-50',
+      onPress: () => router.push('/properties'),
+    },
+  ];
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView
@@ -105,11 +148,34 @@ export default function HomeScreen() {
           />
         }
       >
-        <View className="pt-2">
-          <Text className="text-sm text-muted">Hoş geldin,</Text>
-          <Text className="text-2xl font-bold text-foreground">
-            {user?.fullName ?? 'Kullanıcı'}
-          </Text>
+        {/* Header — gerçek kullanıcı bilgisi (initials avatar), arama + bildirim */}
+        <View className="flex-row items-center gap-3 pt-2">
+          <Avatar name={user?.fullName ?? 'K'} size={44} />
+          <View className="flex-1">
+            <Text className="text-sm text-muted">Hoş geldiniz,</Text>
+            <View className="flex-row items-center gap-2">
+              <Text className="text-xl font-bold text-foreground" numberOfLines={1}>
+                {user?.fullName ?? 'Kullanıcı'}
+              </Text>
+              {canSeeLedger ? (
+                <Text className="text-xs font-semibold text-primary-700">
+                  {contracts.length} Sözleşme
+                </Text>
+              ) : null}
+            </View>
+          </View>
+          <Pressable
+            onPress={() => router.push('/contracts')}
+            className="h-10 w-10 items-center justify-center rounded-full bg-surface border border-border/60 active:opacity-80"
+          >
+            <Search size={18} color={palette.muted} />
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/(app)/notification-settings')}
+            className="h-10 w-10 items-center justify-center rounded-full bg-surface border border-border/60 active:opacity-80"
+          >
+            <Bell size={18} color={palette.muted} />
+          </Pressable>
         </View>
 
         {showLimitStrip ? (
@@ -175,6 +241,9 @@ export default function HomeScreen() {
               </View>
             ) : null}
 
+            {/* Hızlı İşlemler (Stitch) — bağımsız AI Danışman kaldırıldı */}
+            <QuickActions actions={quickActions} />
+
             {/* Tahsilat takibi — Bugün / Geciken / Bu hafta (yöneticide "Alındı") */}
             <CollectionHome
               overdue={overdue}
@@ -206,6 +275,8 @@ export default function HomeScreen() {
               expected={finance.expectedThisMonth}
               collected={finance.collectedThisMonth}
               remaining={finance.remainingThisMonth}
+              onRecord={() => router.push('/contracts')}
+              onReport={() => router.push('/stats')}
             />
 
             <SectionHeader title="Cari Hesap" />
