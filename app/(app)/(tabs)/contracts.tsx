@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowDownUp, BarChart3, FileSearch, Plus, Search } from 'lucide-react-native';
+import { ArrowDownUp, BarChart3, FileSearch, Plus, Search, SlidersHorizontal } from 'lucide-react-native';
 import { ContractCard } from '@/features/contracts/components/ContractCard';
 import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
 import { useContracts } from '@/features/contracts/hooks';
@@ -15,6 +15,7 @@ import { errorMessage } from '@/lib/utils/error';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
+import { FilterBottomSheet } from '@/features/contracts/components/FilterBottomSheet';
 import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
@@ -111,6 +112,7 @@ export default function ContractsScreen() {
   const [query, setQuery] = useState('');
   const [block, setBlock] = useState('all');
   const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [receiveTarget, setReceiveTarget] = useState<Contract | null>(null);
   const toast = useToast();
   const markReceived = useMarkReceived();
@@ -291,6 +293,15 @@ export default function ContractsScreen() {
 
   const summary = `${property === 'all' ? 'Tüm mülkler' : property} · ${filtered.length} sözleşme · ${SORT_LABELS[sort]}`;
 
+  // Filtre bottom sheet için aktif (varsayılandan farklı) filtre sayısı.
+  const activeFilterCount =
+    (status !== 'all' ? 1 : 0) + (property !== 'all' ? 1 : 0) + (sort !== 'name_asc' ? 1 : 0);
+  const clearFilters = () => {
+    setStatus('all');
+    setProperty('all');
+    setSort('name_asc');
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="px-5 pt-2">
@@ -344,16 +355,30 @@ export default function ContractsScreen() {
           </View>
         ) : null}
 
-        {/* Search */}
-        <View className="mt-4 flex-row items-center gap-2 rounded-2xl border border-border bg-surface px-4">
-          <Search size={18} color={colors.textMuted} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Mülk, kiracı veya telefon ara"
-            placeholderTextColor={colors.textMuted}
-            className="h-12 flex-1 text-base text-foreground"
-          />
+        {/* Search + Filtrele (Stitch) */}
+        <View className="mt-4 flex-row items-center gap-2">
+          <View className="flex-1 flex-row items-center gap-2 rounded-2xl border border-border bg-surface px-4">
+            <Search size={18} color={colors.textMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Kiracı, mülk veya blok ara"
+              placeholderTextColor={colors.textMuted}
+              className="h-12 flex-1 text-base text-foreground"
+            />
+          </View>
+          <Pressable
+            onPress={() => setFilterOpen(true)}
+            className="h-12 flex-row items-center gap-1.5 rounded-2xl border border-border bg-surface px-3.5 active:opacity-80"
+          >
+            <SlidersHorizontal size={16} color={colors.text} />
+            <Text className="text-sm font-semibold text-foreground">Filtrele</Text>
+            {activeFilterCount > 0 ? (
+              <View className="h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1">
+                <Text className="text-[11px] font-bold text-white">{activeFilterCount}</Text>
+              </View>
+            ) : null}
+          </Pressable>
         </View>
 
         {/* Status filters */}
@@ -518,6 +543,22 @@ export default function ContractsScreen() {
         title="Sırala"
         items={sortItems}
         onClose={() => setSortOpen(false)}
+      />
+
+      <FilterBottomSheet
+        visible={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        statusFilters={statusFilters}
+        status={status}
+        onStatus={setStatus}
+        propertyOptions={propertyOptions}
+        property={property}
+        onProperty={setProperty}
+        sortOrder={sortOrder}
+        sort={sort}
+        sortLabels={SORT_LABELS}
+        onSort={setSort}
+        onClear={clearFilters}
       />
 
       <MarkReceivedSheet
