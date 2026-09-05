@@ -1,5 +1,5 @@
 /* Kira Asistan — Service Worker (offline shell + push-ready) */
-const CACHE = 'kira-asistan-v6';
+const CACHE = 'kira-asistan-v7';
 const APP_SHELL = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
