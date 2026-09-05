@@ -105,7 +105,7 @@ export default function PropertiesScreen() {
             <BuildingCard
               row={item}
               onPress={() =>
-                router.push(`/(app)/property-report?name=${encodeURIComponent(item.name)}` as Href)
+                router.push(`/(app)/building/${encodeURIComponent(item.name)}` as Href)
               }
             />
           )}
