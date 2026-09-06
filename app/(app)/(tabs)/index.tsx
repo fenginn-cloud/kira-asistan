@@ -7,6 +7,8 @@ import {
   Bell,
   Building2,
   CheckCircle2,
+  ChevronRight,
+  DoorClosed,
   FilePlus2,
   Inbox,
   Lock,
@@ -22,6 +24,8 @@ import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ContractExpiryRow } from '@/features/dashboard/components/ContractExpiryRow';
 import { HeroSummaryCard } from '@/features/dashboard/components/HeroSummaryCard';
 import { FinancialInsight } from '@/features/dashboard/components/FinancialInsight';
+import { useUnits } from '@/features/units/hooks';
+import { computeInventoryStats } from '@/features/units/occupancy';
 import { QuickActions, type QuickAction } from '@/features/dashboard/components/QuickActions';
 import { CollectionHome } from '@/features/dashboard/CollectionHome';
 import { useContractGate } from '@/features/subscription/useContractGate';
@@ -63,6 +67,8 @@ export default function HomeScreen() {
   const finance = getDashboardFinancialSummary(contracts, payments);
   const expiring = expiringContracts(contracts);
   const { data: pendingClaims = [] } = usePendingClaims();
+  const { data: units = [] } = useUnits();
+  const inv = computeInventoryStats(units, contracts);
   const toast = useToast();
   const settlePayment = useSettlePayment();
   const [receiveTarget, setReceiveTarget] = useState<OpenItem | null>(null);
@@ -254,6 +260,28 @@ export default function HomeScreen() {
                 upcoming={upcoming}
                 onPress={() => router.push('/stats')}
               />
+            ) : null}
+
+            {/* Boş daire özeti (envanterden) — Mülkler'e kısayol */}
+            {inv.total > 0 ? (
+              <Pressable
+                onPress={() => router.push('/properties')}
+                className="mt-4 flex-row items-center gap-3 rounded-3xl border border-border/60 bg-surface p-4 shadow-sm shadow-black/5 active:opacity-90"
+              >
+                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-warning-soft">
+                  <DoorClosed size={20} color={palette.warning} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-sm font-bold text-foreground">
+                    {inv.vacant} boş daire
+                  </Text>
+                  <Text className="text-xs text-muted">
+                    {inv.occupied}/{inv.total} dolu · %
+                    {inv.total > 0 ? Math.round((inv.occupied / inv.total) * 100) : 0} doluluk
+                  </Text>
+                </View>
+                <ChevronRight size={18} color={palette.muted} />
+              </Pressable>
             ) : null}
 
             {/* Tahsilat takibi — Bugün / Geciken / Bu hafta (yöneticide "Alındı") */}

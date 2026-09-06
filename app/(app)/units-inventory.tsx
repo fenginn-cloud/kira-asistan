@@ -59,6 +59,14 @@ export default function UnitsInventoryScreen() {
     return { all: merged.length, occupied, vacant: merged.length - occupied };
   }, [merged]);
 
+  // Envanterde eşleşmeyen aktif sözleşmeler (daire no hatalı olabilir).
+  const unmatched = useMemo(() => {
+    const byId = new Map(contracts.map((c) => [c.id, c]));
+    return merged
+      .filter((u) => u.synthesized)
+      .map((u) => ({ u, tenant: (u.contractId && byId.get(u.contractId)?.tenantName) || 'Kiracı' }));
+  }, [merged, contracts]);
+
   // Bina → blok gruplama (filtre uygulanmış).
   const grouped = useMemo(() => {
     const pass = (u: EffectiveUnit) =>
@@ -265,6 +273,37 @@ export default function UnitsInventoryScreen() {
                 </Pressable>
               );
             })}
+          </View>
+        ) : null}
+
+        {/* Eşleşmeyen sözleşme uyarısı — daire no hatalı / envanterde yok */}
+        {unmatched.length > 0 ? (
+          <View className="mt-4 rounded-2xl border border-warning/40 bg-warning-soft p-4">
+            <View className="flex-row items-center gap-2">
+              <AlertTriangle size={16} color={palette.warning} />
+              <Text className="flex-1 text-sm font-bold text-foreground">
+                {unmatched.length} sözleşme envanterle eşleşmedi
+              </Text>
+            </View>
+            <Text className="mt-1 text-xs text-muted">
+              {'Bu sözleşmelerin daire no\'su envanterdeki bir daireyle eşleşmiyor. Sözleşmenin daire/blok bilgisini düzeltin ya da daireyi envantere ekleyin.'}
+            </Text>
+            <View className="mt-2 gap-1.5">
+              {unmatched.slice(0, 8).map(({ u, tenant }) => (
+                <View key={u.id} className="flex-row items-center justify-between">
+                  <Text className="flex-1 pr-2 text-xs font-semibold text-foreground" numberOfLines={1}>
+                    {u.building}
+                    {u.block ? ` · ${u.block}` : ''} · {u.unitLabel || '—'}
+                  </Text>
+                  <Text className="text-xs text-muted" numberOfLines={1}>
+                    {tenant}
+                  </Text>
+                </View>
+              ))}
+              {unmatched.length > 8 ? (
+                <Text className="text-xs text-muted">+{unmatched.length - 8} daha…</Text>
+              ) : null}
+            </View>
           </View>
         ) : null}
 
