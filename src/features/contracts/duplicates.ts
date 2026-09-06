@@ -1,4 +1,5 @@
 import { foldSearch } from '@/lib/utils/property';
+import { locationId, hasUnitIdentity } from '@/features/units/occupancy';
 import type { Contract } from '@/types';
 
 export interface ContractConflicts {
@@ -8,13 +9,17 @@ export interface ContractConflicts {
   sameName: Contract[];
 }
 
-/** Mülk + blok + daire kimliği (Türkçe/boşluk duyarsız). */
+/**
+ * Mülk + blok + daire kimliği — yazıma duyarsız (boşluk, baştaki sıfır,
+ * büyük/küçük, Türkçe, "daire" öneki hepsi normalize edilir). Envanter
+ * eşleştirmesiyle aynı mantık (locationId).
+ */
 export function unitKey(
   propertyName: string,
   block: string | null | undefined,
   unit: string | null | undefined
 ): string {
-  return foldSearch([propertyName ?? '', block ?? '', unit ?? ''].join('|'));
+  return locationId(propertyName, block, unit);
 }
 
 /** Bir aday sözleşmenin mevcutlarla çakışmalarını bulur. */
@@ -30,7 +35,7 @@ export function findContractConflicts(
 ): ContractConflicts {
   const key = unitKey(candidate.propertyName, candidate.block, candidate.unit);
   const name = foldSearch((candidate.tenantName ?? '').trim());
-  const hasUnit = !!(candidate.unit && candidate.unit.trim());
+  const hasUnit = hasUnitIdentity(candidate.propertyName, candidate.unit);
 
   const sameUnit: Contract[] = [];
   const sameName: Contract[] = [];
@@ -39,6 +44,7 @@ export function findContractConflicts(
     if (
       hasUnit &&
       c.status === 'active' &&
+      hasUnitIdentity(c.propertyName, c.unit) &&
       unitKey(c.propertyName, c.block, c.unit) === key
     ) {
       sameUnit.push(c);
@@ -68,7 +74,7 @@ export function conflictingContractIds(contracts: Contract[]): Set<string> {
   const byUnit = new Map<string, Contract[]>();
   const byName = new Map<string, Contract[]>();
   for (const c of contracts) {
-    if (c.status === 'active' && c.unit && c.unit.trim()) {
+    if (c.status === 'active' && hasUnitIdentity(c.propertyName, c.unit)) {
       const k = unitKey(c.propertyName, c.block, c.unit);
       (byUnit.get(k) ?? byUnit.set(k, []).get(k)!).push(c);
     }

@@ -49,10 +49,12 @@ import {
 } from '@/features/payments/components/AddTransactionModal';
 import {
   useContract,
+  useContracts,
   useContractToken,
   useDeleteContract,
   useUpdateContract,
 } from '@/features/contracts/hooks';
+import { findContractConflicts } from '@/features/contracts/duplicates';
 import {
   usePaymentsByContract,
   useAddTransaction,
@@ -104,6 +106,7 @@ export default function ContractDetailScreen() {
   const canSeeLedger = role === 'admin' || role === 'super_admin';
 
   const { data: contract, isLoading } = useContract(id);
+  const { data: allContracts = [] } = useContracts();
   const { data: publicToken } = useContractToken(id);
   const { data: allForms = [] } = useTenantForms();
   const contractForms = allForms.filter((f) => f.contractId === id);
@@ -167,6 +170,15 @@ export default function ContractDetailScreen() {
     }
     return { collected, expected };
   }, [payments]);
+
+  // Aynı daireye başka aktif sözleşme(ler) — çakışma uyarısı için.
+  const unitConflicts = useMemo(
+    () =>
+      contract
+        ? findContractConflicts(allContracts, contract, contract.id).sameUnit
+        : [],
+    [allContracts, contract]
+  );
 
   // Cari hesap: full ledger (chronological) + derived balance summary.
   const ledgerRows = useMemo(() => generateLedgerRows(payments), [payments]);
@@ -482,6 +494,36 @@ export default function ContractDetailScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Çakışma uyarısı — aynı daireye başka aktif sözleşme */}
+        {unitConflicts.length > 0 ? (
+          <View className="mt-4 rounded-2xl border border-danger/40 bg-danger-soft p-4">
+            <View className="flex-row items-center gap-2">
+              <CalendarX2 size={16} color={palette.danger} />
+              <Text className="flex-1 text-sm font-bold text-danger">
+                Bu daireye başka aktif sözleşme var
+              </Text>
+            </View>
+            <Text className="mt-1 text-xs text-muted">
+              Aynı mülk/blok/dairede birden fazla aktif sözleşme çakışmadır. Doğru olmayanı
+              pasife alın veya silin.
+            </Text>
+            <View className="mt-2 gap-2">
+              {unitConflicts.map((c) => (
+                <Pressable
+                  key={c.id}
+                  onPress={() => router.push(`/(app)/contracts/${c.id}`)}
+                  className="flex-row items-center justify-between rounded-xl bg-surface px-3 py-2.5 active:opacity-80"
+                >
+                  <Text className="flex-1 pr-2 text-sm font-semibold text-foreground" numberOfLines={1}>
+                    {c.tenantName}
+                  </Text>
+                  <Text className="text-xs font-semibold text-primary-700">Görüntüle</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {/* Quick actions */}
         <View className="mt-4 flex-row gap-2">
