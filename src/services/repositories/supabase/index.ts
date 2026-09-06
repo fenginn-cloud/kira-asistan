@@ -506,4 +506,81 @@ export const supabaseRepositories: Repositories = {
       if (error) throw error;
     },
   },
+
+  units: {
+    async list() {
+      const { data, error } = await db()
+        .from('units')
+        .select('id, building, block, unit_label, status, vacant_since, note')
+        .order('building', { ascending: true })
+        .order('block', { ascending: true })
+        .order('unit_label', { ascending: true });
+      if (error) {
+        // Tablo henüz yoksa (migration 0019 uygulanmadıysa) sessizce boş dön.
+        if ((error as { code?: string }).code === '42P01') return [];
+        throw error;
+      }
+      return (data ?? []).map((r) => ({
+        id: r.id as string,
+        building: r.building as string,
+        block: (r.block as string) ?? '',
+        unitLabel: r.unit_label as string,
+        status: (r.status as 'occupied' | 'vacant') ?? 'vacant',
+        vacantSince: (r.vacant_since as string | null) ?? null,
+        note: (r.note as string | null) ?? null,
+      }));
+    },
+    async upsert(input) {
+      const company_id = await currentCompanyId();
+      const row = {
+        company_id,
+        building: input.building,
+        block: input.block ?? '',
+        unit_label: input.unitLabel,
+        status: input.status ?? 'vacant',
+        vacant_since: input.vacantSince ?? null,
+        note: input.note ?? null,
+        updated_at: new Date().toISOString(),
+      };
+      // Çakışma olursa mevcut kayıt korunur (ignoreDuplicates) — "isimler
+      // çakışıyorsa kalsın". Ardından güncel satırı çekip döneriz.
+      const { error } = await db()
+        .from('units')
+        .upsert(row, { onConflict: 'company_id,building,block,unit_label', ignoreDuplicates: true });
+      if (error) throw error;
+      const { data, error: selErr } = await db()
+        .from('units')
+        .select('id, building, block, unit_label, status, vacant_since, note')
+        .eq('company_id', company_id)
+        .eq('building', row.building)
+        .eq('block', row.block)
+        .eq('unit_label', row.unit_label)
+        .single();
+      if (selErr) throw selErr;
+      return {
+        id: data.id as string,
+        building: data.building as string,
+        block: (data.block as string) ?? '',
+        unitLabel: data.unit_label as string,
+        status: (data.status as 'occupied' | 'vacant') ?? 'vacant',
+        vacantSince: (data.vacant_since as string | null) ?? null,
+        note: (data.note as string | null) ?? null,
+      };
+    },
+    async setStatus(id, status, vacantSince) {
+      const { error } = await db()
+        .from('units')
+        .update({
+          status,
+          vacant_since: status === 'vacant' ? vacantSince ?? new Date().toISOString().slice(0, 10) : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    async remove(id) {
+      const { error } = await db().from('units').delete().eq('id', id);
+      if (error) throw error;
+    },
+  },
 };

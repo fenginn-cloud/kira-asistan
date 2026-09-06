@@ -107,6 +107,39 @@ export interface BuildingUnitsRepository {
   set(building: string, total: number): Promise<void>;
 }
 
+export type UnitStatus = 'occupied' | 'vacant';
+
+export interface Unit {
+  id: string;
+  building: string;
+  block: string;
+  unitLabel: string;
+  status: UnitStatus;
+  /** status='vacant' iken daire ne zamandan beri boş (YYYY-MM-DD). */
+  vacantSince: string | null;
+  note: string | null;
+}
+
+export interface UnitUpsertInput {
+  building: string;
+  block?: string;
+  unitLabel: string;
+  status?: UnitStatus;
+  vacantSince?: string | null;
+  note?: string | null;
+}
+
+export interface UnitsRepository {
+  /** Şirketin tüm daire envanteri. */
+  list(): Promise<Unit[]>;
+  /** Daire ekle/güncelle. Çakışma (aynı bina+blok+etiket) korunur. */
+  upsert(input: UnitUpsertInput): Promise<Unit>;
+  /** Boş/dolu işaretle (vacantSince ile birlikte). */
+  setStatus(id: string, status: UnitStatus, vacantSince?: string | null): Promise<void>;
+  /** Daireyi envanterden sil. */
+  remove(id: string): Promise<void>;
+}
+
 export interface Repositories {
   contracts: ContractRepository;
   payments: PaymentRepository;
@@ -114,4 +147,5 @@ export interface Repositories {
   company: CompanyRepository;
   claims: ClaimsRepository;
   buildingUnits: BuildingUnitsRepository;
+  units: UnitsRepository;
 }
