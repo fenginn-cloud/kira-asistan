@@ -19,6 +19,24 @@ import { mergeUnitsWithContracts, buildingKey, type EffectiveUnit } from '@/feat
 
 type Filter = 'all' | 'occupied' | 'vacant';
 
+// Demirbaş önerileri (tıklayınca eklenir).
+const FIXTURE_SUGGESTIONS = [
+  'Kombi',
+  'Klima',
+  'TV',
+  'Baza',
+  'Ocak',
+  'Ankastre Fırın',
+  'Davlumbaz',
+  'Buzdolabı',
+  'Çamaşır Makinesi',
+  'Bulaşık Makinesi',
+  'Gardırop',
+  'Perde',
+  'Su Isıtıcı',
+  'Petek / Radyatör',
+];
+
 export default function UnitsInventoryScreen() {
   const router = useRouter();
   const toast = useToast();
@@ -171,24 +189,33 @@ export default function UnitsInventoryScreen() {
 
   const onCell = (u: EffectiveUnit) => setSelected(u);
 
-  const addFixture = () => {
-    const v = dFixInput.trim();
+  const addFixtureValue = (raw: string) => {
+    const v = raw.trim();
     if (!v) return;
-    if (!dFixtures.some((f) => f.toLocaleLowerCase('tr') === v.toLocaleLowerCase('tr'))) {
-      setDFixtures((arr) => [...arr, v]);
-    }
+    setDFixtures((arr) =>
+      arr.some((f) => f.toLocaleLowerCase('tr') === v.toLocaleLowerCase('tr')) ? arr : [...arr, v]
+    );
+  };
+  const addFixture = () => {
+    addFixtureValue(dFixInput);
     setDFixInput('');
   };
 
   const saveDetails = async () => {
     if (!selected) return;
     const area = dArea.trim() ? Number(dArea.replace(',', '.')) : null;
+    // Kutuda yazılı kalan (henüz eklenmemiş) demirbaşı da dahil et.
+    const pending = dFixInput.trim();
+    const fixtures =
+      pending && !dFixtures.some((f) => f.toLocaleLowerCase('tr') === pending.toLocaleLowerCase('tr'))
+        ? [...dFixtures, pending]
+        : dFixtures;
     const details = {
       areaM2: area != null && !Number.isNaN(area) ? area : null,
       layout: dLayout.trim() || null,
       balcony: dBalcony,
       terrace: dTerrace,
-      fixtures: dFixtures,
+      fixtures,
       note: dNote.trim() || null,
     };
     setSavingDetails(true);
@@ -547,6 +574,36 @@ export default function UnitsInventoryScreen() {
                   <Plus size={18} color={palette.primary} />
                 </Pressable>
               </View>
+
+              {/* Öneriler — tıklayınca eklenir (zaten eklenenler gizli) */}
+              {(() => {
+                const has = (s: string) =>
+                  dFixtures.some((f) => f.toLocaleLowerCase('tr') === s.toLocaleLowerCase('tr'));
+                const sug = FIXTURE_SUGGESTIONS.filter((s) => !has(s));
+                if (sug.length === 0) return null;
+                return (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    className="mt-2 -mx-1"
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    <View className="flex-row gap-2 px-1">
+                      {sug.map((s) => (
+                        <Pressable
+                          key={s}
+                          onPress={() => addFixtureValue(s)}
+                          className="flex-row items-center gap-1 rounded-full border border-dashed border-primary/40 bg-primary-50 px-3 py-1.5 active:opacity-80"
+                        >
+                          <Plus size={12} color={palette.primary} />
+                          <Text className="text-xs font-semibold text-primary-700">{s}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </ScrollView>
+                );
+              })()}
+
               {dFixtures.length > 0 ? (
                 <View className="mt-2 flex-row flex-wrap gap-2">
                   {dFixtures.map((f) => (
