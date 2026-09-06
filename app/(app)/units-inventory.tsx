@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, ArrowLeft, DoorClosed, DoorOpen, Plus, Trash2 } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, DoorClosed, DoorOpen, Lock, Plus, Trash2 } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -15,7 +15,8 @@ import { buildingName, foldSearch } from '@/lib/utils/property';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
 import { vacancyLabel } from '@/features/units/vacancy';
-import type { Unit, UnitStatus } from '@/services/repositories/types';
+import { mergeUnitsWithContracts, type EffectiveUnit } from '@/features/units/occupancy';
+import type { UnitStatus } from '@/services/repositories/types';
 
 export default function UnitsInventoryScreen() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function UnitsInventoryScreen() {
   const [labels, setLabels] = useState('');
   const [defStatus, setDefStatus] = useState<UnitStatus>('occupied');
   const [saving, setSaving] = useState(false);
-  const [toDelete, setToDelete] = useState<Unit | null>(null);
+  const [toDelete, setToDelete] = useState<EffectiveUnit | null>(null);
 
   // Mevcut sözleşmelerdeki bina adları (öneri çipleri) — sözleşmeler değişmez.
   const buildingSuggestions = useMemo(() => {
@@ -43,10 +44,13 @@ export default function UnitsInventoryScreen() {
     return names.sort((a, b) => a.localeCompare(b, 'tr'));
   }, [contracts]);
 
-  // Envanteri binaya göre grupla.
+  // Envanter + aktif sözleşmeleri birleştir (yeni sözleşme otomatik "dolu").
+  const merged = useMemo(() => mergeUnitsWithContracts(units, contracts), [units, contracts]);
+
+  // Binaya göre grupla.
   const grouped = useMemo(() => {
-    const map = new Map<string, Unit[]>();
-    for (const u of units) {
+    const map = new Map<string, EffectiveUnit[]>();
+    for (const u of merged) {
       const arr = map.get(u.building);
       if (arr) arr.push(u);
       else map.set(u.building, [u]);
@@ -59,10 +63,10 @@ export default function UnitsInventoryScreen() {
             a.block.localeCompare(b.block, 'tr', { numeric: true }) ||
             a.unitLabel.localeCompare(b.unitLabel, 'tr', { numeric: true })
         ),
-        vacant: list.filter((u) => u.status === 'vacant').length,
+        vacant: list.filter((u) => u.effectiveStatus === 'vacant').length,
       }))
       .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-  }, [units]);
+  }, [merged]);
 
   if (!isAdmin) {
     return (
@@ -112,8 +116,13 @@ export default function UnitsInventoryScreen() {
     }
   };
 
-  const toggle = (u: Unit) => {
-    const next: UnitStatus = u.status === 'vacant' ? 'occupied' : 'vacant';
+  const toggle = (u: EffectiveUnit) => {
+    // Sözleşmeli veya yalnız-sözleşmeden türetilmiş daire elle değiştirilemez.
+    if (u.hasContract || u.synthesized) {
+      toast.info('Bu daire aktif sözleşmeli — durumu sözleşme belirler.');
+      return;
+    }
+    const next: UnitStatus = u.effectiveStatus === 'vacant' ? 'occupied' : 'vacant';
     setStatus.mutate(
       { id: u.id, status: next, vacantSince: next === 'vacant' ? new Date().toISOString().slice(0, 10) : null },
       { onError: (e) => toast.error(e instanceof Error ? e.message : 'Güncellenemedi') }
@@ -246,7 +255,8 @@ export default function UnitsInventoryScreen() {
               </View>
               <View className="gap-2">
                 {g.list.map((u) => {
-                  const isVacant = u.status === 'vacant';
+                  const isVacant = u.effectiveStatus === 'vacant';
+                  const locked = u.hasContract; // sözleşmeli → kilitli
                   return (
                     <Pressable
                       key={u.id}
@@ -274,7 +284,7 @@ export default function UnitsInventoryScreen() {
                           {u.unitLabel}
                         </Text>
                         <Text className="text-xs text-muted">
-                          {isVacant ? vacancyLabel(u.vacantSince) : 'Dolu'}
+                          {locked ? 'Sözleşmeli' : isVacant ? vacancyLabel(u.vacantSince) : 'Dolu'}
                         </Text>
                       </View>
                       <View
@@ -290,9 +300,13 @@ export default function UnitsInventoryScreen() {
                           {isVacant ? 'Boş' : 'Dolu'}
                         </Text>
                       </View>
-                      <Pressable onPress={() => setToDelete(u)} hitSlop={8} className="pl-1">
-                        <Trash2 size={16} color={palette.muted} />
-                      </Pressable>
+                      {locked ? (
+                        <Lock size={15} color={palette.muted} />
+                      ) : u.synthesized ? null : (
+                        <Pressable onPress={() => setToDelete(u)} hitSlop={8} className="pl-1">
+                          <Trash2 size={16} color={palette.muted} />
+                        </Pressable>
+                      )}
                     </Pressable>
                   );
                 })}

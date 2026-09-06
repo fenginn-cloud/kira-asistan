@@ -11,6 +11,7 @@ import { useAllPayments } from '@/features/payments/hooks';
 import { useBuildingUnits } from '@/features/stats/buildingUnitsHooks';
 import { useUnits } from '@/features/units/hooks';
 import { vacancyLabel } from '@/features/units/vacancy';
+import { mergeUnitsWithContracts } from '@/features/units/occupancy';
 import { getContractBalance, formatCurrencyTRY, type LedgerStatus } from '@/lib/ledger/ledger';
 import { buildingName, foldSearch } from '@/lib/utils/property';
 import { formatCurrency, getInitials } from '@/lib/utils/format';
@@ -58,17 +59,18 @@ export default function BuildingDetailScreen() {
   const { data: overrides = [] } = useBuildingUnits();
   const { data: allUnits = [] } = useUnits();
 
-  // Bu binanın envanterdeki boş daireleri (elle işaretlenmiş).
+  // Bu binanın boş daireleri: envanter + aktif sözleşmelerle birleştirilir.
+  // Sözleşme yapılan daire otomatik "dolu" olur; boş kalanlar listelenir.
   const vacantUnits = useMemo(() => {
     const key = foldSearch(building);
-    return allUnits
-      .filter((u) => u.status === 'vacant' && foldSearch(u.building) === key)
+    return mergeUnitsWithContracts(allUnits, contracts)
+      .filter((u) => u.effectiveStatus === 'vacant' && foldSearch(u.building) === key)
       .sort(
         (a, b) =>
           a.block.localeCompare(b.block, 'tr', { numeric: true }) ||
           a.unitLabel.localeCompare(b.unitLabel, 'tr', { numeric: true })
       );
-  }, [allUnits, building]);
+  }, [allUnits, contracts, building]);
 
   const data = useMemo(() => {
     const key = foldSearch(building);
