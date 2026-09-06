@@ -38,6 +38,58 @@ export function buildingKey(name: string): string {
   return foldSearch(name).replace(/[^a-z0-9]/g, '');
 }
 
+export interface BuildingOccupancy {
+  key: string;
+  name: string;
+  total: number;
+  occupied: number;
+  vacant: number;
+}
+
+export interface InventoryStats {
+  byKey: Map<string, BuildingOccupancy>;
+  total: number;
+  occupied: number;
+  vacant: number;
+  buildings: number;
+}
+
+/**
+ * Envanter + sözleşmelerden gerçek doluluk (bina bazında ve genel).
+ * Doluluk sözleşme-güdümlü (mergeUnitsWithContracts). Envanterde daire
+ * tanımlı olmayan binalar burada yer almaz — çağıran taraf fallback yapar.
+ */
+export function computeInventoryStats(units: Unit[], contracts: Contract[]): InventoryStats {
+  const merged = mergeUnitsWithContracts(units, contracts);
+  const byKey = new Map<string, BuildingOccupancy>();
+  for (const u of merged) {
+    const k = buildingKey(u.building);
+    const g = byKey.get(k);
+    const occ = u.effectiveStatus === 'occupied' ? 1 : 0;
+    if (g) {
+      g.total += 1;
+      g.occupied += occ;
+      g.vacant += occ ? 0 : 1;
+      if (!u.synthesized) g.name = u.building; // envanterdeki (seed) yazımı tercih et
+    } else {
+      byKey.set(k, {
+        key: k,
+        name: u.building,
+        total: 1,
+        occupied: occ,
+        vacant: occ ? 0 : 1,
+      });
+    }
+  }
+  let total = 0;
+  let occupied = 0;
+  for (const g of byKey.values()) {
+    total += g.total;
+    occupied += g.occupied;
+  }
+  return { byKey, total, occupied, vacant: total - occupied, buildings: byKey.size };
+}
+
 /** Sözleşmenin konum kimliği. Daire no ayrı alandaysa onu kullan; yoksa
  *  mülk adı zaten daireyi içeriyordur (ör. "42 Evler 01"). Çift saymayı önler. */
 function contractId(c: Contract): string {

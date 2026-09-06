@@ -20,6 +20,9 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { BarChart } from '@/components/charts/BarChart';
 import { useStats } from '@/features/stats/useStats';
+import { useContracts } from '@/features/contracts/hooks';
+import { useUnits } from '@/features/units/hooks';
+import { computeInventoryStats } from '@/features/units/occupancy';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { foldSearch } from '@/lib/utils/property';
@@ -76,6 +79,17 @@ export default function StatsScreen() {
     () => new Map(s.occupancy.map((o) => [foldSearch(o.building), o])),
     [s.occupancy]
   );
+
+  // Envanterden gerçek doluluk (varsa building_units tahminini geçersiz kılar).
+  const { data: units = [] } = useUnits();
+  const { data: allContracts = [] } = useContracts();
+  const inv = useMemo(
+    () => computeInventoryStats(units, allContracts),
+    [units, allContracts]
+  );
+  const occTotal = inv.total > 0 ? inv.occupied : s.occupiedTotal;
+  const unitTotal = inv.total > 0 ? inv.total : s.unitTotal;
+  const occRate = unitTotal > 0 ? Math.round((occTotal / unitTotal) * 100) : 0;
 
   // Free plan: istatistik + Finansal Özet Pro/Business özelliği — kilitli tanıtım.
   if (!entitlement.limits.stats) {
@@ -242,10 +256,8 @@ export default function StatsScreen() {
               />
               <StatTile
                 label="Portföy Doluluk"
-                value={`%${
-                  s.unitTotal > 0 ? Math.round((s.occupiedTotal / s.unitTotal) * 100) : 0
-                }`}
-                sub={s.unitTotal > 0 ? `${s.occupiedTotal}/${s.unitTotal} daire` : undefined}
+                value={`%${occRate}`}
+                sub={unitTotal > 0 ? `${occTotal}/${unitTotal} daire` : undefined}
                 icon={Building2}
                 chip="bg-success-soft"
                 iconColor={palette.success}

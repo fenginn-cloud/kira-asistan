@@ -8,6 +8,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { useContracts } from '@/features/contracts/hooks';
 import { useBuildingUnits } from '@/features/stats/buildingUnitsHooks';
+import { useUnits } from '@/features/units/hooks';
+import { computeInventoryStats, buildingKey } from '@/features/units/occupancy';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { buildingName, foldSearch } from '@/lib/utils/property';
 import { formatCurrencyTRY } from '@/lib/ledger/ledger';
@@ -41,6 +43,10 @@ export default function PropertiesScreen() {
   const listRef = useScrollToTop<FlatList>('properties');
   const { data: contracts = [], isLoading } = useContracts();
   const { data: overrides = [] } = useBuildingUnits();
+  const { data: units = [] } = useUnits();
+
+  // Envanterden gerçek doluluk (varsa building_units tahminini geçersiz kılar).
+  const inv = useMemo(() => computeInventoryStats(units, contracts), [units, contracts]);
 
   const rows = useMemo<BuildingRow[]>(() => {
     const totalByFold = new Map(overrides.map((o) => [foldSearch(o.building), o.total]));
@@ -81,18 +87,28 @@ export default function PropertiesScreen() {
           blockMap: new Map(),
         });
     }
+    // Envanterde tanımlı olup listede olmayan binaları da ekle.
+    for (const g of inv.byKey.values()) {
+      const k = foldSearch(g.name);
+      if (!map.has(k))
+        map.set(k, { name: g.name, total: g.total, occupied: 0, income: 0, blockMap: new Map() });
+    }
     return [...map.values()]
-      .map((r) => ({
-        name: r.name,
-        total: r.total,
-        occupied: r.occupied,
-        income: r.income,
-        blocks: [...r.blockMap.entries()]
-          .map(([block, occupied]) => ({ block, occupied }))
-          .sort((a, b) => a.block.localeCompare(b.block, 'tr', { numeric: true })),
-      }))
+      .map((r) => {
+        // Envanter varsa doluluğu ondan al (sözleşme-güdümlü, en doğru).
+        const g = inv.byKey.get(buildingKey(r.name));
+        return {
+          name: r.name,
+          total: g ? g.total : r.total,
+          occupied: g ? g.occupied : r.occupied,
+          income: r.income,
+          blocks: [...r.blockMap.entries()]
+            .map(([block, occupied]) => ({ block, occupied }))
+            .sort((a, b) => a.block.localeCompare(b.block, 'tr', { numeric: true })),
+        };
+      })
       .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-  }, [contracts, overrides]);
+  }, [contracts, overrides, inv]);
 
   const totals = useMemo(() => {
     let total = 0;
