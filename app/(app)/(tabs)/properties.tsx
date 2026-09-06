@@ -11,7 +11,7 @@ import { useBuildingUnits } from '@/features/stats/buildingUnitsHooks';
 import { useUnits } from '@/features/units/hooks';
 import { computeInventoryStats, buildingKey } from '@/features/units/occupancy';
 import { useScrollToTop } from '@/lib/scrollToTop';
-import { buildingName, foldSearch } from '@/lib/utils/property';
+import { buildingName } from '@/lib/utils/property';
 import { formatCurrencyTRY } from '@/lib/ledger/ledger';
 import { getInitials } from '@/lib/utils/format';
 import { palette } from '@/lib/theme/colors';
@@ -49,14 +49,15 @@ export default function PropertiesScreen() {
   const inv = useMemo(() => computeInventoryStats(units, contracts), [units, contracts]);
 
   const rows = useMemo<BuildingRow[]>(() => {
-    const totalByFold = new Map(overrides.map((o) => [foldSearch(o.building), o.total]));
+    // Yazıma duyarsız bina anahtarı: "42 Evler" == "42EVLER" tek satır.
+    const totalByFold = new Map(overrides.map((o) => [buildingKey(o.building), o.total]));
     const map = new Map<
       string,
       Omit<BuildingRow, 'blocks'> & { blockMap: Map<string, number> }
     >();
     for (const c of contracts) {
       const name = buildingName(c.propertyName);
-      const k = foldSearch(name);
+      const k = buildingKey(name);
       if (!k) continue;
       const row =
         map.get(k) ??
@@ -77,7 +78,7 @@ export default function PropertiesScreen() {
     }
     // Sözleşmesi olmayan ama daire sayısı girilmiş binaları da göster.
     for (const o of overrides) {
-      const k = foldSearch(o.building);
+      const k = buildingKey(o.building);
       if (!map.has(k))
         map.set(k, {
           name: o.building,
@@ -89,16 +90,15 @@ export default function PropertiesScreen() {
     }
     // Envanterde tanımlı olup listede olmayan binaları da ekle.
     for (const g of inv.byKey.values()) {
-      const k = foldSearch(g.name);
-      if (!map.has(k))
-        map.set(k, { name: g.name, total: g.total, occupied: 0, income: 0, blockMap: new Map() });
+      if (!map.has(g.key))
+        map.set(g.key, { name: g.name, total: g.total, occupied: 0, income: 0, blockMap: new Map() });
     }
     return [...map.values()]
       .map((r) => {
-        // Envanter varsa doluluğu ondan al (sözleşme-güdümlü, en doğru).
+        // Envanter varsa doluluğu ve kanonik adı ondan al (tüm ekranlarda aynı).
         const g = inv.byKey.get(buildingKey(r.name));
         return {
-          name: r.name,
+          name: g ? g.name : r.name,
           total: g ? g.total : r.total,
           occupied: g ? g.occupied : r.occupied,
           income: r.income,
