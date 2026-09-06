@@ -1,15 +1,15 @@
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, ArrowLeft, DoorClosed, Lock, Plus } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, DoorClosed, Lock, Plus, X } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useToast } from '@/components/ui/Toast';
 import { useContracts } from '@/features/contracts/hooks';
-import { useUnits, useUpsertUnit, useDeleteUnit } from '@/features/units/hooks';
+import { useUnits, useUpsertUnit, useUpdateUnitDetails, useDeleteUnit } from '@/features/units/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { buildingName, foldSearch } from '@/lib/utils/property';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
@@ -30,6 +30,7 @@ export default function UnitsInventoryScreen() {
   const { data: contracts = [] } = useContracts();
   const { data: units = [], isLoading } = useUnits();
   const upsert = useUpsertUnit();
+  const updateDetails = useUpdateUnitDetails();
   const del = useDeleteUnit();
 
   const [building, setBuilding] = useState('');
@@ -40,6 +41,27 @@ export default function UnitsInventoryScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const [selected, setSelected] = useState<EffectiveUnit | null>(null);
   const [toDelete, setToDelete] = useState<EffectiveUnit | null>(null);
+
+  // Seçili dairenin düzenlenebilir detayları.
+  const [dArea, setDArea] = useState('');
+  const [dLayout, setDLayout] = useState('');
+  const [dBalcony, setDBalcony] = useState(false);
+  const [dTerrace, setDTerrace] = useState(false);
+  const [dFixtures, setDFixtures] = useState<string[]>([]);
+  const [dFixInput, setDFixInput] = useState('');
+  const [dNote, setDNote] = useState('');
+  const [savingDetails, setSavingDetails] = useState(false);
+
+  useEffect(() => {
+    if (!selected) return;
+    setDArea(selected.areaM2 != null ? String(selected.areaM2) : '');
+    setDLayout(selected.layout ?? '');
+    setDBalcony(selected.balcony);
+    setDTerrace(selected.terrace);
+    setDFixtures(selected.fixtures ?? []);
+    setDFixInput('');
+    setDNote(selected.note ?? '');
+  }, [selected]);
 
   // 4 sütunlu ızgara için kutucuk genişliği (px-5 = 40 kenar, 8 boşluk).
   const cols = 4;
@@ -148,6 +170,48 @@ export default function UnitsInventoryScreen() {
   };
 
   const onCell = (u: EffectiveUnit) => setSelected(u);
+
+  const addFixture = () => {
+    const v = dFixInput.trim();
+    if (!v) return;
+    if (!dFixtures.some((f) => f.toLocaleLowerCase('tr') === v.toLocaleLowerCase('tr'))) {
+      setDFixtures((arr) => [...arr, v]);
+    }
+    setDFixInput('');
+  };
+
+  const saveDetails = async () => {
+    if (!selected) return;
+    const area = dArea.trim() ? Number(dArea.replace(',', '.')) : null;
+    const details = {
+      areaM2: area != null && !Number.isNaN(area) ? area : null,
+      layout: dLayout.trim() || null,
+      balcony: dBalcony,
+      terrace: dTerrace,
+      fixtures: dFixtures,
+      note: dNote.trim() || null,
+    };
+    setSavingDetails(true);
+    try {
+      let id = selected.id;
+      // Sözleşmeden türetilmiş daire henüz envanterde yok → önce oluştur.
+      if (selected.synthesized) {
+        const created = await upsert.mutateAsync({
+          building: selected.building,
+          block: selected.block,
+          unitLabel: selected.unitLabel,
+        });
+        id = created.id;
+      }
+      await updateDetails.mutateAsync({ id, details });
+      toast.success('Daire bilgileri kaydedildi');
+      setSelected(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Kaydedilemedi');
+    } finally {
+      setSavingDetails(false);
+    }
+  };
 
   const FILTERS: { key: Filter; label: string; count: number }[] = [
     { key: 'all', label: 'Tümü', count: totals.all },
@@ -380,40 +444,152 @@ export default function UnitsInventoryScreen() {
         )}
       </ScrollView>
 
-      {/* Daire detay / işlem sayfası */}
+      {/* Daire detay / düzenleme sayfası */}
       {selected ? (
         <Pressable
           onPress={() => setSelected(null)}
           className="absolute inset-0 justify-end bg-black/40"
         >
-          <Pressable onPress={(e) => e.stopPropagation()} className="rounded-t-3xl bg-surface p-5 pb-8">
-            <View className="mb-3 items-center">
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            className="rounded-t-3xl bg-surface px-5 pb-8 pt-3"
+            style={{ maxHeight: '88%' }}
+          >
+            <View className="mb-2 items-center">
               <View className="h-1.5 w-10 rounded-full bg-border" />
             </View>
-            <Text className="text-lg font-bold text-foreground">
-              {selected.building}
-              {selected.block ? ` · ${selected.block} Blok` : ''} · Daire {selected.unitLabel}
-            </Text>
-            <Text className="mt-1 text-sm text-muted">
-              {selected.hasContract
-                ? 'Dolu — aktif sözleşmeli. Durum sözleşmeye göre otomatik belirlenir.'
-                : `Boş — ${vacancyLabel(selected.vacantSince)}. Sözleşme yapılınca otomatik dolu olur.`}
-            </Text>
-            {!selected.hasContract && !selected.synthesized ? (
-              <Pressable
-                onPress={() => {
-                  const u = selected;
-                  setSelected(null);
-                  setTimeout(() => setToDelete(u), 0);
-                }}
-                className="mt-4 items-center rounded-2xl bg-danger-soft py-3 active:opacity-80"
+            <View className="flex-row items-center justify-between">
+              <Text className="flex-1 pr-2 text-lg font-bold text-foreground" numberOfLines={1}>
+                {selected.building}
+                {selected.block ? ` · ${selected.block}` : ''} · Daire {selected.unitLabel}
+              </Text>
+              <View
+                className={`rounded-full px-2.5 py-1 ${
+                  selected.effectiveStatus === 'vacant' ? 'bg-muted/15' : 'bg-success-soft'
+                }`}
               >
-                <Text className="text-sm font-bold text-danger">Bu daireyi envanterden sil</Text>
-              </Pressable>
-            ) : null}
-            <Pressable onPress={() => setSelected(null)} className="mt-2 items-center py-2">
-              <Text className="text-sm font-semibold text-muted">Kapat</Text>
-            </Pressable>
+                <Text
+                  className={`text-[11px] font-bold ${
+                    selected.effectiveStatus === 'vacant' ? 'text-muted' : 'text-success'
+                  }`}
+                >
+                  {selected.effectiveStatus === 'vacant' ? 'Boş' : 'Dolu'}
+                </Text>
+              </View>
+            </View>
+            <Text className="mt-0.5 text-xs text-muted">
+              {selected.hasContract
+                ? 'Aktif sözleşmeli — durum otomatik.'
+                : `${vacancyLabel(selected.vacantSince)} — sözleşme yapılınca otomatik dolu olur.`}
+            </Text>
+
+            <ScrollView showsVerticalScrollIndicator={false} className="mt-3" keyboardShouldPersistTaps="handled">
+              {/* m² + oda tipi */}
+              <View className="flex-row gap-3">
+                <View className="flex-1 gap-1.5">
+                  <Text className="text-sm font-medium text-muted">m²</Text>
+                  <TextInput
+                    value={dArea}
+                    onChangeText={(t) => setDArea(t.replace(/[^\d.,]/g, ''))}
+                    keyboardType="decimal-pad"
+                    placeholder="Örn. 85"
+                    placeholderTextColor={colors.textMuted}
+                    className="h-11 rounded-2xl border border-border bg-background px-3 text-base text-foreground"
+                  />
+                </View>
+                <View className="flex-1 gap-1.5">
+                  <Text className="text-sm font-medium text-muted">Oda tipi</Text>
+                  <TextInput
+                    value={dLayout}
+                    onChangeText={setDLayout}
+                    placeholder="Örn. 2+1"
+                    placeholderTextColor={colors.textMuted}
+                    className="h-11 rounded-2xl border border-border bg-background px-3 text-base text-foreground"
+                  />
+                </View>
+              </View>
+
+              {/* Balkon / Teras */}
+              <View className="mt-2 flex-row gap-3">
+                <View className="flex-1 flex-row items-center justify-between rounded-2xl border border-border bg-background px-3 py-2.5">
+                  <Text className="text-sm text-foreground">Balkon</Text>
+                  <Switch
+                    value={dBalcony}
+                    onValueChange={setDBalcony}
+                    trackColor={{ true: palette.primary, false: palette.border }}
+                  />
+                </View>
+                <View className="flex-1 flex-row items-center justify-between rounded-2xl border border-border bg-background px-3 py-2.5">
+                  <Text className="text-sm text-foreground">Teras</Text>
+                  <Switch
+                    value={dTerrace}
+                    onValueChange={setDTerrace}
+                    trackColor={{ true: palette.primary, false: palette.border }}
+                  />
+                </View>
+              </View>
+
+              {/* Demirbaşlar */}
+              <Text className="mb-1.5 mt-2 text-sm font-medium text-muted">Demirbaşlar</Text>
+              <View className="flex-row gap-2">
+                <TextInput
+                  value={dFixInput}
+                  onChangeText={setDFixInput}
+                  onSubmitEditing={addFixture}
+                  placeholder="Örn. Kombi, Ankastre ocak…"
+                  placeholderTextColor={colors.textMuted}
+                  className="h-11 flex-1 rounded-2xl border border-border bg-background px-3 text-base text-foreground"
+                />
+                <Pressable
+                  onPress={addFixture}
+                  className="h-11 items-center justify-center rounded-2xl bg-primary-50 px-4 active:opacity-80"
+                >
+                  <Plus size={18} color={palette.primary} />
+                </Pressable>
+              </View>
+              {dFixtures.length > 0 ? (
+                <View className="mt-2 flex-row flex-wrap gap-2">
+                  {dFixtures.map((f) => (
+                    <View
+                      key={f}
+                      className="flex-row items-center gap-1.5 rounded-full bg-background px-3 py-1.5"
+                    >
+                      <Text className="text-xs font-semibold text-foreground">{f}</Text>
+                      <Pressable onPress={() => setDFixtures((arr) => arr.filter((x) => x !== f))} hitSlop={6}>
+                        <X size={13} color={palette.muted} />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {/* Not */}
+              <Text className="mb-1.5 mt-2 text-sm font-medium text-muted">Not (opsiyonel)</Text>
+              <TextInput
+                value={dNote}
+                onChangeText={setDNote}
+                placeholder="Ek açıklama…"
+                placeholderTextColor={colors.textMuted}
+                className="h-11 rounded-2xl border border-border bg-background px-3 text-base text-foreground"
+              />
+
+              <View className="mt-3 mb-1">
+                <Button label="Kaydet" onPress={saveDetails} loading={savingDetails} />
+              </View>
+
+              {!selected.hasContract && !selected.synthesized ? (
+                <Pressable
+                  onPress={() => {
+                    const u = selected;
+                    setSelected(null);
+                    setTimeout(() => setToDelete(u), 0);
+                  }}
+                  className="mt-1 items-center py-2.5"
+                >
+                  <Text className="text-sm font-semibold text-danger">Daireyi envanterden sil</Text>
+                </Pressable>
+              ) : null}
+            </ScrollView>
           </Pressable>
         </Pressable>
       ) : null}

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { repositories } from '@/services';
-import type { UnitStatus, UnitUpsertInput } from '@/services/repositories/types';
+import type { UnitDetails, UnitStatus, UnitUpsertInput } from '@/services/repositories/types';
 
 const KEY = ['units'] as const;
 
@@ -35,6 +35,16 @@ export function useSetUnitStatus() {
       status: UnitStatus;
       vacantSince?: string | null;
     }) => repositories.units.setStatus(id, status, vacantSince),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+/** Daire detaylarını (m², oda tipi, balkon, teras, demirbaş, not) kaydet. */
+export function useUpdateUnitDetails() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, details }: { id: string; details: UnitDetails }) =>
+      repositories.units.updateDetails(id, details),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
   });
 }

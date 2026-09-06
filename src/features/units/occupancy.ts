@@ -18,6 +18,12 @@ export interface EffectiveUnit {
   hasContract: boolean;
   contractId: string | null;
   synthesized: boolean;
+  // Daire detayları (envanterde kayıtlıysa).
+  areaM2: number | null;
+  layout: string | null;
+  balcony: boolean;
+  terrace: boolean;
+  fixtures: string[];
 }
 
 /**
@@ -154,6 +160,11 @@ export function mergeUnitsWithContracts(units: Unit[], contracts: Contract[]): E
       hasContract: !!c,
       contractId: c?.id ?? null,
       synthesized: false,
+      areaM2: un.areaM2,
+      layout: un.layout,
+      balcony: un.balcony,
+      terrace: un.terrace,
+      fixtures: un.fixtures,
     });
   }
 
@@ -173,6 +184,11 @@ export function mergeUnitsWithContracts(units: Unit[], contracts: Contract[]): E
       hasContract: true,
       contractId: c.id,
       synthesized: true,
+      areaM2: null,
+      layout: null,
+      balcony: false,
+      terrace: false,
+      fixtures: [],
     });
   }
 

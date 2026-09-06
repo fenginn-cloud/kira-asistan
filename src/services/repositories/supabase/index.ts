@@ -511,7 +511,9 @@ export const supabaseRepositories: Repositories = {
     async list() {
       const { data, error } = await db()
         .from('units')
-        .select('id, building, block, unit_label, status, vacant_since, note')
+        .select(
+          'id, building, block, unit_label, status, vacant_since, note, area_m2, layout, balcony, terrace, fixtures'
+        )
         .order('building', { ascending: true })
         .order('block', { ascending: true })
         .order('unit_label', { ascending: true });
@@ -528,6 +530,11 @@ export const supabaseRepositories: Repositories = {
         status: (r.status as 'occupied' | 'vacant') ?? 'vacant',
         vacantSince: (r.vacant_since as string | null) ?? null,
         note: (r.note as string | null) ?? null,
+        areaM2: (r.area_m2 as number | null) ?? null,
+        layout: (r.layout as string | null) ?? null,
+        balcony: (r.balcony as boolean | null) ?? false,
+        terrace: (r.terrace as boolean | null) ?? false,
+        fixtures: (r.fixtures as string[] | null) ?? [],
       }));
     },
     async upsert(input) {
@@ -550,7 +557,9 @@ export const supabaseRepositories: Repositories = {
       if (error) throw error;
       const { data, error: selErr } = await db()
         .from('units')
-        .select('id, building, block, unit_label, status, vacant_since, note')
+        .select(
+          'id, building, block, unit_label, status, vacant_since, note, area_m2, layout, balcony, terrace, fixtures'
+        )
         .eq('company_id', company_id)
         .eq('building', row.building)
         .eq('block', row.block)
@@ -565,7 +574,27 @@ export const supabaseRepositories: Repositories = {
         status: (data.status as 'occupied' | 'vacant') ?? 'vacant',
         vacantSince: (data.vacant_since as string | null) ?? null,
         note: (data.note as string | null) ?? null,
+        areaM2: (data.area_m2 as number | null) ?? null,
+        layout: (data.layout as string | null) ?? null,
+        balcony: (data.balcony as boolean | null) ?? false,
+        terrace: (data.terrace as boolean | null) ?? false,
+        fixtures: (data.fixtures as string[] | null) ?? [],
       };
+    },
+    async updateDetails(id, details) {
+      const { error } = await db()
+        .from('units')
+        .update({
+          area_m2: details.areaM2,
+          layout: details.layout,
+          balcony: details.balcony,
+          terrace: details.terrace,
+          fixtures: details.fixtures,
+          note: details.note,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id);
+      if (error) throw error;
     },
     async setStatus(id, status, vacantSince) {
       const { error } = await db()

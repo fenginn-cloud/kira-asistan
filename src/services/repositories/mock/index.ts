@@ -268,6 +268,11 @@ export const mockRepositories: Repositories = {
         status: input.status ?? 'vacant',
         vacantSince: input.vacantSince ?? null,
         note: input.note ?? null,
+        areaM2: null,
+        layout: null,
+        balcony: false,
+        terrace: false,
+        fixtures: [],
       };
       units.push(unit);
       return delay({ ...unit });
@@ -278,6 +283,18 @@ export const mockRepositories: Repositories = {
         u.status = status;
         u.vacantSince =
           status === 'vacant' ? vacantSince ?? new Date().toISOString().slice(0, 10) : null;
+      }
+      return delay(undefined);
+    },
+    updateDetails: (id, details) => {
+      const u = units.find((x) => x.id === id);
+      if (u) {
+        u.areaM2 = details.areaM2;
+        u.layout = details.layout;
+        u.balcony = details.balcony;
+        u.terrace = details.terrace;
+        u.fixtures = details.fixtures;
+        u.note = details.note;
       }
       return delay(undefined);
     },
