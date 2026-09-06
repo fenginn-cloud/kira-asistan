@@ -15,7 +15,7 @@ import { buildingName, foldSearch } from '@/lib/utils/property';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
 import { vacancyLabel } from '@/features/units/vacancy';
-import { mergeUnitsWithContracts, type EffectiveUnit } from '@/features/units/occupancy';
+import { mergeUnitsWithContracts, buildingKey, type EffectiveUnit } from '@/features/units/occupancy';
 
 type Filter = 'all' | 'occupied' | 'vacant';
 
@@ -63,15 +63,26 @@ export default function UnitsInventoryScreen() {
   const grouped = useMemo(() => {
     const pass = (u: EffectiveUnit) =>
       filter === 'all' ? true : u.effectiveStatus === filter;
-    const byBuilding = new Map<string, EffectiveUnit[]>();
+    // Yazıma duyarsız bina anahtarı ile grupla (ör. "Dream Rezidans" ==
+    // "DREAM REZİDANS" tek grup). Görünen ad: varsa envanterdeki (seed) yazım.
+    const byBuilding = new Map<string, { display: string; fromInv: boolean; list: EffectiveUnit[] }>();
     for (const u of merged) {
       if (!pass(u)) continue;
-      const arr = byBuilding.get(u.building);
-      if (arr) arr.push(u);
-      else byBuilding.set(u.building, [u]);
+      const k = buildingKey(u.building);
+      const g = byBuilding.get(k);
+      if (g) {
+        g.list.push(u);
+        if (!g.fromInv && !u.synthesized) {
+          g.display = u.building;
+          g.fromInv = true;
+        }
+      } else {
+        byBuilding.set(k, { display: u.building, fromInv: !u.synthesized, list: [u] });
+      }
     }
-    return [...byBuilding.entries()]
-      .map(([name, list]) => {
+    return [...byBuilding.values()]
+      .map(({ display, list }) => {
+        const name = display;
         const byBlock = new Map<string, EffectiveUnit[]>();
         for (const u of list) {
           const b = u.block || '';
