@@ -150,6 +150,36 @@ export interface UnitsRepository {
   remove(id: string): Promise<void>;
 }
 
+export interface DeviceSession {
+  id: string;
+  deviceToken: string;
+  label: string;
+  platform: string | null;
+  lastActive: string;
+  revoked: boolean;
+}
+
+export interface DeviceSessionRegisterInput {
+  deviceToken: string;
+  label: string;
+  platform: string;
+}
+
+export interface DeviceSessionsRepository {
+  /** Bu kullanıcının cihaz oturumları (en son aktif üstte). */
+  list(): Promise<DeviceSession[]>;
+  /** Bu cihazı kaydet/güncelle (giriş + açılışta). */
+  register(input: DeviceSessionRegisterInput): Promise<void>;
+  /** Bu cihazın son aktifliğini güncelle. */
+  touch(deviceToken: string): Promise<void>;
+  /** Bu cihaz iptal edildi mi (revoked) — kendi kendine çıkış için. */
+  isRevoked(deviceToken: string): Promise<boolean>;
+  /** Bir cihazı iptal et (o cihaz çevrimiçi olunca çıkış yapar). */
+  revoke(id: string): Promise<void>;
+  /** Kaydı sil. */
+  remove(id: string): Promise<void>;
+}
+
 export interface Repositories {
   contracts: ContractRepository;
   payments: PaymentRepository;
@@ -158,4 +188,5 @@ export interface Repositories {
   claims: ClaimsRepository;
   buildingUnits: BuildingUnitsRepository;
   units: UnitsRepository;
+  deviceSessions: DeviceSessionsRepository;
 }

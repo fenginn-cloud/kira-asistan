@@ -14,13 +14,14 @@ import type {
 } from '@/types';
 import { derivePaymentStatus } from '@/lib/utils/payments';
 import { recentPaymentPeriods } from '@/lib/utils/paymentPeriods';
-import type { Repositories, Unit } from '../types';
+import type { DeviceSession, Repositories, Unit } from '../types';
 
 // In-memory stores (cloned so we can mutate without touching the seed data).
 let contracts: Contract[] = structuredClone(mockContracts);
 let payments: Payment[] = structuredClone(mockPayments);
 let buildingUnits: { building: string; total: number }[] = [];
 let units: Unit[] = [];
+let deviceSessions: DeviceSession[] = [];
 let transactions: PaymentTransaction[] = structuredClone(mockTransactions);
 let users: AppUser[] = structuredClone(mockUsers);
 let company: Company = structuredClone(mockCompany);
@@ -300,6 +301,49 @@ export const mockRepositories: Repositories = {
     },
     remove: (id) => {
       units = units.filter((x) => x.id !== id);
+      return delay(undefined);
+    },
+  },
+
+  deviceSessions: {
+    list: () =>
+      delay(
+        [...deviceSessions].sort((a, b) => b.lastActive.localeCompare(a.lastActive)).map((d) => ({ ...d }))
+      ),
+    register: (input) => {
+      const now = new Date().toISOString();
+      const existing = deviceSessions.find((d) => d.deviceToken === input.deviceToken);
+      if (existing) {
+        existing.label = input.label;
+        existing.platform = input.platform;
+        existing.lastActive = now;
+        existing.revoked = false;
+      } else {
+        deviceSessions.push({
+          id: uid('dev'),
+          deviceToken: input.deviceToken,
+          label: input.label,
+          platform: input.platform,
+          lastActive: now,
+          revoked: false,
+        });
+      }
+      return delay(undefined);
+    },
+    touch: (deviceToken) => {
+      const d = deviceSessions.find((x) => x.deviceToken === deviceToken);
+      if (d) d.lastActive = new Date().toISOString();
+      return delay(undefined);
+    },
+    isRevoked: (deviceToken) =>
+      delay(deviceSessions.find((x) => x.deviceToken === deviceToken)?.revoked ?? false),
+    revoke: (id) => {
+      const d = deviceSessions.find((x) => x.id === id);
+      if (d) d.revoked = true;
+      return delay(undefined);
+    },
+    remove: (id) => {
+      deviceSessions = deviceSessions.filter((x) => x.id !== id);
       return delay(undefined);
     },
   },

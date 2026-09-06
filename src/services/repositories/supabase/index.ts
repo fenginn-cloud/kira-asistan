@@ -612,4 +612,80 @@ export const supabaseRepositories: Repositories = {
       if (error) throw error;
     },
   },
+
+  deviceSessions: {
+    async list() {
+      const { data: auth } = await db().auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return [];
+      const { data, error } = await db()
+        .from('device_sessions')
+        .select('id, device_token, label, platform, last_active, revoked')
+        .eq('user_id', uid)
+        .order('last_active', { ascending: false });
+      if (error) {
+        if ((error as { code?: string }).code === '42P01') return []; // tablo yoksa
+        throw error;
+      }
+      return (data ?? []).map((r) => ({
+        id: r.id as string,
+        deviceToken: r.device_token as string,
+        label: r.label as string,
+        platform: (r.platform as string | null) ?? null,
+        lastActive: r.last_active as string,
+        revoked: !!r.revoked,
+      }));
+    },
+    async register(input) {
+      const { data: auth } = await db().auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return;
+      const { error } = await db().from('device_sessions').upsert(
+        {
+          user_id: uid,
+          device_token: input.deviceToken,
+          label: input.label,
+          platform: input.platform,
+          last_active: new Date().toISOString(),
+          revoked: false,
+        },
+        { onConflict: 'user_id,device_token' }
+      );
+      if (error && (error as { code?: string }).code !== '42P01') throw error;
+    },
+    async touch(deviceToken) {
+      const { data: auth } = await db().auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return;
+      await db()
+        .from('device_sessions')
+        .update({ last_active: new Date().toISOString() })
+        .eq('user_id', uid)
+        .eq('device_token', deviceToken);
+    },
+    async isRevoked(deviceToken) {
+      const { data: auth } = await db().auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) return false;
+      const { data, error } = await db()
+        .from('device_sessions')
+        .select('revoked')
+        .eq('user_id', uid)
+        .eq('device_token', deviceToken)
+        .maybeSingle();
+      if (error) return false;
+      return !!data?.revoked;
+    },
+    async revoke(id) {
+      const { error } = await db()
+        .from('device_sessions')
+        .update({ revoked: true })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    async remove(id) {
+      const { error } = await db().from('device_sessions').delete().eq('id', id);
+      if (error) throw error;
+    },
+  },
 };
