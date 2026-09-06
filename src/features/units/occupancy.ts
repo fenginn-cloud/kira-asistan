@@ -55,7 +55,8 @@ export function mergeUnitsWithContracts(
       building: un.building,
       block: un.block,
       unitLabel: un.unitLabel,
-      effectiveStatus: c ? 'occupied' : un.status,
+      // Durum TAMAMEN sözleşmeye göre: aktif sözleşme varsa dolu, yoksa boş.
+      effectiveStatus: c ? 'occupied' : 'vacant',
       storedStatus: un.status,
       vacantSince: un.vacantSince,
       note: un.note,

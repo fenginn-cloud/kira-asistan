@@ -9,14 +9,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useToast } from '@/components/ui/Toast';
 import { useContracts } from '@/features/contracts/hooks';
-import { useUnits, useUpsertUnit, useSetUnitStatus, useDeleteUnit } from '@/features/units/hooks';
+import { useUnits, useUpsertUnit, useDeleteUnit } from '@/features/units/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { buildingName, foldSearch } from '@/lib/utils/property';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
 import { vacancyLabel } from '@/features/units/vacancy';
 import { mergeUnitsWithContracts, type EffectiveUnit } from '@/features/units/occupancy';
-import type { UnitStatus } from '@/services/repositories/types';
 
 export default function UnitsInventoryScreen() {
   const router = useRouter();
@@ -28,13 +27,11 @@ export default function UnitsInventoryScreen() {
   const { data: contracts = [] } = useContracts();
   const { data: units = [], isLoading } = useUnits();
   const upsert = useUpsertUnit();
-  const setStatus = useSetUnitStatus();
   const del = useDeleteUnit();
 
   const [building, setBuilding] = useState('');
   const [block, setBlock] = useState('');
   const [labels, setLabels] = useState('');
-  const [defStatus, setDefStatus] = useState<UnitStatus>('occupied');
   const [saving, setSaving] = useState(false);
   const [toDelete, setToDelete] = useState<EffectiveUnit | null>(null);
 
@@ -95,16 +92,10 @@ export default function UnitsInventoryScreen() {
     }
     setSaving(true);
     try {
-      const today = new Date().toISOString().slice(0, 10);
       let added = 0;
       for (const label of list) {
-        await upsert.mutateAsync({
-          building: b,
-          block: block.trim(),
-          unitLabel: label,
-          status: defStatus,
-          vacantSince: defStatus === 'vacant' ? today : null,
-        });
+        // Durum sözleşmeye göre otomatik; envantere sadece dairenin varlığı eklenir.
+        await upsert.mutateAsync({ building: b, block: block.trim(), unitLabel: label });
         added++;
       }
       toast.success(`${added} daire envantere eklendi`);
@@ -116,18 +107,9 @@ export default function UnitsInventoryScreen() {
     }
   };
 
-  const toggle = (u: EffectiveUnit) => {
-    // Sözleşmeli veya yalnız-sözleşmeden türetilmiş daire elle değiştirilemez.
-    if (u.hasContract || u.synthesized) {
-      toast.info('Bu daire aktif sözleşmeli — durumu sözleşme belirler.');
-      return;
-    }
-    const next: UnitStatus = u.effectiveStatus === 'vacant' ? 'occupied' : 'vacant';
-    setStatus.mutate(
-      { id: u.id, status: next, vacantSince: next === 'vacant' ? new Date().toISOString().slice(0, 10) : null },
-      { onError: (e) => toast.error(e instanceof Error ? e.message : 'Güncellenemedi') }
-    );
-  };
+  // Durum tamamen sözleşmeye göre belirlenir; elle değiştirilmez.
+  const explainStatus = () =>
+    toast.info('Durum sözleşmeye göre otomatik: sözleşmesi olan dolu, olmayan boş.');
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -143,8 +125,9 @@ export default function UnitsInventoryScreen() {
           <Text className="text-2xl font-bold text-foreground">Daire Envanteri</Text>
         </View>
         <Text className="mt-2 text-sm text-muted">
-          Her binada hangi dairelerin olduğunu girin. Boş daireleri karta dokunarak
-          işaretleyin — boş daireler gri gösterilir. Mevcut sözleşmeler etkilenmez.
+          Her binada hangi dairelerin olduğunu girin. Durum otomatik: aktif sözleşmesi
+          olan daire dolu, olmayan boş (gri) gösterilir. Yeni sözleşme yapılınca daire
+          otomatik dolu olur. Mevcut sözleşmeler etkilenmez.
         </Text>
 
         {/* Ekleme formu */}
@@ -185,39 +168,15 @@ export default function UnitsInventoryScreen() {
             ) : null}
           </View>
 
-          <View className="flex-row gap-3">
-            <View className="flex-1 gap-1.5">
-              <Text className="text-sm font-medium text-muted">Blok (opsiyonel)</Text>
-              <TextInput
-                value={block}
-                onChangeText={setBlock}
-                placeholder="A / B / —"
-                placeholderTextColor={colors.textMuted}
-                className="h-11 rounded-2xl border border-border bg-background px-3 text-base text-foreground"
-              />
-            </View>
-            <View className="flex-1 gap-1.5">
-              <Text className="text-sm font-medium text-muted">Varsayılan durum</Text>
-              <View className="h-11 flex-row rounded-2xl bg-background p-1">
-                {(['occupied', 'vacant'] as UnitStatus[]).map((s) => (
-                  <Pressable
-                    key={s}
-                    onPress={() => setDefStatus(s)}
-                    className={`flex-1 items-center justify-center rounded-xl ${
-                      defStatus === s ? 'bg-surface shadow-sm shadow-black/5' : ''
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-semibold ${
-                        defStatus === s ? 'text-primary-700' : 'text-muted'
-                      }`}
-                    >
-                      {s === 'occupied' ? 'Dolu' : 'Boş'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
+          <View className="gap-1.5">
+            <Text className="text-sm font-medium text-muted">Blok (opsiyonel)</Text>
+            <TextInput
+              value={block}
+              onChangeText={setBlock}
+              placeholder="A / B / —"
+              placeholderTextColor={colors.textMuted}
+              className="h-11 rounded-2xl border border-border bg-background px-3 text-base text-foreground"
+            />
           </View>
 
           <View className="gap-1.5">
@@ -260,7 +219,7 @@ export default function UnitsInventoryScreen() {
                   return (
                     <Pressable
                       key={u.id}
-                      onPress={() => toggle(u)}
+                      onPress={explainStatus}
                       className={`flex-row items-center gap-3 rounded-2xl border p-3 active:opacity-80 ${
                         isVacant ? 'border-border/70 bg-background' : 'border-border/60 bg-surface'
                       }`}
