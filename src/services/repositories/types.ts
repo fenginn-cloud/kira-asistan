@@ -109,7 +109,16 @@ export interface BuildingUnitsRepository {
 
 export type UnitStatus = 'occupied' | 'vacant';
 
-export interface Unit {
+export interface UnitDetails {
+  areaM2: number | null;
+  layout: string | null; // ör. "2+1"
+  balcony: boolean;
+  terrace: boolean;
+  fixtures: string[]; // demirbaşlar
+  note: string | null;
+}
+
+export interface Unit extends UnitDetails {
   id: string;
   building: string;
   block: string;
@@ -117,7 +126,6 @@ export interface Unit {
   status: UnitStatus;
   /** status='vacant' iken daire ne zamandan beri boş (YYYY-MM-DD). */
   vacantSince: string | null;
-  note: string | null;
 }
 
 export interface UnitUpsertInput {
@@ -136,6 +144,8 @@ export interface UnitsRepository {
   upsert(input: UnitUpsertInput): Promise<Unit>;
   /** Boş/dolu işaretle (vacantSince ile birlikte). */
   setStatus(id: string, status: UnitStatus, vacantSince?: string | null): Promise<void>;
+  /** Daire detaylarını (m², oda tipi, balkon, teras, demirbaş, not) kaydet. */
+  updateDetails(id: string, details: UnitDetails): Promise<void>;
   /** Daireyi envanterden sil. */
   remove(id: string): Promise<void>;
 }
