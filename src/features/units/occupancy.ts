@@ -90,19 +90,37 @@ export function computeInventoryStats(units: Unit[], contracts: Contract[]): Inv
   return { byKey, total, occupied, vacant: total - occupied, buildings: byKey.size };
 }
 
-/** Sözleşmenin konum kimliği. Daire no ayrı alandaysa onu kullan; yoksa
- *  mülk adı zaten daireyi içeriyordur (ör. "42 Evler 01"). Çift saymayı önler. */
-function contractId(c: Contract): string {
-  const unit = (c.unit ?? '').trim();
-  if (unit) return normId(buildingName(c.propertyName), c.block, unit);
-  return normId(c.propertyName, c.block);
+/**
+ * Bir dairenin (konumun) yazıma duyarsız kimliği. Daire no ayrı alandaysa onu
+ * kullan; yoksa mülk adı zaten daireyi içeriyordur (ör. "42 Evler 01").
+ * Hem envanter eşleştirmesi hem de çakışma tespiti bunu kullanır.
+ */
+export function locationId(
+  propertyName: string,
+  block: string | null | undefined,
+  unit: string | null | undefined
+): string {
+  const u = (unit ?? '').trim();
+  if (u) return normId(buildingName(propertyName), block, u);
+  return normId(propertyName, block);
 }
 
-/** Sözleşmede daire no ayrı yoksa mülk adının sonundaki daire etiketini çıkar
- *  (yalnızca sentezlenen dairenin GÖSTERİMİ için; eşleşme normId ile yapılır). */
-function unitLabelFromName(propertyName: string): string {
+function contractId(c: Contract): string {
+  return locationId(c.propertyName, c.block, c.unit);
+}
+
+/** Sözleşmede daire no ayrı yoksa mülk adının sonundaki daire etiketini çıkar. */
+export function unitLabelFromName(propertyName: string): string {
   const m = (propertyName ?? '').trim().match(/([A-Za-zÇĞİÖŞÜçğıöşü]?\d+)\s*$/);
   return m?.[1] ?? '';
+}
+
+/** Bir sözleşmeye/adaya ait daire kimliği belirlenebiliyor mu (çakışma için). */
+export function hasUnitIdentity(
+  propertyName: string,
+  unit: string | null | undefined
+): boolean {
+  return !!(unit && unit.trim()) || !!unitLabelFromName(propertyName);
 }
 
 /**
