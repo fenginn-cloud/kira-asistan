@@ -23,6 +23,7 @@ import { useStats } from '@/features/stats/useStats';
 import { useContracts } from '@/features/contracts/hooks';
 import { useUnits } from '@/features/units/hooks';
 import { computeInventoryStats } from '@/features/units/occupancy';
+import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { foldSearch } from '@/lib/utils/property';
@@ -90,6 +91,10 @@ export default function StatsScreen() {
   const occTotal = inv.total > 0 ? inv.occupied : s.occupiedTotal;
   const unitTotal = inv.total > 0 ? inv.total : s.unitTotal;
   const occRate = unitTotal > 0 ? Math.round((occTotal / unitTotal) * 100) : 0;
+
+  // Bugün itibarıyla gecikmiş (ana sayfa "Finansal Öngörü" ile aynı kaynak).
+  const nc = useNotificationCenter();
+  const overdueNow = { count: nc.overdue.length, total: nc.summary.overdueCollections };
 
   // Free plan: istatistik + Finansal Özet Pro/Business özelliği — kilitli tanıtım.
   if (!entitlement.limits.stats) {
@@ -220,7 +225,7 @@ export default function StatsScreen() {
                 <View className="flex-1 rounded-2xl bg-danger-soft/60 p-3">
                   <View className="flex-row items-center gap-1.5">
                     <Dot color={palette.danger} />
-                    <Text className="text-xs font-medium text-muted">Geciken / Kalan</Text>
+                    <Text className="text-xs font-medium text-muted">Bu Ay Kalan</Text>
                   </View>
                   <Text className="mt-1 text-lg font-extrabold text-danger" numberOfLines={1}>
                     {formatCurrency(s.overdue + s.pending)}
@@ -239,6 +244,18 @@ export default function StatsScreen() {
                   total={s.due}
                 />
               </View>
+
+              {/* Bugün gerçekten gecikmiş (ana sayfadaki "Finansal Öngörü" ile
+                  aynı hesap) — iki ekranı bağlar. */}
+              {overdueNow.count > 0 ? (
+                <View className="mt-4 flex-row items-center justify-between border-t border-border/60 pt-3">
+                  <Text className="text-xs text-muted">Bugün itibarıyla gecikmiş</Text>
+                  <Text className="text-sm font-bold text-danger">
+                    {formatCurrency(overdueNow.total)}{' '}
+                    <Text className="text-xs font-medium text-muted">({overdueNow.count})</Text>
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
             {/* 2x2 İSTATİSTİK KUTULARI (Stitch) — tümü gerçek veri */}
