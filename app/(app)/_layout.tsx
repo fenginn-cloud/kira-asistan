@@ -3,6 +3,7 @@ import { Redirect, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useNotificationScheduler } from '@/features/notifications/useNotificationScheduler';
 import { useNotificationNavigation } from '@/features/notifications/useNotificationNavigation';
+import { useDeviceGuard } from '@/features/security/hooks';
 import { useDesktopShell } from '@/lib/useDesktopShell';
 import { DesktopSidebar } from '@/features/navigation/DesktopSidebar';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
@@ -13,6 +14,7 @@ export default function AppLayout() {
   const colors = useThemeColors();
   useNotificationScheduler();
   useNotificationNavigation();
+  useDeviceGuard();
 
   // Geniş ekran + yönetici: global telefon-kolonu kısıtını kaldırmak için
   // <html>'e desktop-shell sınıfını ekle (global.css bu sınıfı gözetir).
@@ -54,6 +56,7 @@ export default function AppLayout() {
         <Stack.Screen name="building/[name]" />
         <Stack.Screen name="property-report" />
         <Stack.Screen name="notification-settings" />
+        <Stack.Screen name="sessions" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
       {enabled ? <DesktopSidebar width={sidebarWidth} /> : null}

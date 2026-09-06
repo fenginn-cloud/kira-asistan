@@ -11,6 +11,7 @@ import {
   Crown,
   LogOut,
   Mail,
+  MonitorSmartphone,
   Moon,
   FileSpreadsheet,
   ShieldCheck,
@@ -321,6 +322,14 @@ export default function SettingsScreen() {
           title="Hatırlatma Bildirimleri"
           subtitle="7 / 3 / 1 gün, ödeme günü, gecikme ve ses"
           onPress={() => router.push('/(app)/notification-settings')}
+        />
+
+        {/* Aktif oturumlar / cihazlar */}
+        <NavCard
+          icon={MonitorSmartphone}
+          title="Aktif Oturumlar"
+          subtitle="Hesabının açık olduğu cihazları gör ve kapat"
+          onPress={() => router.push('/(app)/sessions')}
         />
 
         {/* UYGULAMA */}
