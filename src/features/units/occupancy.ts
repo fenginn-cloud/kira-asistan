@@ -28,8 +28,14 @@ export interface EffectiveUnit {
  */
 function normId(...parts: (string | null | undefined)[]): string {
   return foldSearch(parts.map((p) => p ?? '').join(' '))
+    .replace(/daire|numara/g, '') // "DAİRE 11" == "11" (yazım gürültüsü)
     .replace(/[^a-z0-9]/g, '')
     .replace(/\d+/g, (m) => String(parseInt(m, 10)));
+}
+
+/** Bina adını yazıma duyarsız gruplama anahtarı. */
+export function buildingKey(name: string): string {
+  return foldSearch(name).replace(/[^a-z0-9]/g, '');
 }
 
 /** Sözleşmenin konum kimliği. Daire no ayrı alandaysa onu kullan; yoksa
