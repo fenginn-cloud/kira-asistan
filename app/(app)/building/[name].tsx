@@ -9,6 +9,8 @@ import { StatusPill, type PillTone } from '@/features/dashboard/components/Statu
 import { useContracts } from '@/features/contracts/hooks';
 import { useAllPayments } from '@/features/payments/hooks';
 import { useBuildingUnits } from '@/features/stats/buildingUnitsHooks';
+import { useUnits } from '@/features/units/hooks';
+import { vacancyLabel } from '@/features/units/vacancy';
 import { getContractBalance, formatCurrencyTRY, type LedgerStatus } from '@/lib/ledger/ledger';
 import { buildingName, foldSearch } from '@/lib/utils/property';
 import { formatCurrency, getInitials } from '@/lib/utils/format';
@@ -54,6 +56,19 @@ export default function BuildingDetailScreen() {
   const { data: contracts = [] } = useContracts();
   const { data: payments = [] } = useAllPayments();
   const { data: overrides = [] } = useBuildingUnits();
+  const { data: allUnits = [] } = useUnits();
+
+  // Bu binanın envanterdeki boş daireleri (elle işaretlenmiş).
+  const vacantUnits = useMemo(() => {
+    const key = foldSearch(building);
+    return allUnits
+      .filter((u) => u.status === 'vacant' && foldSearch(u.building) === key)
+      .sort(
+        (a, b) =>
+          a.block.localeCompare(b.block, 'tr', { numeric: true }) ||
+          a.unitLabel.localeCompare(b.unitLabel, 'tr', { numeric: true })
+      );
+  }, [allUnits, building]);
 
   const data = useMemo(() => {
     const key = foldSearch(building);
@@ -210,8 +225,46 @@ export default function BuildingDetailScreen() {
           ))
         )}
 
-        {/* Boş daire notu (numara uydurulmaz) */}
-        {data.vacant > 0 ? (
+        {/* Boş daireler — envanterde elle işaretlenmiş (gri). */}
+        {vacantUnits.length > 0 ? (
+          <View className="mt-6">
+            <View className="mb-2 flex-row items-center justify-between">
+              <Text className="text-base font-bold text-foreground">Boş Daireler</Text>
+              <Text className="text-xs font-semibold text-muted">{vacantUnits.length} daire</Text>
+            </View>
+            <View className="gap-2">
+              {vacantUnits.map((u) => (
+                <View
+                  key={u.id}
+                  className="flex-row items-center gap-3 rounded-2xl border border-border/70 bg-background p-3"
+                >
+                  <View className="h-10 w-10 items-center justify-center rounded-2xl bg-muted/15">
+                    <DoorClosed size={18} color={palette.muted} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-sm font-bold text-muted">
+                      {u.block ? `${u.block} · ` : ''}
+                      {u.unitLabel}
+                    </Text>
+                    <Text className="text-xs text-muted">{vacancyLabel(u.vacantSince)}</Text>
+                  </View>
+                  <View className="rounded-full bg-muted/15 px-2.5 py-1">
+                    <Text className="text-[11px] font-bold text-muted">Boş</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            <Pressable
+              onPress={() => router.push('/(app)/units-inventory')}
+              className="mt-2 items-center py-2 active:opacity-70"
+            >
+              <Text className="text-xs font-semibold text-primary-700">Envanteri düzenle</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* Boş daire notu (envanterde işaretli boş daire yoksa; numara uydurulmaz) */}
+        {vacantUnits.length === 0 && data.vacant > 0 ? (
           <View className="mt-6 flex-row items-center gap-3 rounded-2xl border border-dashed border-warning/40 bg-warning-soft p-4">
             <DoorClosed size={18} color={palette.warning} />
             <Text className="flex-1 text-sm text-foreground">

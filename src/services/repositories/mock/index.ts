@@ -14,12 +14,13 @@ import type {
 } from '@/types';
 import { derivePaymentStatus } from '@/lib/utils/payments';
 import { recentPaymentPeriods } from '@/lib/utils/paymentPeriods';
-import type { Repositories } from '../types';
+import type { Repositories, Unit } from '../types';
 
 // In-memory stores (cloned so we can mutate without touching the seed data).
 let contracts: Contract[] = structuredClone(mockContracts);
 let payments: Payment[] = structuredClone(mockPayments);
 let buildingUnits: { building: string; total: number }[] = [];
+let units: Unit[] = [];
 let transactions: PaymentTransaction[] = structuredClone(mockTransactions);
 let users: AppUser[] = structuredClone(mockUsers);
 let company: Company = structuredClone(mockCompany);
@@ -246,6 +247,42 @@ export const mockRepositories: Repositories = {
       const i = buildingUnits.findIndex((b) => b.building === building);
       if (i >= 0) buildingUnits[i] = { building, total };
       else buildingUnits.push({ building, total });
+      return delay(undefined);
+    },
+  },
+
+  units: {
+    list: () => delay(units.map((u) => ({ ...u }))),
+    upsert: (input) => {
+      const block = input.block ?? '';
+      const existing = units.find(
+        (u) => u.building === input.building && u.block === block && u.unitLabel === input.unitLabel
+      );
+      // Çakışırsa mevcut korunur ("isimler çakışıyorsa kalsın").
+      if (existing) return delay({ ...existing });
+      const unit: Unit = {
+        id: uid('u'),
+        building: input.building,
+        block,
+        unitLabel: input.unitLabel,
+        status: input.status ?? 'vacant',
+        vacantSince: input.vacantSince ?? null,
+        note: input.note ?? null,
+      };
+      units.push(unit);
+      return delay({ ...unit });
+    },
+    setStatus: (id, status, vacantSince) => {
+      const u = units.find((x) => x.id === id);
+      if (u) {
+        u.status = status;
+        u.vacantSince =
+          status === 'vacant' ? vacantSince ?? new Date().toISOString().slice(0, 10) : null;
+      }
+      return delay(undefined);
+    },
+    remove: (id) => {
+      units = units.filter((x) => x.id !== id);
       return delay(undefined);
     },
   },

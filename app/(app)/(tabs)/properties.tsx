@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
-import { Building2, ChevronRight, DoorClosed, Sliders, TrendingUp } from 'lucide-react-native';
+import { Building2, ChevronRight, DoorClosed, DoorOpen, Sliders, TrendingUp } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
@@ -125,13 +125,21 @@ export default function PropertiesScreen() {
             </Text>
           ) : null}
         </View>
-        <Pressable
-          onPress={() => router.push('/(app)/building-units')}
-          className="h-10 flex-row items-center gap-1.5 rounded-2xl bg-primary-50 px-3.5 active:opacity-80"
-        >
-          <Sliders size={16} color={palette.primary} />
-          <Text className="text-sm font-semibold text-primary-700">Daire Sayıları</Text>
-        </Pressable>
+        <View className="flex-row items-center gap-2">
+          <Pressable
+            onPress={() => router.push('/(app)/units-inventory')}
+            className="h-10 flex-row items-center gap-1.5 rounded-2xl bg-primary px-3.5 active:opacity-80"
+          >
+            <DoorOpen size={16} color="#FFFFFF" />
+            <Text className="text-sm font-semibold text-white">Envanter</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/(app)/building-units')}
+            className="h-10 w-10 items-center justify-center rounded-2xl bg-primary-50 active:opacity-80"
+          >
+            <Sliders size={16} color={palette.primary} />
+          </Pressable>
+        </View>
       </View>
 
       {isLoading ? (
