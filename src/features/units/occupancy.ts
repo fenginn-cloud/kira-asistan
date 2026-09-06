@@ -44,6 +44,27 @@ export function buildingKey(name: string): string {
   return foldSearch(name).replace(/[^a-z0-9]/g, '');
 }
 
+/**
+ * TÜM ekranlarda aynı bina adını göstermek için kanonik ad haritası
+ * (buildingKey → görünen ad). Öncelik SÖZLEŞMEDEKİ yazım (kullanıcının
+ * girdiği, ör. "42 Evler"); sözleşme yoksa envanterdeki ad. Böylece Mülkler,
+ * Analiz ve Envanter aynı ismi gösterir.
+ */
+export function buildingNameMap(units: Unit[], contracts: Contract[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const c of contracts) {
+    if (c.status !== 'active') continue;
+    const nm = buildingName(c.propertyName);
+    const k = buildingKey(nm);
+    if (k && !m.has(k)) m.set(k, nm);
+  }
+  for (const u of units) {
+    const k = buildingKey(u.building);
+    if (k && !m.has(k)) m.set(k, u.building);
+  }
+  return m;
+}
+
 export interface BuildingOccupancy {
   key: string;
   name: string;
@@ -67,6 +88,7 @@ export interface InventoryStats {
  */
 export function computeInventoryStats(units: Unit[], contracts: Contract[]): InventoryStats {
   const merged = mergeUnitsWithContracts(units, contracts);
+  const names = buildingNameMap(units, contracts);
   const byKey = new Map<string, BuildingOccupancy>();
   for (const u of merged) {
     const k = buildingKey(u.building);
@@ -76,11 +98,10 @@ export function computeInventoryStats(units: Unit[], contracts: Contract[]): Inv
       g.total += 1;
       g.occupied += occ;
       g.vacant += occ ? 0 : 1;
-      if (!u.synthesized) g.name = u.building; // envanterdeki (seed) yazımı tercih et
     } else {
       byKey.set(k, {
         key: k,
-        name: u.building,
+        name: names.get(k) ?? u.building, // kanonik ad (tüm ekranlarda aynı)
         total: 1,
         occupied: occ,
         vacant: occ ? 0 : 1,

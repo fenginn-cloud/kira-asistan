@@ -15,7 +15,12 @@ import { buildingName, foldSearch } from '@/lib/utils/property';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
 import { vacancyLabel } from '@/features/units/vacancy';
-import { mergeUnitsWithContracts, buildingKey, type EffectiveUnit } from '@/features/units/occupancy';
+import {
+  mergeUnitsWithContracts,
+  buildingKey,
+  buildingNameMap,
+  type EffectiveUnit,
+} from '@/features/units/occupancy';
 
 type Filter = 'all' | 'occupied' | 'vacant';
 
@@ -111,22 +116,16 @@ export default function UnitsInventoryScreen() {
   const grouped = useMemo(() => {
     const pass = (u: EffectiveUnit) =>
       filter === 'all' ? true : u.effectiveStatus === filter;
-    // Yazıma duyarsız bina anahtarı ile grupla (ör. "Dream Rezidans" ==
-    // "DREAM REZİDANS" tek grup). Görünen ad: varsa envanterdeki (seed) yazım.
-    const byBuilding = new Map<string, { display: string; fromInv: boolean; list: EffectiveUnit[] }>();
+    // Yazıma duyarsız bina anahtarı ile grupla; görünen ad TÜM ekranlarla
+    // aynı kanonik addır (buildingNameMap).
+    const names = buildingNameMap(units, contracts);
+    const byBuilding = new Map<string, { display: string; list: EffectiveUnit[] }>();
     for (const u of merged) {
       if (!pass(u)) continue;
       const k = buildingKey(u.building);
       const g = byBuilding.get(k);
-      if (g) {
-        g.list.push(u);
-        if (!g.fromInv && !u.synthesized) {
-          g.display = u.building;
-          g.fromInv = true;
-        }
-      } else {
-        byBuilding.set(k, { display: u.building, fromInv: !u.synthesized, list: [u] });
-      }
+      if (g) g.list.push(u);
+      else byBuilding.set(k, { display: names.get(k) ?? u.building, list: [u] });
     }
     return [...byBuilding.values()]
       .map(({ display, list }) => {
@@ -152,7 +151,7 @@ export default function UnitsInventoryScreen() {
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-  }, [merged, filter]);
+  }, [merged, filter, units, contracts]);
 
   if (!isAdmin) {
     return (

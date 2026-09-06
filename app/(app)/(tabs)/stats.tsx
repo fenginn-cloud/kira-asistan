@@ -22,11 +22,10 @@ import { BarChart } from '@/components/charts/BarChart';
 import { useStats } from '@/features/stats/useStats';
 import { useContracts } from '@/features/contracts/hooks';
 import { useUnits } from '@/features/units/hooks';
-import { computeInventoryStats } from '@/features/units/occupancy';
+import { computeInventoryStats, buildingKey } from '@/features/units/occupancy';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { useScrollToTop } from '@/lib/scrollToTop';
-import { foldSearch } from '@/lib/utils/property';
 import { formatCurrency } from '@/lib/utils/format';
 import { palette } from '@/lib/theme/colors';
 
@@ -74,12 +73,6 @@ export default function StatsScreen() {
   const [month, setMonth] = useState<string | undefined>(undefined);
   const s = useStats(month);
   const scrollRef = useScrollToTop<ScrollView>('stats');
-
-  // Bina adına göre doluluk eşlemesi (Portföy & Gelir Dağılımı için).
-  const occByName = useMemo(
-    () => new Map(s.occupancy.map((o) => [foldSearch(o.building), o])),
-    [s.occupancy]
-  );
 
   // Envanterden gerçek doluluk (varsa building_units tahminini geçersiz kılar).
   const { data: units = [] } = useUnits();
@@ -308,7 +301,9 @@ export default function StatsScreen() {
                 <View className="gap-4">
                   {s.byBuilding.map((b, i) => {
                     const share = s.due > 0 ? (b.due / s.due) * 100 : 0;
-                    const occ = occByName.get(foldSearch(b.building));
+                    // Doluluk ve daire sayısı envanterden (Mülkler ile aynı kaynak).
+                    const occ = inv.byKey.get(buildingKey(b.building));
+                    const daireCount = occ ? occ.total : b.totalUnits;
                     const dolulukPct =
                       occ && occ.total > 0
                         ? Math.round((occ.occupied / occ.total) * 100)
@@ -327,10 +322,10 @@ export default function StatsScreen() {
                               className="flex-1 text-sm font-bold text-foreground"
                               numberOfLines={1}
                             >
-                              {b.building}
+                              {occ?.name ?? b.building}
                             </Text>
-                            {b.totalUnits > 0 ? (
-                              <Text className="text-xs text-muted">({b.totalUnits} Daire)</Text>
+                            {daireCount > 0 ? (
+                              <Text className="text-xs text-muted">({daireCount} Daire)</Text>
                             ) : null}
                           </View>
                           <Text className="text-sm font-bold text-foreground" numberOfLines={1}>
