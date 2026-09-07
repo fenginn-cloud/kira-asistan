@@ -51,3 +51,13 @@
     box-shadow: 0 0 48px rgba(0, 0, 0, 0.6);
   }
 }
+
+/* Public landing (/) — telefon-kolonu kısıtı uygulanmaz; tam genişlik. */
+html.landing-web body {
+  background-color: #ffffff !important;
+}
+html.landing-web #root,
+html.landing-web body > div:not(#root) {
+  max-width: none !important;
+  box-shadow: none !important;
+}
