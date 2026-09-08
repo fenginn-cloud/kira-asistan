@@ -105,9 +105,7 @@ export function LandingPage() {
         <View style={web({ position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(10px)' })} className="w-full items-center border-b border-slate-200/70 bg-white/85">
           <View className="w-full max-w-[1200px] flex-row items-center justify-between px-5" style={{ height: 72 }}>
             <Pressable onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} className="flex-row items-center gap-2.5">
-              <View className="h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-black" style={{ boxShadow: '0 4px 12px rgba(0,0,0,.18)' } as never}>
-                <Image source={require('../../../assets/icon.png')} style={{ width: 24, height: 24, borderRadius: 6 }} />
-              </View>
+              <Image source={require('../../../assets/icon.png')} style={{ width: 36, height: 36, borderRadius: 9 }} />
               <View>
                 <Text className="text-lg font-extrabold leading-5 tracking-tight text-slate-900">Kira Asistan</Text>
                 <Text className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Kira & Mülk Yönetimi</Text>
@@ -460,9 +458,7 @@ export function LandingPage() {
             <View className={isDesktop ? 'flex-row justify-between gap-10' : 'gap-10'}>
               <View className="max-w-[360px]">
                 <View className="flex-row items-center gap-2.5">
-                  <View className="h-8 w-8 items-center justify-center rounded-xl bg-black">
-                    <Image source={require('../../../assets/icon.png')} style={{ width: 20, height: 20, borderRadius: 5 }} />
-                  </View>
+                  <Image source={require('../../../assets/icon.png')} style={{ width: 32, height: 32, borderRadius: 8 }} />
                   <Text className="text-lg font-black tracking-tight text-slate-900">Kira Asistan</Text>
                 </View>
                 <Text className="mt-4 text-xs leading-5 text-slate-500">
