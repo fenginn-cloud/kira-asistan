@@ -40,6 +40,10 @@ const web = (o: object) => o as never; // web-only style (RN tip uyumu)
 const rw = (o: object) => o as { [k: string]: unknown }; // dataSet vb. web props
 
 const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+html.landing-web, html.landing-web *:not(svg):not(path){font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important}
+html.landing-web{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html.landing-web body{overflow-x:hidden}
 [data-reveal]{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
 [data-reveal].ka-in{opacity:1;transform:none}
 @keyframes ka-pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -61,6 +65,9 @@ export function LandingPage() {
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 960;
+  // Hero telefonu mobilde ekrana sığsın (320px'de bile taşma olmasın).
+  const heroPhoneW = isDesktop ? 300 : Math.min(290, Math.max(220, width - 72));
+  const heroVisualW = isDesktop ? 360 : Math.min(340, width - 32);
   const scrollRef = useRef<ScrollView>(null);
   const offsets = useRef<Record<string, number>>({});
   const [menuOpen, setMenuOpen] = useState(false);
@@ -103,7 +110,7 @@ export function LandingPage() {
       <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
         {/* ---------- HEADER (sticky) ---------- */}
         <View style={web({ position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(10px)' })} className="w-full items-center border-b border-slate-200/70 bg-white/85">
-          <View className="w-full max-w-[1200px] flex-row items-center justify-between px-5" style={{ height: 72 }}>
+          <View className="w-full max-w-[1240px] flex-row items-center justify-between px-5" style={{ height: 72 }}>
             <Pressable onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })} className="flex-row items-center gap-2.5">
               <Image source={require('../../../assets/icon.png')} style={{ width: 36, height: 36, borderRadius: 9 }} />
               <View>
@@ -146,7 +153,7 @@ export function LandingPage() {
           </View>
 
           {!isDesktop && menuOpen ? (
-            <View className="w-full max-w-[1200px] gap-1 border-t border-slate-200 bg-white px-5 py-3">
+            <View className="w-full max-w-[1240px] gap-1 border-t border-slate-200 bg-white px-5 py-3">
               {NAV.map((n) => (
                 <Pressable key={n.key} onPress={() => scrollTo(n.key)} className="py-2.5">
                   <Text className="text-base font-medium text-slate-700">{n.label}</Text>
@@ -166,8 +173,8 @@ export function LandingPage() {
 
         {/* ---------- HERO ---------- */}
         <View className="w-full items-center overflow-hidden bg-white">
-          <View className="w-full max-w-[1200px] px-5">
-            <View className={isDesktop ? 'flex-row items-center gap-6 pb-28 pt-20' : 'gap-14 pb-16 pt-12'}>
+          <View className="w-full max-w-[1240px] px-5">
+            <View className={isDesktop ? 'flex-row items-center gap-12 pb-28 pt-24' : 'gap-14 pb-16 pt-12'}>
               {/* Sol */}
               <View className={isDesktop ? 'flex-1' : ''} {...rw({ dataSet: { reveal: '' } })}>
                 <View className="flex-row items-center gap-2 self-start rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5">
@@ -176,7 +183,7 @@ export function LandingPage() {
                 </View>
                 <Text
                   className="mt-6 font-extrabold tracking-tight text-black"
-                  style={{ fontSize: isDesktop ? 62 : 40, lineHeight: isDesktop ? 66 : 44, letterSpacing: -1 }}
+                  style={{ fontSize: isDesktop ? 64 : 38, lineHeight: isDesktop ? 68 : 44, letterSpacing: isDesktop ? -1.4 : -0.8 }}
                 >
                   Kira yönetiminin{'\n'}daha akıllı yolu.
                 </Text>
@@ -200,9 +207,9 @@ export function LandingPage() {
 
               {/* Sağ — telefon mockup + blob + floating kartlar */}
               <View className={isDesktop ? 'flex-1 items-center' : 'items-center'} {...rw({ dataSet: { reveal: '' } })}>
-                <View className="relative items-center justify-center" style={{ width: 360, height: isDesktop ? 640 : 560 }}>
-                  <View className="absolute rounded-full bg-primary-50" style={web({ width: 360, height: 360, top: 20, filter: 'blur(60px)' })} />
-                  <PhoneFrame />
+                <View className="relative items-center justify-center" style={{ width: heroVisualW, height: isDesktop ? 640 : 540 }}>
+                  <View className="absolute rounded-full bg-primary-50" style={web({ width: heroVisualW, height: heroVisualW, top: 20, filter: 'blur(60px)' })} />
+                  <PhoneFrame width={heroPhoneW} />
                   {isDesktop ? (
                     <>
                       <View className="absolute" style={{ top: 60, left: -14 }} {...rw({ dataSet: { float: '' } })}>
@@ -224,7 +231,7 @@ export function LandingPage() {
 
         {/* ---------- BİZİMLE ÇALIŞAN FİRMALAR ---------- */}
         <View className="w-full items-center border-y border-slate-200 bg-slate-50/70">
-          <View className="w-full max-w-[1200px] px-5 py-12" {...rw({ dataSet: { reveal: '' } })}>
+          <View className="w-full max-w-[1240px] px-5 py-12" {...rw({ dataSet: { reveal: '' } })}>
             <Text className="text-center text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
               Bizimle çalışan firmalar
             </Text>
@@ -293,7 +300,7 @@ export function LandingPage() {
 
         {/* ---------- NASIL ÇALIŞIR ---------- */}
         <View className="w-full items-center bg-white" onLayout={onSectionLayout('how')}>
-          <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
+          <View className="w-full max-w-[1240px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
             <SectionHead
               desktop={isDesktop}
               eyebrow="Basit ve Hızlı Süreç"
@@ -318,7 +325,7 @@ export function LandingPage() {
 
         {/* ---------- KİMLER İÇİN ---------- */}
         <View className="w-full items-center border-y border-slate-200 bg-slate-50/70" onLayout={onSectionLayout('who')}>
-          <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
+          <View className="w-full max-w-[1240px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
             <SectionHead
               desktop={isDesktop}
               eyebrow="Hedef Odaklı Çözümler"
@@ -337,7 +344,7 @@ export function LandingPage() {
                   key={c.n}
                   {...rw({ dataSet: { lift: '' } })}
                   className="rounded-2xl border border-slate-200 bg-white p-6"
-                  style={{ width: isDesktop ? undefined : 300, flex: isDesktop ? 1 : undefined, boxShadow: '0 2px 16px rgba(15,23,42,.05)' } as never}
+                  style={{ width: isDesktop ? undefined : Math.min(360, width - 40), flex: isDesktop ? 1 : undefined, boxShadow: '0 2px 16px rgba(15,23,42,.05)' } as never}
                 >
                   <View className="h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
                     <Text className="text-sm font-black text-slate-900">{c.n}</Text>
@@ -352,7 +359,7 @@ export function LandingPage() {
 
         {/* ---------- MOBİL ---------- */}
         <View className="w-full items-center bg-white">
-          <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
+          <View className="w-full max-w-[1240px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
             <View className={isDesktop ? 'flex-row items-center gap-16' : 'gap-10'}>
               <View className="flex-1">
                 <View className="flex-row items-center gap-2 self-start rounded-full bg-slate-100 px-3 py-1">
@@ -387,12 +394,14 @@ export function LandingPage() {
                   <Text className="text-base font-extrabold text-slate-900">₺45.500</Text>
                   <Text className="text-[9px] font-semibold text-emerald-600">2 yeni ödeme geldi</Text>
                 </MiniPhone>
-                <View style={{ marginTop: 40 }}>
-                  <MiniPhone title="Ödeme Hatırlatması" tone="emerald">
-                    <Text className="text-[11px] font-bold text-emerald-900">Vade yaklaşıyor</Text>
-                    <Text className="mt-1 text-[10px] text-emerald-700">Daire 4 · ödeme gününe 2 gün kaldı</Text>
-                  </MiniPhone>
-                </View>
+                {width >= 720 ? (
+                  <View style={{ marginTop: 40 }}>
+                    <MiniPhone title="Ödeme Hatırlatması" tone="emerald">
+                      <Text className="text-[11px] font-bold text-emerald-900">Vade yaklaşıyor</Text>
+                      <Text className="mt-1 text-[10px] text-emerald-700">Daire 4 · ödeme gününe 2 gün kaldı</Text>
+                    </MiniPhone>
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>
@@ -400,7 +409,7 @@ export function LandingPage() {
 
         {/* ---------- PLANLAR ---------- */}
         <View className="w-full items-center bg-slate-50" onLayout={onSectionLayout('pricing')}>
-          <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
+          <View className="w-full max-w-[1240px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
             <SectionHead
               desktop={isDesktop}
               eyebrow="Şeffaf Fiyatlandırma"
@@ -433,7 +442,7 @@ export function LandingPage() {
 
         {/* ---------- FINAL CTA ---------- */}
         <View className="w-full items-center bg-white">
-          <View className="w-full max-w-[1200px] px-5 pb-24" {...rw({ dataSet: { reveal: '' } })}>
+          <View className="w-full max-w-[1240px] px-5 pb-24" {...rw({ dataSet: { reveal: '' } })}>
             <View
               className={`overflow-hidden rounded-[40px] bg-black px-8 py-16 ${isDesktop ? 'flex-row items-center justify-between gap-8' : 'gap-8'}`}
               style={{ boxShadow: '0 30px 60px rgba(2,6,23,.28)' } as never}
@@ -454,7 +463,7 @@ export function LandingPage() {
 
         {/* ---------- FOOTER ---------- */}
         <View className="w-full items-center border-t border-slate-200 bg-white">
-          <View className="w-full max-w-[1200px] px-5 pb-12 pt-16">
+          <View className="w-full max-w-[1240px] px-5 pb-12 pt-16">
             <View className={isDesktop ? 'flex-row justify-between gap-10' : 'gap-10'}>
               <View className="max-w-[360px]">
                 <View className="flex-row items-center gap-2.5">
@@ -523,8 +532,8 @@ function Feature({
 }) {
   return (
     <View className={`w-full items-center ${tint ? 'bg-slate-50' : 'bg-white'}`}>
-      <View className="w-full max-w-[1200px] px-5 py-20" {...rw({ dataSet: { reveal: '' } })}>
-        <View className={desktop ? `flex-row items-center gap-16 ${reverse ? 'flex-row-reverse' : ''}` : 'gap-10'}>
+      <View className="w-full max-w-[1240px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
+        <View className={desktop ? `flex-row items-center gap-20 ${reverse ? 'flex-row-reverse' : ''}` : 'gap-10'}>
           <View className="flex-1">
             <View className="mb-4 h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
               <Icon size={22} color="#2563EB" />
@@ -650,8 +659,8 @@ function Panel({ children, className, wide }: { children: React.ReactNode; class
   );
 }
 
-function PhoneFrame({ small }: { small?: boolean }) {
-  const w = small ? 250 : 300;
+function PhoneFrame({ small, width }: { small?: boolean; width?: number }) {
+  const w = width ?? (small ? 250 : 300);
   return (
     <View className="rounded-[46px] border-4 border-zinc-800 bg-black p-3" style={{ width: w, boxShadow: '0 40px 80px rgba(2,6,23,.35)' } as never}>
       <View className="overflow-hidden rounded-[36px] bg-white pt-3">
