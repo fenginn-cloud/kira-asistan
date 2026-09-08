@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { Platform } from 'react-native';
 import { useContracts } from '@/features/contracts/hooks';
 import { useAllPayments } from '@/features/payments/hooks';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -9,6 +10,7 @@ import {
   configure,
   ensurePushSubscription,
   getPermission,
+  requestPermission,
   showDueReminders,
 } from './device';
 
@@ -37,6 +39,21 @@ export function useNotificationScheduler(): void {
   useEffect(() => {
     configure();
   }, []);
+
+  // Native (Android 13+/iOS): ilk girişte bildirim iznini bir kez iste. Web'de
+  // izin kullanıcı jesti gerektirdiğinden (Ayarlar kartı) burada tetiklenmez.
+  const askedRef = useRef(false);
+  useEffect(() => {
+    if (!user || Platform.OS === 'web' || askedRef.current) return;
+    askedRef.current = true;
+    (async () => {
+      // Yalnızca henüz karar verilmemişse (default) sistem dialogu açılır;
+      // daha önce izin verildi/reddedildiyse sessiz kalır (yeniden sormaz).
+      if ((await getPermission()) === 'default') {
+        await requestPermission();
+      }
+    })();
+  }, [user]);
 
   useEffect(() => {
     if (!user || todayReminders.length === 0) return;

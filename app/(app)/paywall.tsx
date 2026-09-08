@@ -35,12 +35,6 @@ function paywallHeader(
         title: 'Excel Aktarımı',
         subtitle: 'Tek tıkla tüm sözleşmelerinizi içeri aktarın. Pro ve Business planlarına dahildir.',
       };
-    case 'ai':
-      return {
-        title: 'AI Asistan',
-        subtitle:
-          'Kim ödemedi, geciken alacak, aylık tahsilat… Portföyünüz üzerinde anında yanıt. Pro ve Business’a dahildir.',
-      };
     case 'team':
       return {
         title: 'Ekip Yönetimi',

@@ -20,10 +20,13 @@ interface SettingsState {
   reminderSound: boolean;
   /** İlk açılış rehberi (coach marks) gösterildi mi. */
   onboardingSeen: boolean;
+  /** Profil avatarı olarak seçilen emoji (null = ad-soyad baş harfleri). */
+  avatarEmoji: string | null;
   setTheme: (theme: ThemePreference) => void;
   toggleNotification: (key: keyof NotificationPreferences) => void;
   setReminderSound: (on: boolean) => void;
   setOnboardingSeen: (seen: boolean) => void;
+  setAvatarEmoji: (emoji: string | null) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -33,9 +36,11 @@ export const useSettingsStore = create<SettingsState>()(
       notifications: defaultNotifications,
       reminderSound: false,
       onboardingSeen: false,
+      avatarEmoji: null,
       setTheme: (theme) => set({ theme }),
       setReminderSound: (on) => set({ reminderSound: on }),
       setOnboardingSeen: (seen) => set({ onboardingSeen: seen }),
+      setAvatarEmoji: (emoji) => set({ avatarEmoji: emoji }),
       toggleNotification: (key) =>
         set((state) => ({
           notifications: {

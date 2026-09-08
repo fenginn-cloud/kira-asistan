@@ -1,6 +1,7 @@
 import { fgColor } from '@/lib/theme/useThemeColors';
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -17,13 +18,25 @@ import { useToast } from '@/components/ui/Toast';
 import { ProfileForm } from '@/features/profile/ProfileForm';
 import { ChangePasswordForm } from '@/features/profile/ChangePasswordForm';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useState } from 'react';
+
+/** Profil avatarı için hazır emoji/hayvan seçenekleri (fotoğraf yükleme yok). */
+const AVATAR_EMOJIS = [
+  '🐯', '🦁', '🦊', '🐶', '🐱', '🐼',
+  '🐨', '🐵', '🦉', '🦜', '🐧', '🦋',
+  '🐢', '🐬', '🦄', '🐝', '🐺', '🐰',
+  '🐸', '🐷', '🦈', '🦖', '🐙', '🦩',
+];
 
 export default function ProfileScreen() {
   const router = useRouter();
   const toast = useToast();
   const { user, updateProfile, changePassword } = useAuthStore();
+  const avatarEmoji = useSettingsStore((s) => s.avatarEmoji);
+  const setAvatarEmoji = useSettingsStore((s) => s.setAvatarEmoji);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
 
   if (!user) return null;
 
@@ -46,14 +59,9 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View className="mt-4 items-center">
-            <Avatar name={user.fullName} size={84} />
-            <Pressable
-              onPress={() => toast.show('Fotoğraf yükleme Storage fazında aktif olacak', 'info')}
-              className="mt-3"
-            >
-              <Text className="text-sm font-semibold text-primary-700">
-                Fotoğrafı Değiştir
-              </Text>
+            <Avatar name={user.fullName} size={84} emoji={avatarEmoji} />
+            <Pressable onPress={() => setAvatarPickerOpen(true)} className="mt-3">
+              <Text className="text-sm font-semibold text-primary-700">Avatar Seç</Text>
             </Pressable>
           </View>
 
@@ -95,6 +103,60 @@ export default function ProfileScreen() {
           </Card>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={avatarPickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAvatarPickerOpen(false)}
+      >
+        <Pressable
+          onPress={() => setAvatarPickerOpen(false)}
+          className="flex-1 items-center justify-center bg-black/40 px-6"
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-3xl bg-surface p-5"
+          >
+            <Text className="text-center text-lg font-bold text-foreground">Avatar Seç</Text>
+            <Text className="mt-1 text-center text-sm text-muted">
+              Bir simge seçin veya baş harflerinize dönün.
+            </Text>
+
+            <View className="mt-5 flex-row flex-wrap justify-center gap-3">
+              {AVATAR_EMOJIS.map((e) => {
+                const selected = avatarEmoji === e;
+                return (
+                  <Pressable
+                    key={e}
+                    onPress={() => {
+                      setAvatarEmoji(e);
+                      setAvatarPickerOpen(false);
+                      toast.success('Avatar güncellendi');
+                    }}
+                    className={`h-14 w-14 items-center justify-center rounded-full ${
+                      selected ? 'bg-primary-100 border-2 border-primary' : 'bg-background'
+                    }`}
+                  >
+                    <Text style={{ fontSize: 30 }}>{e}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Pressable
+              onPress={() => {
+                setAvatarEmoji(null);
+                setAvatarPickerOpen(false);
+                toast.success('Baş harflere dönüldü');
+              }}
+              className="mt-6 h-12 items-center justify-center rounded-2xl bg-background active:opacity-80"
+            >
+              <Text className="text-base font-semibold text-muted">Baş Harfleri Kullan</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

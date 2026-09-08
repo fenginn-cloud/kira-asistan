@@ -12,15 +12,12 @@ import {
 import { useRouter } from 'expo-router';
 import {
   ArrowRight,
-  Bell,
   Building2,
   Check,
   ChevronDown,
   ClipboardList,
   FileText,
   Menu,
-  Send,
-  Sparkles,
   TrendingUp,
   Users,
   Wallet,
@@ -211,11 +208,14 @@ export function LandingPage() {
                   <PhoneFrame />
                   {isDesktop ? (
                     <>
-                      <View className="absolute" style={{ top: 70, left: -6 }} {...rw({ dataSet: { float: '' } })}>
-                        <FloatChip icon={TrendingUp} tint="emerald" title="Doluluk" value="%—" />
+                      <View className="absolute" style={{ top: 60, left: -14 }} {...rw({ dataSet: { float: '' } })}>
+                        <FloatChip icon={TrendingUp} tint="emerald" title="Doluluk" value="%94" />
                       </View>
-                      <View className="absolute" style={{ bottom: 90, right: -10 }} {...rw({ dataSet: { float2: '' } })}>
-                        <FloatChip icon={Check} tint="primary" title="Tahsilat" value="Kaydedildi" />
+                      <View className="absolute" style={{ top: 150, right: -18 }} {...rw({ dataSet: { float2: '' } })}>
+                        <FloatChip icon={Wallet} tint="primary" title="Aylık Gelir" value="₺485.000" />
+                      </View>
+                      <View className="absolute" style={{ bottom: 70, left: -10 }} {...rw({ dataSet: { float: '' } })}>
+                        <FloatChip icon={Check} tint="emerald" title="Tahsil Edilen" value="₺420.000" />
                       </View>
                     </>
                   ) : null}
@@ -225,15 +225,17 @@ export function LandingPage() {
           </View>
         </View>
 
-        {/* ---------- SEKTÖR ŞERİDİ ---------- */}
-        <View className="w-full items-center border-y border-slate-200 bg-slate-50">
-          <View className="w-full max-w-[1200px] px-5 py-9" {...rw({ dataSet: { reveal: '' } })}>
-            <Text className="text-center text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
-              Gayrimenkul sektörü için tasarlandı
+        {/* ---------- BİZİMLE ÇALIŞAN FİRMALAR ---------- */}
+        <View className="w-full items-center border-y border-slate-200 bg-slate-50/70">
+          <View className="w-full max-w-[1200px] px-5 py-12" {...rw({ dataSet: { reveal: '' } })}>
+            <Text className="text-center text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+              Bizimle çalışan firmalar
             </Text>
-            <View className="mt-5 flex-row flex-wrap items-center justify-center gap-x-12 gap-y-4">
-              {['Ece Gayrimenkul', 'Nova Emlak', 'Marmara Gayrimenkul', 'Kent Portföy', 'Prime Estate'].map((n) => (
-                <Text key={n} className="text-lg font-extrabold tracking-tight text-slate-300">{n}</Text>
+            <View className="mt-7 flex-row flex-wrap items-center justify-center gap-x-14 gap-y-5">
+              {['Re/Max Dream', 'Sarper Gayrimenkul', 'Hece Gayrimenkul', 'Sapanca Realty', 'Kent Portföy'].map((n) => (
+                <Text key={n} className="text-xl font-black tracking-tight text-slate-700" style={web({ letterSpacing: -0.4 })}>
+                  {n}
+                </Text>
               ))}
             </View>
           </View>
@@ -290,33 +292,6 @@ export function LandingPage() {
             points={['Kişisel ve iletişim bilgileri', 'Gelir ve araç / plaka', 'Evde yaşayacak kişiler', 'Acil durum kişisi ve danışman değerlendirmesi']}
             mock={<FormMock />}
           />
-        </View>
-
-        {/* ---------- AI (koyu) ---------- */}
-        <View className="w-full items-center overflow-hidden bg-slate-950">
-          <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
-            <View className={isDesktop ? 'flex-row items-center gap-14' : 'gap-10'}>
-              <View className="flex-1">
-                <View className="flex-row items-center gap-2 self-start rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5">
-                  <Sparkles size={13} color="#a5b4fc" />
-                  <Text className="text-xs font-semibold text-slate-200">AI Asistan</Text>
-                </View>
-                <Text className="mt-5 font-extrabold tracking-tight text-white" style={{ fontSize: isDesktop ? 44 : 30, lineHeight: isDesktop ? 48 : 34, letterSpacing: -0.5 }}>
-                  Portföyünüzle konuşun.
-                </Text>
-                <Text className="mt-4 max-w-[560px] text-base leading-7 text-slate-300">
-                  Kira Asistan, portföyünüzün verilerinden bağlamsal finansal öngörüler üretir; geciken tahsilat,
-                  yaklaşan vade ve aylık tahsilat oranı gibi içgörüleri ana sayfanıza taşır.
-                </Text>
-                <Text className="mt-3 text-sm font-medium text-slate-400">
-                  AI Asistan: Pro planda günlük soru hakkıyla, Business planda gelişmiş.
-                </Text>
-              </View>
-              <View className="flex-1">
-                <AiMock />
-              </View>
-            </View>
-          </View>
         </View>
 
         {/* ---------- NASIL ÇALIŞIR ---------- */}
@@ -641,9 +616,9 @@ function PlanCard({ id, onStart, desktop }: { id: 'free' | 'pro' | 'business'; o
 
 // ---- mockups (nötr, gerçek kişisel veri yok) ----
 
-function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
+function Panel({ children, className, wide }: { children: React.ReactNode; className?: string; wide?: boolean }) {
   return (
-    <View className={`w-full max-w-[420px] rounded-[26px] border border-slate-200 bg-white p-5 ${className ?? ''}`} style={{ boxShadow: '0 24px 60px rgba(15,23,42,.10)' } as never}>
+    <View className={`w-full ${wide ? 'max-w-[520px]' : 'max-w-[420px]'} rounded-[26px] border border-slate-200 bg-white p-5 ${className ?? ''}`} style={{ boxShadow: '0 24px 60px rgba(15,23,42,.10)' } as never}>
       {children}
     </View>
   );
@@ -658,8 +633,9 @@ function PhoneFrame({ small }: { small?: boolean }) {
         <View className="px-4 pb-5">
           <View className="rounded-3xl bg-primary p-4">
             <Text className="text-[10px] font-medium text-white/80">Bu Ay Tahsilat</Text>
-            <Text className="mt-1 text-2xl font-extrabold text-white">₺—</Text>
-            <View className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/25"><View className="h-1.5 w-2/3 rounded-full bg-white" /></View>
+            <Text className="mt-1 text-2xl font-extrabold text-white">₺420.000</Text>
+            <View className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/25"><View className="h-1.5 w-[86%] rounded-full bg-white" /></View>
+            <Text className="mt-1.5 text-[9px] font-medium text-white/70">42 / 48 tahsil edildi</Text>
           </View>
           <View className="mt-3 flex-row gap-2">
             {['Tahsilat', 'Sözleşme', 'Form'].map((t, i) => (
@@ -668,11 +644,18 @@ function PhoneFrame({ small }: { small?: boolean }) {
               </View>
             ))}
           </View>
-          {[0, 1, 2].map((i) => (
-            <View key={i} className="mt-2.5 flex-row items-center gap-2.5 rounded-2xl border border-slate-100 px-2.5 py-2.5">
-              <View className={`h-8 w-8 rounded-xl ${i === 1 ? 'bg-danger-soft' : 'bg-primary-50'}`} />
-              <View className="flex-1 gap-1"><View className="h-2.5 w-2/3 rounded bg-slate-200" /><View className="h-2 w-1/2 rounded bg-slate-100" /></View>
-              <Bell size={14} color="#94a3b8" />
+          {[
+            { n: 'Dream Res. · D8', s: 'Ödendi', amount: '₺26.500', late: false },
+            { n: 'Vadi Kule · D12', s: 'Gecikmede', amount: '₺31.000', late: true },
+            { n: 'Sky Garden · D4', s: 'Yaklaştı', amount: '₺19.000', late: false },
+          ].map((r) => (
+            <View key={r.n} className="mt-2.5 flex-row items-center gap-2.5 rounded-2xl border border-slate-100 px-2.5 py-2">
+              <View className={`h-8 w-8 rounded-xl ${r.late ? 'bg-danger-soft' : 'bg-primary-50'}`} />
+              <View className="flex-1">
+                <Text className="text-[11px] font-bold text-slate-800">{r.n}</Text>
+                <Text className={`text-[9px] font-medium ${r.late ? 'text-danger' : 'text-slate-400'}`}>{r.s}</Text>
+              </View>
+              <Text className={`text-[11px] font-extrabold ${r.late ? 'text-danger' : 'text-emerald-600'}`}>{r.amount}</Text>
             </View>
           ))}
         </View>
@@ -682,20 +665,42 @@ function PhoneFrame({ small }: { small?: boolean }) {
 }
 
 function TrackMock() {
+  const rows = [
+    { in: 'CE', name: 'Caner Erkin', unit: 'Dream Residence · Daire 8', amount: '₺26.500', st: 'Ödendi', tone: 'emerald' as const },
+    { in: 'SK', name: 'Selin Kaya', unit: 'Sky Garden · Daire 4', amount: '₺19.000', st: 'Vadesi yaklaştı', tone: 'amber' as const },
+    { in: 'MA', name: 'Murat Aksoy', unit: 'Vadi Kule · Daire 12', amount: '₺31.000', st: '6 gün gecikmede', tone: 'rose' as const },
+    { in: 'BT', name: 'Bahar Tan', unit: 'Pera Konutları · Daire 2', amount: '₺22.500', st: 'Ödendi', tone: 'emerald' as const },
+  ];
+  const dot = { emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e' };
+  const txt = { emerald: 'text-emerald-600', amber: 'text-amber-600', rose: 'text-rose-600' };
   return (
-    <Panel>
-      <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-bold text-slate-800">Tahsilat Takibi</Text>
-        <View className="rounded-full bg-danger-soft px-2.5 py-1"><Text className="text-[11px] font-bold text-danger">Geciken</Text></View>
+    <Panel wide>
+      <View className="flex-row items-center justify-between border-b border-slate-100 pb-4">
+        <View>
+          <Text className="text-sm font-bold text-slate-900">Kira Tahsilat Tablosu</Text>
+          <Text className="text-[11px] text-slate-400">Bu ay güncel durum</Text>
+        </View>
+        <View className="rounded-full border border-slate-200 bg-white px-3 py-1"><Text className="text-[11px] font-semibold text-slate-600">Örnek görünüm</Text></View>
       </View>
-      <View className="mt-3">
-        {['Bu ay', 'Geciken', 'Bu hafta'].map((t, i) => (
-          <View key={t} className={`flex-row items-center justify-between py-3 ${i > 0 ? 'border-t border-slate-100' : ''}`}>
-            <View className="flex-row items-center gap-2.5">
-              <View className={`h-8 w-8 rounded-xl ${i === 1 ? 'bg-danger-soft' : 'bg-primary-50'}`} />
-              <Text className="text-sm font-medium text-slate-600">{t}</Text>
+      <View className="mt-1">
+        {rows.map((r, i) => (
+          <View key={r.in} className={`flex-row items-center justify-between py-3.5 ${i > 0 ? 'border-t border-slate-100' : ''}`}>
+            <View className="flex-row items-center gap-3">
+              <View className={`h-9 w-9 items-center justify-center rounded-full ${r.tone === 'rose' ? 'bg-rose-100' : 'bg-slate-100'}`}>
+                <Text className={`text-[11px] font-bold ${r.tone === 'rose' ? 'text-rose-700' : 'text-slate-600'}`}>{r.in}</Text>
+              </View>
+              <View>
+                <Text className="text-sm font-semibold text-slate-900">{r.name}</Text>
+                <Text className="text-[11px] text-slate-400">{r.unit}</Text>
+              </View>
             </View>
-            <View className={`h-6 w-16 rounded-lg ${i === 1 ? 'bg-danger-soft' : 'bg-slate-100'}`} />
+            <View className="items-end">
+              <Text className="text-sm font-bold text-slate-900">{r.amount}</Text>
+              <View className="mt-0.5 flex-row items-center gap-1">
+                <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dot[r.tone] }} />
+                <Text className={`text-[11px] font-semibold ${txt[r.tone]}`}>{r.st}</Text>
+              </View>
+            </View>
           </View>
         ))}
       </View>
@@ -704,36 +709,74 @@ function TrackMock() {
 }
 
 function ContractMock() {
+  const meta = [
+    { k: 'Başlangıç / Bitiş', v: '01.09.2023 — 01.09.2025' },
+    { k: 'Kira bedeli', v: '₺25.000 / ay' },
+    { k: 'Depozito', v: '₺50.000' },
+    { k: 'Kiracı', v: 'Caner Erkin' },
+  ];
   return (
-    <Panel>
-      <View className="flex-row items-center gap-3">
-        <View className="h-12 w-12 rounded-2xl bg-primary-50" />
-        <View className="flex-1 gap-2"><View className="h-3 w-2/3 rounded bg-slate-200" /><View className="h-2.5 w-1/2 rounded bg-slate-100" /></View>
-        <View className="rounded-full bg-emerald-100 px-2.5 py-1"><Text className="text-[11px] font-bold text-emerald-700">Aktif</Text></View>
+    <Panel wide>
+      <View className="flex-row items-center justify-between">
+        <View className="rounded-full bg-emerald-100 px-3 py-1"><Text className="text-[11px] font-bold text-emerald-800">Yürürlükte</Text></View>
+        <Text className="text-[11px] font-semibold text-slate-400">Dream Residence · A Blok</Text>
       </View>
-      <View className="mt-4 gap-3 border-t border-slate-100 pt-4">
-        {['Başlangıç / Bitiş', 'Kira bedeli', 'Komisyon', 'Sözleşme PDF'].map((t) => (
-          <View key={t} className="flex-row items-center justify-between">
-            <Text className="text-xs text-slate-400">{t}</Text>
-            <View className="h-2.5 w-20 rounded bg-slate-100" />
+      <Text className="mt-3 text-lg font-bold text-slate-900">A Blok – Daire 8</Text>
+      <View className="mt-1 flex-row items-end gap-1">
+        <Text className="text-2xl font-black text-slate-900">₺25.000</Text>
+        <Text className="pb-1 text-xs font-medium text-slate-400">/ ay</Text>
+      </View>
+      <View className="mt-4 flex-row flex-wrap gap-y-3 border-t border-slate-100 pt-4">
+        {meta.map((m) => (
+          <View key={m.k} style={{ width: '50%' }}>
+            <Text className="text-[11px] text-slate-400">{m.k}</Text>
+            <Text className="mt-0.5 text-xs font-semibold text-slate-800">{m.v}</Text>
           </View>
         ))}
+      </View>
+      <View className="mt-4 flex-row items-center justify-between border-t border-slate-100 pt-3.5">
+        <Text className="text-[11px] font-medium text-slate-500">Sözleşme PDF yüklü</Text>
+        <Text className="text-[11px] font-bold text-slate-900">PDF’i Gör →</Text>
       </View>
     </Panel>
   );
 }
 
 function PropertyMock() {
+  const units = [
+    { blk: 'A Blok · D:8', name: 'Caner Erkin', rent: '₺26.500 / ay', st: 'DOLU', vacant: false },
+    { blk: 'A Blok · D:9', name: 'Derya Demir', rent: '₺28.000 / ay', st: 'DOLU', vacant: false },
+    { blk: 'B Blok · D:2', name: 'Kiracı aranıyor', rent: 'Hedef: ₺30.000 / ay', st: 'BOŞ', vacant: true },
+    { blk: 'B Blok · D:7', name: 'Emre Yıldız', rent: '₺24.000 / ay', st: 'DOLU', vacant: false },
+  ];
   return (
-    <Panel>
-      <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-bold text-slate-800">Daire Envanteri</Text>
-        <Text className="text-xs font-bold text-emerald-600">%— Dolu</Text>
+    <Panel wide>
+      <View className="flex-row items-center justify-between border-b border-slate-100 pb-4">
+        <View>
+          <View className="flex-row items-center gap-2">
+            <Text className="text-base font-bold text-slate-900">Dream Residence</Text>
+            <View className="rounded-full bg-emerald-100 px-2 py-0.5"><Text className="text-[10px] font-semibold text-emerald-700">Aktif</Text></View>
+          </View>
+          <Text className="mt-0.5 text-[11px] text-slate-400">48 bağımsız bölüm</Text>
+        </View>
+        <View className="items-end">
+          <Text className="text-[10px] text-slate-400">Doluluk</Text>
+          <Text className="text-lg font-black text-slate-900">%98</Text>
+        </View>
       </View>
-      <View className="mt-3 flex-row flex-wrap gap-1.5">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <View key={i} className={`h-9 items-center justify-center rounded-lg ${i % 5 === 0 ? 'bg-slate-100' : 'bg-emerald-100'}`} style={{ width: '18%' }}>
-            <Text className={`text-[10px] font-bold ${i % 5 === 0 ? 'text-slate-400' : 'text-emerald-700'}`}>{i + 1}</Text>
+      <View className="mt-4 flex-row flex-wrap gap-3">
+        {units.map((u) => (
+          <View
+            key={u.blk}
+            className={`rounded-2xl border p-3.5 ${u.vacant ? 'border-2 border-dashed border-slate-300 bg-slate-50' : 'border-slate-200 bg-white'}`}
+            style={{ width: '47%' }}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="rounded bg-slate-100 px-2 py-0.5"><Text className="text-[10px] font-bold text-slate-600">{u.blk}</Text></View>
+              <Text className={`text-[10px] font-bold ${u.vacant ? 'text-slate-500' : 'text-emerald-600'}`}>{u.st}</Text>
+            </View>
+            <Text className={`mt-3 text-sm font-bold ${u.vacant ? 'text-slate-500' : 'text-slate-900'}`}>{u.name}</Text>
+            <Text className="text-[11px] text-slate-400">{u.rent}</Text>
           </View>
         ))}
       </View>
@@ -742,53 +785,73 @@ function PropertyMock() {
 }
 
 function StatsMock() {
-  const bars = [42, 60, 48, 78, 58, 92];
+  const kpis = [
+    { l: 'Aylık toplam kira', v: '₺485.000', s: '↑ %8.4', danger: false },
+    { l: 'Tahsilat oranı', v: '%94', s: '42 tamamlandı', danger: false },
+    { l: 'Geciken kiralar', v: '₺35.000', s: '3 takipte', danger: true },
+    { l: 'Boş daire', v: '3', s: 'Potansiyel gelir', danger: false },
+  ];
+  const bars = [60, 65, 68, 72, 78, 80, 86, 90, 95, 100];
   return (
-    <Panel>
-      <Text className="text-sm font-bold text-slate-800">Aylık Tahsilat Trendi</Text>
-      <View className="mt-4 h-36 flex-row items-end justify-between gap-2.5">
-        {bars.map((h, i) => (
-          <View key={i} className={`flex-1 rounded-t-xl ${i === bars.length - 1 ? 'bg-primary' : 'bg-primary-50'}`} style={{ height: `${h}%` }} />
+    <Panel wide>
+      <View className="flex-row flex-wrap gap-3">
+        {kpis.map((k) => (
+          <View key={k.l} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5" style={{ width: '47%' }}>
+            <Text className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{k.l}</Text>
+            <Text className={`mt-1 text-xl font-black ${k.danger ? 'text-rose-600' : 'text-slate-900'}`}>{k.v}</Text>
+            <Text className={`text-[10px] font-medium ${k.danger ? 'text-rose-500' : 'text-emerald-600'}`}>{k.s}</Text>
+          </View>
         ))}
       </View>
-      <View className="mt-3 flex-row justify-between">
-        {['Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl'].map((m) => <Text key={m} className="text-[10px] text-slate-400">{m}</Text>)}
+      <View className="mt-5 rounded-2xl border border-slate-100 p-4">
+        <Text className="text-xs font-bold text-slate-800">Aylık tahsilat eğrisi</Text>
+        <View className="mt-4 h-28 flex-row items-end justify-between gap-1.5">
+          {bars.map((h, i) => (
+            <View key={i} className={`flex-1 rounded-t-md ${i === bars.length - 1 ? 'bg-slate-900' : 'bg-slate-200'}`} style={{ height: `${h}%` }} />
+          ))}
+        </View>
       </View>
     </Panel>
   );
 }
 
 function FormMock() {
+  const fields = [
+    { l: 'Ad Soyad', v: 'Caner Erkin' },
+    { l: 'Telefon', v: '0532 *** 45 67' },
+    { l: 'Meslek / Gelir', v: 'Yazılım Direktörü' },
+    { l: 'Araç / Plaka', v: '34 BJK 1903' },
+  ];
   return (
-    <Panel>
-      <Text className="text-sm font-bold text-slate-800">Kiracı Bilgi Formu</Text>
-      <View className="mt-3">
-        {['Ad Soyad', 'Telefon', 'Gelir', 'Araç / Plaka'].map((t) => (
-          <View key={t} className="mb-2.5 gap-1.5">
-            <Text className="text-[11px] font-medium text-slate-400">{t}</Text>
-            <View className="h-10 rounded-xl border border-slate-200 bg-slate-50" />
-          </View>
-        ))}
+    <Panel wide>
+      <View className="flex-row items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+        <View className="h-2 w-2 rounded-full bg-emerald-500" />
+        <Text className="text-[11px] font-medium text-slate-500">kiraasist.fngn.com.tr/form</Text>
+        <View className="ml-auto rounded bg-emerald-100 px-2 py-0.5"><Text className="text-[9px] font-bold text-emerald-700">SSL</Text></View>
+      </View>
+      <View className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+        <Text className="text-sm font-bold text-slate-900">Kiracı Bilgi Formu</Text>
+        <View className="mt-3 flex-row flex-wrap gap-3">
+          {fields.map((f) => (
+            <View key={f.l} style={{ width: '47%' }}>
+              <Text className="mb-1 text-[10px] font-semibold text-slate-400">{f.l}</Text>
+              <View className="rounded-lg border border-slate-200 bg-white px-2.5 py-2">
+                <Text className="text-[11px] font-semibold text-slate-800">{f.v}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+        <View className="mt-4 items-center rounded-xl bg-slate-900 py-2.5">
+          <Text className="text-[11px] font-bold text-white">Bilgiler güvenle gönderildi ✓</Text>
+        </View>
+      </View>
+      <View className="mt-3 flex-row items-center gap-2.5 rounded-xl border border-emerald-200 bg-white p-3">
+        <View className="h-2 w-2 rounded-full bg-emerald-500" />
+        <Text className="flex-1 text-[11px] text-slate-600">
+          <Text className="font-bold text-slate-900">Bildirim:</Text> Yeni kiracı formu dolduruldu.
+        </Text>
       </View>
     </Panel>
-  );
-}
-
-function AiMock() {
-  return (
-    <View className="w-full max-w-[440px] self-center rounded-[26px] border border-white/10 bg-white/5 p-5">
-      <View className="flex-row items-center gap-2.5">
-        <View className="h-9 w-9 items-center justify-center rounded-2xl bg-primary"><Sparkles size={16} color="#fff" /></View>
-        <View><Text className="text-sm font-bold text-white">Finansal Öngörü</Text><Text className="text-[11px] text-slate-400">Portföyünüzden</Text></View>
-      </View>
-      <View className="mt-4 self-start rounded-2xl rounded-tl-md bg-white/10 px-4 py-3" style={{ maxWidth: '85%' }}>
-        <Text className="text-sm leading-6 text-slate-100">Bu ay tahsilatın büyük kısmı tamamlandı; geciken birkaç ödeme için hatırlatma gönderebilirsiniz.</Text>
-      </View>
-      <View className="mt-3 flex-row items-center gap-2 self-end rounded-full border border-white/10 bg-white/5 px-4 py-2.5" style={{ maxWidth: '85%' }}>
-        <Text className="flex-1 text-sm text-slate-400">Geciken tahsilatlar ne durumda?</Text>
-        <Send size={15} color="#a5b4fc" />
-      </View>
-    </View>
   );
 }
 

@@ -8,8 +8,8 @@ import type { PlanId } from '@/types';
  * (RevenueCat entegrasyonunda store ürün fiyatları da buraya eşlenecek.)
  *
  * NOT: Kartlardaki bazı özelliklerin backend'i henüz hazır değildir
- * (bkz. görev raporu: 5 kullanıcı limiti, işlem geçmişi/audit, AI kotası,
- * katmanlı "gelişmiş" AI/Excel). Satın alma bu ekranda kapalıdır ("yakında").
+ * (bkz. görev raporu: 5 kullanıcı limiti, işlem geçmişi/audit, katmanlı
+ * "gelişmiş" Excel). Satın alma bu ekranda kapalıdır ("yakında").
  */
 
 export type BillingPeriod = 'yearly';
@@ -62,7 +62,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       "Excel'den sözleşme aktarımı",
       'İstatistik ve raporlar',
       'Kiracı ödeme bildirimleri',
-      'AI Asistan — günde 15 soru',
     ],
     price: { yearly: 1799, monthlyEquivalent: 150, period: 'yearly' },
   },
@@ -73,7 +72,6 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     features: [
       "Pro'daki her şey dahil",
       'Sınırsız sözleşme',
-      'Gelişmiş AI Asistan — sınırsız',
       '5 kullanıcı dahil',
       'Ekip ve personel yönetimi',
       'Kullanıcı bazlı yetkilendirme',
@@ -107,7 +105,6 @@ export const FEATURE_MATRIX: FeatureRow[] = [
   { label: 'Hatırlatmalar', free: 'Temel', pro: 'Tümü', business: 'Tümü' },
   { label: "Excel'den sözleşme aktarımı", free: false, pro: true, business: true },
   { label: 'Kiracı ödeme bildirimleri', free: false, pro: true, business: true },
-  { label: 'AI Asistan', free: false, pro: 'Standart', business: 'Gelişmiş' },
   { label: 'Ekip / personel yönetimi', free: false, pro: false, business: true },
   { label: 'Kullanıcı bazlı yetkilendirme', free: false, pro: false, business: true },
   { label: 'Ekip tahsilat takibi', free: false, pro: false, business: true },

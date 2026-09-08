@@ -97,6 +97,7 @@ export default function SettingsScreen() {
   const scrollRef = useScrollToTop<ScrollView>('settings');
   const { user, signOut } = useAuthStore();
   const { theme, setTheme } = useSettingsStore();
+  const avatarEmoji = useSettingsStore((s) => s.avatarEmoji);
   const { data: company } = useCompany();
   const { data: contracts = [] } = useContracts();
   const entitlement = useEntitlement();
@@ -136,7 +137,7 @@ export default function SettingsScreen() {
         <Pressable className="mt-5" onPress={() => router.push('/(app)/profile')}>
           <Card>
             <View className="flex-row items-center gap-4">
-              <Avatar name={user?.fullName ?? 'K'} size={60} />
+              <Avatar name={user?.fullName ?? 'K'} size={60} emoji={avatarEmoji} />
               <View className="flex-1">
                 <Text className="text-lg font-bold text-foreground" numberOfLines={1}>
                   {user?.fullName}
