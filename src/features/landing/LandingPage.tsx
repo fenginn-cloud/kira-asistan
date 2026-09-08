@@ -13,14 +13,19 @@ import { useRouter } from 'expo-router';
 import {
   Apple,
   ArrowRight,
+  BarChart3,
+  Bell,
   Building2,
   Check,
   ChevronDown,
   ClipboardList,
+  CreditCard,
   FileText,
   Menu,
   Play,
+  ShieldCheck,
   TrendingUp,
+  Users,
   Wallet,
   X,
 } from 'lucide-react-native';
@@ -67,9 +72,6 @@ export function LandingPage() {
   const user = useAuthStore((s) => s.user);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 960;
-  // Hero telefonu mobilde ekrana sığsın (320px'de bile taşma olmasın).
-  const heroPhoneW = isDesktop ? 300 : Math.min(290, Math.max(220, width - 72));
-  const heroVisualW = isDesktop ? 360 : Math.min(340, width - 32);
   const scrollRef = useRef<ScrollView>(null);
   const offsets = useRef<Record<string, number>>({});
   const [menuOpen, setMenuOpen] = useState(false);
@@ -147,9 +149,14 @@ export function LandingPage() {
                   </Pressable>
                 </>
               ) : (
-                <Pressable onPress={() => setMenuOpen((v) => !v)} className="h-10 w-10 items-center justify-center rounded-xl border border-slate-200">
-                  {menuOpen ? <X size={20} color="#0f172a" /> : <Menu size={20} color="#0f172a" />}
-                </Pressable>
+                <>
+                  <Pressable onPress={goLogin} className="px-3 py-2">
+                    <Text className="text-sm font-semibold text-slate-700">Giriş Yap</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setMenuOpen((v) => !v)} className="h-10 w-10 items-center justify-center rounded-xl border border-slate-200">
+                    {menuOpen ? <X size={20} color="#0f172a" /> : <Menu size={20} color="#0f172a" />}
+                  </Pressable>
+                </>
               )}
             </View>
           </View>
@@ -174,65 +181,57 @@ export function LandingPage() {
         </View>
 
         {/* ---------- HERO ---------- */}
-        <View className="w-full items-center overflow-hidden bg-white">
-          <View className="w-full max-w-[1240px] px-5">
-            <View className={isDesktop ? 'flex-row items-center gap-12 pb-28 pt-24' : 'gap-14 pb-16 pt-12'}>
-              {/* Sol */}
-              <View className={isDesktop ? 'flex-1' : ''} {...rw({ dataSet: { reveal: '' } })}>
-                <View className="flex-row items-center gap-2 self-start rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5">
-                  <View className="h-2 w-2 rounded-full bg-emerald-500" {...rw({ dataSet: { pulse: '' } })} />
-                  <Text className="text-xs font-semibold text-slate-700">Kira takibinden fazlası</Text>
-                </View>
-                <Text
-                  className="mt-6 font-extrabold tracking-tight text-black"
-                  style={{ fontSize: isDesktop ? 64 : 38, lineHeight: isDesktop ? 68 : 44, letterSpacing: isDesktop ? -1.4 : -0.8 }}
-                >
-                  Kira yönetiminin{'\n'}daha akıllı yolu.
-                </Text>
-                <Text className="mt-5 max-w-[520px] text-lg leading-8 text-slate-500">
-                  Sözleşmelerinizi, kira ödemelerinizi, kiracılarınızı ve mülklerinizi tek bir yerden yönetin.
-                </Text>
-                <View className="mt-8 flex-row flex-wrap items-center gap-3">
-                  <Pressable onPress={goRegister} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-2 rounded-full bg-black px-8 py-4" style={{ boxShadow: '0 16px 34px rgba(0,0,0,.22)' } as never}>
-                    <Text className="text-base font-bold text-white">Ücretsiz Başla</Text>
-                    <ArrowRight size={17} color="#fff" />
-                  </Pressable>
-                  <Pressable onPress={() => scrollTo('how')} {...rw({ dataSet: { cta: '' } })} className="rounded-full border border-slate-300 bg-white px-8 py-4">
-                    <Text className="text-base font-semibold text-slate-900">Nasıl Çalışır?</Text>
-                  </Pressable>
-                </View>
-                <View className="mt-7">
-                  <Text className="text-xs font-semibold uppercase tracking-wider text-slate-400">Mobil uygulamayı indirin</Text>
-                  <View className="mt-3">
-                    <StoreBadges />
-                  </View>
-                </View>
-                <View className="mt-5 flex-row items-center gap-2">
-                  <Check size={16} color="#059669" />
-                  <Text className="text-sm font-medium text-slate-500">App Store ve Google Play’de · Kredi kartı gerekmez</Text>
-                </View>
+        <View className="w-full items-center overflow-hidden" style={web({ background: 'linear-gradient(180deg,#e9f1ff 0%,#f4f8ff 42%,#ffffff 100%)' })}>
+          <View className="w-full max-w-[1240px] px-5 pb-16 pt-12">
+            {/* Metin bloğu */}
+            <View className="items-center" {...rw({ dataSet: { reveal: '' } })}>
+              <View className="flex-row items-center gap-2 rounded-full border border-primary-100 bg-primary-50 px-4 py-1.5">
+                <View className="h-2 w-2 rounded-full bg-primary" {...rw({ dataSet: { pulse: '' } })} />
+                <Text className="text-xs font-bold text-primary-700">Daha kolay, daha düzenli</Text>
               </View>
+              <Text
+                className="mt-6 text-center font-extrabold tracking-tight text-slate-900"
+                style={{ fontSize: isDesktop ? 66 : 40, lineHeight: isDesktop ? 70 : 46, letterSpacing: isDesktop ? -1.6 : -1 }}
+              >
+                Tüm kira yönetimi{'\n'}tek yerde.
+              </Text>
+              <Text
+                className="mt-5 max-w-[580px] text-center text-slate-500"
+                style={{ fontSize: isDesktop ? 19 : 16, lineHeight: isDesktop ? 30 : 25 }}
+              >
+                Sözleşmelerinizi, kira ödemelerinizi, kiracılarınızı ve mülklerinizi kolayca yönetin.
+                Zamandan tasarruf edin, hayatınızı kolaylaştırın.
+              </Text>
+              <View className="mt-8 flex-row flex-wrap items-center justify-center gap-3">
+                <Pressable onPress={goRegister} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-2 rounded-2xl bg-slate-900 px-8 py-4" style={{ boxShadow: '0 16px 34px rgba(2,6,23,.24)' } as never}>
+                  <Text className="text-base font-bold text-white">Ücretsiz Başla</Text>
+                  <ArrowRight size={17} color="#fff" />
+                </Pressable>
+                <Pressable onPress={() => scrollTo('how')} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-6 py-4">
+                  <View className="h-7 w-7 items-center justify-center rounded-full bg-slate-900"><Play size={12} color="#fff" fill="#fff" /></View>
+                  <Text className="text-base font-semibold text-slate-900">Nasıl Çalışır?</Text>
+                </Pressable>
+              </View>
+              <View className="mt-4 flex-row items-center gap-2">
+                <View className="h-5 w-5 items-center justify-center rounded-full bg-primary-50"><Check size={13} color="#2563EB" /></View>
+                <Text className="text-sm font-medium text-slate-500">Kredi kartı gerekmez.</Text>
+              </View>
+            </View>
 
-              {/* Sağ — telefon mockup + blob + floating kartlar */}
-              <View className={isDesktop ? 'flex-1 items-center' : 'items-center'} {...rw({ dataSet: { reveal: '' } })}>
-                <View className="relative items-center justify-center" style={{ width: heroVisualW, height: isDesktop ? 640 : 540 }}>
-                  <View className="absolute rounded-full bg-primary-50" style={web({ width: heroVisualW, height: heroVisualW, top: 20, filter: 'blur(60px)' })} />
-                  <PhoneFrame width={heroPhoneW} />
-                  {isDesktop ? (
-                    <>
-                      <View className="absolute" style={{ top: 60, left: -14 }} {...rw({ dataSet: { float: '' } })}>
-                        <FloatChip icon={TrendingUp} tint="emerald" title="Doluluk" value="%94" />
-                      </View>
-                      <View className="absolute" style={{ top: 150, right: -18 }} {...rw({ dataSet: { float2: '' } })}>
-                        <FloatChip icon={Wallet} tint="primary" title="Aylık Gelir" value="₺485.000" />
-                      </View>
-                      <View className="absolute" style={{ bottom: 70, left: -10 }} {...rw({ dataSet: { float: '' } })}>
-                        <FloatChip icon={Check} tint="emerald" title="Tahsil Edilen" value="₺420.000" />
-                      </View>
-                    </>
-                  ) : null}
-                </View>
-              </View>
+            {/* Cihaz showcase — telefon + masaüstü panel (uygulamadaki gibi) */}
+            <View className="mt-14" {...rw({ dataSet: { reveal: '' } })}>
+              <HeroShowcase width={width} />
+            </View>
+
+            {/* Özellik ikonları şeridi */}
+            <View className="mt-16" {...rw({ dataSet: { reveal: '' } })}>
+              <HeroFeatureIcons desktop={isDesktop} />
+            </View>
+
+            {/* Mağaza rozetleri */}
+            <View className="mt-16 items-center" {...rw({ dataSet: { reveal: '' } })}>
+              <Text className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Mobil uygulamayı indirin</Text>
+              <View className="mt-4"><StoreBadges center /></View>
             </View>
           </View>
         </View>
@@ -604,20 +603,6 @@ function StoreBadges({ center }: { center?: boolean }) {
   );
 }
 
-function FloatChip({ icon: Icon, title, value, tint }: { icon: typeof Check; title: string; value: string; tint: 'emerald' | 'primary' }) {
-  return (
-    <View className="flex-row items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5" style={{ boxShadow: '0 12px 28px rgba(15,23,42,.14)' } as never}>
-      <View className={`h-8 w-8 items-center justify-center rounded-xl ${tint === 'emerald' ? 'bg-emerald-100' : 'bg-primary-50'}`}>
-        <Icon size={16} color={tint === 'emerald' ? '#059669' : '#2563EB'} />
-      </View>
-      <View>
-        <Text className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{title}</Text>
-        <Text className="text-sm font-extrabold text-slate-900">{value}</Text>
-      </View>
-    </View>
-  );
-}
-
 function PlanCard({ id, onStart, desktop }: { id: 'free' | 'pro' | 'business'; onStart: () => void; desktop: boolean }) {
   const p = PLANS[id];
   const rec = !!p.recommended;
@@ -678,42 +663,179 @@ function Panel({ children, className, wide }: { children: React.ReactNode; class
   );
 }
 
-function PhoneFrame({ small, width }: { small?: boolean; width?: number }) {
-  const w = width ?? (small ? 250 : 300);
+// ---- Hero cihaz showcase: telefon ana ekranı + masaüstü panel ----
+
+function HeroShowcase({ width }: { width: number }) {
+  const compact = width < 760;
+  const designW = compact ? 560 : 900;
+  const designH = 500;
+  const avail = Math.min(width - 20, compact ? 600 : 1080);
+  const k = Math.min(1, avail / designW);
   return (
-    <View className="rounded-[46px] border-4 border-zinc-800 bg-black p-3" style={{ width: w, boxShadow: '0 40px 80px rgba(2,6,23,.35)' } as never}>
-      <View className="overflow-hidden rounded-[36px] bg-white pt-3">
-        <View className="mx-auto mb-3 h-4 w-20 rounded-full bg-black" />
-        <View className="px-4 pb-5">
-          <View className="rounded-3xl bg-primary p-4">
-            <Text className="text-[10px] font-medium text-white/80">Bu Ay Tahsilat</Text>
-            <Text className="mt-1 text-2xl font-extrabold text-white">₺420.000</Text>
-            <View className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/25"><View className="h-1.5 w-[86%] rounded-full bg-white" /></View>
-            <Text className="mt-1.5 text-[9px] font-medium text-white/70">42 / 48 tahsil edildi</Text>
+    <View style={{ width: designW * k, height: designH * k, alignSelf: 'center' }}>
+      <View
+        className={compact ? 'overflow-hidden' : ''}
+        style={{ width: designW, height: designH, transform: [{ scale: k }], transformOrigin: 'top left' } as never}
+      >
+        <View style={{ position: 'absolute', right: compact ? -160 : 0, top: compact ? 30 : 20 }}>
+          <DesktopDashboard />
+        </View>
+        <View style={{ position: 'absolute', left: compact ? 0 : 40, bottom: 0, zIndex: 20 }}>
+          <PhoneHome />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function PhoneHome() {
+  const items = [
+    { ic: FileText, bg: 'bg-rose-100', fg: '#e11d48', label: 'Tahsilat Bekleyenler', val: '3' },
+    { ic: Wallet, bg: 'bg-amber-100', fg: '#d97706', label: 'Yaklaşan Ödemeler', val: '5' },
+    { ic: FileText, bg: 'bg-primary-50', fg: '#2563EB', label: 'Tüm Sözleşmeler', val: '24' },
+    { ic: Building2, bg: 'bg-emerald-100', fg: '#059669', label: 'Dolu Mülk Oranı', val: '%87' },
+  ];
+  return (
+    <View className="rounded-[40px] bg-slate-900 p-1.5" style={{ width: 240, boxShadow: '0 30px 70px rgba(2,6,23,.35)' } as never}>
+      <View className="overflow-hidden rounded-[34px] bg-white">
+        <View className="items-center pt-2"><View className="h-4 w-16 rounded-full bg-slate-900" /></View>
+        <View className="px-3.5 pb-4 pt-3">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-1.5">
+              <Image source={require('../../../assets/icon.png')} style={{ width: 18, height: 18, borderRadius: 5 }} />
+              <Text className="text-[11px] font-bold text-slate-900">Kira Asistan</Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              <Bell size={13} color="#94a3b8" />
+              <View className="h-5 w-5 rounded-full bg-primary-50" />
+            </View>
           </View>
-          <View className="mt-3 flex-row gap-2">
-            {['Tahsilat', 'Sözleşme', 'Form'].map((t, i) => (
-              <View key={t} className={`flex-1 items-center rounded-2xl py-2.5 ${i === 0 ? 'bg-primary-50' : 'bg-slate-100'}`}>
-                <Text className={`text-[10px] font-bold ${i === 0 ? 'text-primary-700' : 'text-slate-600'}`}>{t}</Text>
+          <Text className="mt-3 text-base font-extrabold text-slate-900">Hoş geldiniz 👋</Text>
+          <Text className="text-[10px] text-slate-400">Bugün 3 hatırlatmanız var.</Text>
+          <View className="mt-3 gap-2">
+            {items.map((it) => {
+              const Ic = it.ic;
+              return (
+                <View key={it.label} className="flex-row items-center gap-2.5 rounded-2xl border border-slate-100 bg-white px-2.5 py-2.5" style={{ boxShadow: '0 2px 8px rgba(15,23,42,.05)' } as never}>
+                  <View className={`h-8 w-8 items-center justify-center rounded-xl ${it.bg}`}><Ic size={15} color={it.fg} /></View>
+                  <Text className="flex-1 text-[11px] font-semibold text-slate-700">{it.label}</Text>
+                  <Text className="text-sm font-extrabold text-slate-900">{it.val}</Text>
+                </View>
+              );
+            })}
+          </View>
+          <View className="mt-3 flex-row justify-between border-t border-slate-100 pt-2.5">
+            {[{ i: 'Ana Sayfa', a: true }, { i: 'Sözleşmeler' }, { i: 'Mülkler' }, { i: 'Daha Fazla' }].map((t) => (
+              <View key={t.i} className="items-center gap-1">
+                <View className={`h-1.5 w-1.5 rounded-full ${t.a ? 'bg-primary' : 'bg-slate-300'}`} />
+                <Text className={`text-[8px] font-semibold ${t.a ? 'text-primary-700' : 'text-slate-400'}`}>{t.i}</Text>
               </View>
             ))}
           </View>
-          {[
-            { n: 'Dream Res. · D8', s: 'Ödendi', amount: '₺26.500', late: false },
-            { n: 'Vadi Kule · D12', s: 'Gecikmede', amount: '₺31.000', late: true },
-            { n: 'Sky Garden · D4', s: 'Yaklaştı', amount: '₺19.000', late: false },
-          ].map((r) => (
-            <View key={r.n} className="mt-2.5 flex-row items-center gap-2.5 rounded-2xl border border-slate-100 px-2.5 py-2">
-              <View className={`h-8 w-8 rounded-xl ${r.late ? 'bg-danger-soft' : 'bg-primary-50'}`} />
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-800">{r.n}</Text>
-                <Text className={`text-[9px] font-medium ${r.late ? 'text-danger' : 'text-slate-400'}`}>{r.s}</Text>
-              </View>
-              <Text className={`text-[11px] font-extrabold ${r.late ? 'text-danger' : 'text-emerald-600'}`}>{r.amount}</Text>
-            </View>
-          ))}
         </View>
       </View>
+    </View>
+  );
+}
+
+function DesktopDashboard() {
+  const nav = [
+    { ic: Building2, label: 'Ana Sayfa', a: true },
+    { ic: FileText, label: 'Sözleşmeler' },
+    { ic: Building2, label: 'Mülkler' },
+    { ic: Wallet, label: 'Ödemeler' },
+    { ic: Users, label: 'Kiracılar' },
+    { ic: BarChart3, label: 'Raporlar' },
+    { ic: ShieldCheck, label: 'Ayarlar' },
+  ];
+  const bars = [40, 55, 70, 85, 100, 80];
+  const upc = [
+    { in: 'AY', name: 'Ahmet Yılmaz', unit: 'A Blok · Daire 3', date: '5 Eyl 2026', amt: '₺18.000' },
+    { in: 'ZK', name: 'Zeynep Kaya', unit: 'B Blok · Daire 7', date: '7 Eyl 2026', amt: '₺22.500' },
+    { in: 'MD', name: 'Mehmet Demir', unit: 'C Blok · Daire 1', date: '10 Eyl 2026', amt: '₺15.000' },
+  ];
+  return (
+    <View className="flex-row overflow-hidden rounded-3xl border border-slate-200 bg-white" style={{ width: 650, height: 440, boxShadow: '0 40px 90px rgba(15,23,42,.16)' } as never}>
+      <View className="bg-slate-50 px-3 py-4" style={{ width: 152 }}>
+        <View className="flex-row items-center gap-1.5 px-1">
+          <Image source={require('../../../assets/icon.png')} style={{ width: 18, height: 18, borderRadius: 5 }} />
+          <Text className="text-[11px] font-extrabold text-slate-900">Kira Asistan</Text>
+        </View>
+        <View className="mt-4 gap-0.5">
+          {nav.map((n) => {
+            const Ic = n.ic;
+            return (
+              <View key={n.label} className={`flex-row items-center gap-2 rounded-xl px-2.5 py-2 ${n.a ? 'bg-primary' : ''}`}>
+                <Ic size={13} color={n.a ? '#fff' : '#64748b'} />
+                <Text className={`text-[11px] font-semibold ${n.a ? 'text-white' : 'text-slate-500'}`}>{n.label}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+      <View className="flex-1 px-4 py-4">
+        <Text className="text-sm font-extrabold text-slate-900">Genel Bakış</Text>
+        <View className="mt-3 flex-row gap-3">
+          <View className="flex-1 rounded-2xl border border-slate-200 bg-white p-3">
+            <Text className="text-[9px] text-slate-400">Aylık Gelir</Text>
+            <Text className="text-base font-black text-slate-900">₺420.000</Text>
+            <Text className="text-[9px] font-semibold text-emerald-600">↗ %12</Text>
+          </View>
+          <View className="flex-1 rounded-2xl border border-slate-200 bg-white p-3">
+            <Text className="text-[9px] text-slate-400">Tahsilat Oranı</Text>
+            <Text className="text-base font-black text-slate-900">%87</Text>
+            <Text className="text-[9px] font-semibold text-emerald-600">↗ %5</Text>
+          </View>
+        </View>
+        <View className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-[10px] font-bold text-slate-800">Aylık Gelir</Text>
+            <View className="rounded-full bg-slate-100 px-2 py-0.5"><Text className="text-[8px] font-semibold text-slate-500">Son 6 Ay</Text></View>
+          </View>
+          <View className="mt-2 h-16 flex-row items-end justify-between gap-2">
+            {bars.map((h, i) => (<View key={i} className="flex-1 rounded-t bg-primary" style={{ height: `${h}%`, opacity: i === 4 ? 1 : 0.85 } as never} />))}
+          </View>
+          <View className="mt-1 flex-row justify-between">
+            {['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz'].map((m) => (<Text key={m} className="text-[7px] text-slate-400">{m}</Text>))}
+          </View>
+        </View>
+        <View className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+          <Text className="text-[10px] font-bold text-slate-800">Yaklaşan Ödemeler</Text>
+          <View className="mt-1.5">
+            {upc.map((u, i) => (
+              <View key={u.in} className={`flex-row items-center gap-2 py-1.5 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
+                <View className="h-6 w-6 items-center justify-center rounded-full bg-slate-100"><Text className="text-[8px] font-bold text-slate-600">{u.in}</Text></View>
+                <View className="flex-1"><Text className="text-[10px] font-semibold text-slate-800">{u.name}</Text><Text className="text-[8px] text-slate-400">{u.unit}</Text></View>
+                <Text className="text-[8px] text-slate-400">{u.date}</Text>
+                <Text className="text-[10px] font-bold text-slate-900">{u.amt}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function HeroFeatureIcons({ desktop }: { desktop: boolean }) {
+  const items = [
+    { ic: FileText, label: 'Sözleşme\nyönetimi' },
+    { ic: CreditCard, label: 'Kira\ntakibi' },
+    { ic: Users, label: 'Kiracı\nbilgileri' },
+    { ic: BarChart3, label: 'Detaylı\nraporlar' },
+    { ic: ShieldCheck, label: 'Güvenli\nveri' },
+  ];
+  return (
+    <View className="flex-row flex-wrap items-start justify-center gap-x-8 gap-y-7">
+      {items.map((it) => {
+        const Ic = it.ic;
+        return (
+          <View key={it.label} className="items-center" style={{ width: desktop ? 150 : 92 }}>
+            <View className="h-14 w-14 items-center justify-center rounded-2xl bg-primary-50"><Ic size={24} color="#2563EB" /></View>
+            <Text className="mt-3 text-center text-sm font-semibold text-slate-700">{it.label}</Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
