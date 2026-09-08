@@ -19,14 +19,13 @@ import {
   FileText,
   Menu,
   TrendingUp,
-  Users,
   Wallet,
   X,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { PLANS } from '@/features/subscription/plans';
 import { LEGAL_LINKS, SUPPORT_EMAIL } from '@/content/legal';
-import { APP_STORE_URL, GOOGLE_PLAY_URL } from './config';
+import { GOOGLE_PLAY_URL } from './config';
 
 const NAV = [
   { key: 'features', label: 'Özellikler' },
@@ -297,70 +296,58 @@ export function LandingPage() {
         {/* ---------- NASIL ÇALIŞIR ---------- */}
         <View className="w-full items-center bg-white" onLayout={onSectionLayout('how')}>
           <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
-            <Eyebrow center>Nasıl Çalışır?</Eyebrow>
-            <Text className="mt-2 text-center font-extrabold tracking-tight text-slate-900" style={{ fontSize: isDesktop ? 40 : 28, letterSpacing: -0.5 }}>
-              Üç adımda başlayın.
-            </Text>
-            <View className={`mt-12 gap-5 ${isDesktop ? 'flex-row' : ''}`}>
+            <SectionHead
+              desktop={isDesktop}
+              eyebrow="Basit ve Hızlı Süreç"
+              title="Kira Asistan nasıl çalışır?"
+              sub="Karmaşık kurulum yok. Üç basit adımda profesyonel kira ve mülk yönetimine geçin."
+            />
+            <View className={`mt-14 gap-6 ${isDesktop ? 'flex-row' : ''}`}>
               {[
-                { n: '01', t: 'Hesabınızı oluşturun', d: 'Dakikalar içinde ücretsiz hesabınızı açın.' },
-                { n: '02', t: 'Mülk ve sözleşmelerinizi ekleyin', d: 'Sözleşmeleri tek tek girin veya Excel’den aktarın.' },
-                { n: '03', t: 'Takibi Kira Asistan’a bırakın', d: 'Tahsilat, hatırlatma ve raporları uygulama yönetsin.' },
+                { n: '01', t: 'Hesabınızı oluşturun', d: 'Dakikalar içinde ücretsiz kaydolun; bireysel mülk sahibi veya ofis profilinizi seçin.' },
+                { n: '02', t: 'Mülk ve sözleşmelerinizi ekleyin', d: 'Bina ve daireleri girin, kiracıya form linki gönderin veya Excel tablonuzu tek tıkla aktarın.' },
+                { n: '03', t: 'Takibi Kira Asistan’a bırakın', d: 'Vadesi gelen kiraları uygulama hatırlatsın; tahsilat, cari hesap ve raporlar hazır olsun.' },
               ].map((s) => (
-                <View key={s.n} {...rw({ dataSet: { lift: '' } })} className="flex-1 rounded-[28px] border border-slate-200 bg-white p-8" style={{ boxShadow: '0 2px 20px rgba(15,23,42,.05)' } as never}>
-                  <Text className="text-4xl font-extrabold text-slate-200">{s.n}</Text>
-                  <Text className="mt-4 text-xl font-bold text-slate-900">{s.t}</Text>
-                  <Text className="mt-2 text-sm leading-6 text-slate-500">{s.d}</Text>
+                <View key={s.n} {...rw({ dataSet: { lift: '' } })} className="flex-1 rounded-3xl border border-slate-200 bg-slate-50 p-8">
+                  <Text className="text-5xl font-black text-slate-300">{s.n}</Text>
+                  <Text className="mt-6 text-xl font-bold text-slate-900">{s.t}</Text>
+                  <Text className="mt-3 text-sm leading-6 text-slate-500">{s.d}</Text>
                 </View>
               ))}
             </View>
           </View>
         </View>
 
-        {/* ---------- KİMLER İÇİN + EKİP ---------- */}
-        <View className="w-full items-center bg-slate-50" onLayout={onSectionLayout('who')}>
-          <View className="w-full max-w-[1200px] px-5 py-24">
-            <View {...rw({ dataSet: { reveal: '' } })}>
-              <Eyebrow>Kimler İçin?</Eyebrow>
-              <Text className="mt-2 font-extrabold tracking-tight text-slate-900" style={{ fontSize: isDesktop ? 40 : 28, letterSpacing: -0.5 }}>
-                Kira Asistan kimler için?
-              </Text>
-              <View className="mt-8 flex-row flex-wrap gap-3">
-                {[
-                  { t: 'Mülk Sahipleri', i: Building2 },
-                  { t: 'Gayrimenkul Yatırımcıları', i: TrendingUp },
-                  { t: 'Gayrimenkul Ofisleri', i: Users },
-                  { t: 'Rezidans Yöneticileri', i: Building2 },
-                  { t: 'Profesyonel Portföy Yöneticileri', i: Wallet },
-                ].map((w) => (
-                  <View key={w.t} {...rw({ dataSet: { lift: '' } })} className="flex-row items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-5 py-4">
-                    <View className="h-8 w-8 items-center justify-center rounded-xl bg-slate-100">
-                      <w.i size={16} color="#0f172a" />
-                    </View>
-                    <Text className="text-base font-semibold text-slate-800">{w.t}</Text>
+        {/* ---------- KİMLER İÇİN ---------- */}
+        <View className="w-full items-center border-y border-slate-200 bg-slate-50/70" onLayout={onSectionLayout('who')}>
+          <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
+            <SectionHead
+              desktop={isDesktop}
+              eyebrow="Hedef Odaklı Çözümler"
+              title="Kira Asistan kimler için?"
+              sub="Tek bir dairesi olandan yüzlerce bağımsız bölüm yöneten kurumsal şirketlere kadar herkes için ölçeklenebilir altyapı."
+            />
+            <View className={`mt-14 gap-6 ${isDesktop ? 'flex-row' : 'flex-row flex-wrap justify-center'}`}>
+              {[
+                { n: '01', t: 'Bireysel Mülk Sahipleri', d: '1-5 dairesi olan, kira günlerini unutmak istemeyen ve kiracısıyla profesyonel bağ kurmak isteyenler.' },
+                { n: '02', t: 'Gayrimenkul Yatırımcıları', d: 'Birden fazla şehirde ve projede yatırımı bulunan, toplam getiri ve nakit akışını anlık izlemek isteyenler.' },
+                { n: '03', t: 'Gayrimenkul Ofisleri', d: 'Müşterilerine kira ve yönetim danışmanlığı sunarak düzenli ek gelir elde eden emlak ofisleri.' },
+                { n: '04', t: 'Rezidans & Apart Yönetimleri', d: 'Toplu konut, apartman veya rezidanslarda aidat ve kira döngüsünü aksatmadan yönetmek isteyen idareciler.' },
+                { n: '05', t: 'Portföy Yöneticileri', d: 'Aile ofisleri, vakıf ve şirket portföylerini tek merkezi panel üzerinden denetleyen profesyoneller.' },
+              ].map((c) => (
+                <View
+                  key={c.n}
+                  {...rw({ dataSet: { lift: '' } })}
+                  className="rounded-2xl border border-slate-200 bg-white p-6"
+                  style={{ width: isDesktop ? undefined : 300, flex: isDesktop ? 1 : undefined, boxShadow: '0 2px 16px rgba(15,23,42,.05)' } as never}
+                >
+                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-slate-100">
+                    <Text className="text-sm font-black text-slate-900">{c.n}</Text>
                   </View>
-                ))}
-              </View>
-            </View>
-
-            <View {...rw({ dataSet: { reveal: '' } })} className={`mt-10 rounded-[28px] border border-slate-200 bg-white p-8 ${isDesktop ? 'flex-row items-center gap-10' : ''}`}>
-              <View className="flex-1">
-                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-primary-50">
-                  <Users size={22} color="#2563EB" />
+                  <Text className="mt-4 text-base font-bold text-slate-900">{c.t}</Text>
+                  <Text className="mt-2 text-xs leading-5 text-slate-500">{c.d}</Text>
                 </View>
-                <Text className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">Ekibinizle birlikte yönetin.</Text>
-                <Text className="mt-2 max-w-[520px] text-sm leading-6 text-slate-500">
-                  Business planında ekibinize kullanıcı ekleyin; yönetici ve personel rolleriyle yetkileri belirleyin,
-                  tahsilatı birlikte takip edin.
-                </Text>
-              </View>
-              <View className="mt-6 flex-row gap-2">
-                {['Yönetici', 'Personel', 'Ekip'].map((r) => (
-                  <View key={r} className="rounded-xl bg-slate-100 px-4 py-2.5">
-                    <Text className="text-sm font-semibold text-slate-700">{r}</Text>
-                  </View>
-                ))}
-              </View>
+              ))}
             </View>
           </View>
         </View>
@@ -370,36 +357,44 @@ export function LandingPage() {
           <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
             <View className={isDesktop ? 'flex-row items-center gap-16' : 'gap-10'}>
               <View className="flex-1">
-                <Eyebrow>Mobil</Eyebrow>
-                <Text className="mt-2 font-extrabold tracking-tight text-slate-900" style={{ fontSize: isDesktop ? 40 : 28, letterSpacing: -0.5 }}>
+                <View className="flex-row items-center gap-2 self-start rounded-full bg-slate-100 px-3 py-1">
+                  <Text className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Her Zaman Erişilebilir</Text>
+                </View>
+                <Text className="mt-4 font-extrabold tracking-tight text-slate-900" style={{ fontSize: isDesktop ? 42 : 28, lineHeight: isDesktop ? 48 : 34, letterSpacing: -0.6 }}>
                   Kira Asistan her zaman yanınızda.
                 </Text>
                 <Text className="mt-4 text-base leading-7 text-slate-500">
-                  Kira Asistan bir web uygulamasıdır; telefonunuzun tarayıcısından açıp ana ekranınıza
-                  ekleyerek uygulama gibi kullanabilirsiniz. İnternet olan her yerden portföyünüze erişin.
+                  Portföyünüzü bilgisayardan, tabletten veya cebinizden yönetin. Anlık bildirimlerle
+                  ödemeler yattığı an haberdar olun; kira ve sözleşmelerinizi dilediğiniz yerden takip edin.
                 </Text>
-                {APP_STORE_URL || GOOGLE_PLAY_URL ? (
-                  <View className="mt-7 flex-row gap-3">
-                    {APP_STORE_URL ? (
-                      <Pressable onPress={() => Linking.openURL(APP_STORE_URL)} className="rounded-full bg-black px-6 py-3.5">
-                        <Text className="text-sm font-semibold text-white">App Store</Text>
-                      </Pressable>
-                    ) : null}
-                    {GOOGLE_PLAY_URL ? (
-                      <Pressable onPress={() => Linking.openURL(GOOGLE_PLAY_URL)} className="rounded-full bg-black px-6 py-3.5">
-                        <Text className="text-sm font-semibold text-white">Google Play</Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
+                {GOOGLE_PLAY_URL ? (
+                  <Pressable onPress={() => Linking.openURL(GOOGLE_PLAY_URL)} {...rw({ dataSet: { cta: '' } })} className="mt-7 flex-row items-center gap-3 self-start rounded-2xl bg-black px-5 py-3">
+                    <Text className="text-2xl">▶</Text>
+                    <View>
+                      <Text className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Google Play’den</Text>
+                      <Text className="text-sm font-bold text-white">İndirin</Text>
+                    </View>
+                  </Pressable>
                 ) : (
                   <Pressable onPress={goRegister} {...rw({ dataSet: { cta: '' } })} className="mt-7 flex-row items-center gap-2 self-start rounded-full bg-black px-7 py-4" style={{ boxShadow: '0 14px 30px rgba(0,0,0,.2)' } as never}>
                     <Text className="text-base font-bold text-white">Tarayıcıdan Başla</Text>
                     <ArrowRight size={16} color="#fff" />
                   </Pressable>
                 )}
+                <Text className="mt-3 text-xs text-slate-400">Tarayıcıdan açıp ana ekranınıza ekleyerek uygulama gibi de kullanabilirsiniz.</Text>
               </View>
-              <View className={isDesktop ? 'flex-1 items-center' : 'items-center'}>
-                <PhoneFrame small />
+              <View className={isDesktop ? 'flex-1 flex-row items-center justify-center gap-4' : 'flex-row items-center justify-center gap-3'}>
+                <MiniPhone title="Canlı Kira Takibi" tone="plain">
+                  <Text className="text-[10px] text-slate-400">Bugün tahsil edilen</Text>
+                  <Text className="text-base font-extrabold text-slate-900">₺45.500</Text>
+                  <Text className="text-[9px] font-semibold text-emerald-600">2 yeni ödeme geldi</Text>
+                </MiniPhone>
+                <View style={{ marginTop: 40 }}>
+                  <MiniPhone title="Ödeme Hatırlatması" tone="emerald">
+                    <Text className="text-[11px] font-bold text-emerald-900">Vade yaklaşıyor</Text>
+                    <Text className="mt-1 text-[10px] text-emerald-700">Daire 4 · ödeme gününe 2 gün kaldı</Text>
+                  </MiniPhone>
+                </View>
               </View>
             </View>
           </View>
@@ -408,28 +403,31 @@ export function LandingPage() {
         {/* ---------- PLANLAR ---------- */}
         <View className="w-full items-center bg-slate-50" onLayout={onSectionLayout('pricing')}>
           <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
-            <Eyebrow center>Fiyatlandırma</Eyebrow>
-            <Text className="mt-2 text-center font-extrabold tracking-tight text-slate-900" style={{ fontSize: isDesktop ? 40 : 28, letterSpacing: -0.5 }}>
-              İhtiyacınıza uygun planı seçin.
-            </Text>
-            <Text className="mt-3 text-center text-base text-slate-500">Ücretsiz başlayın; dilediğinizde uygulama içinden yükseltin.</Text>
-            <View className={`mt-12 gap-5 ${isDesktop ? 'flex-row items-stretch' : ''}`}>
+            <SectionHead
+              desktop={isDesktop}
+              eyebrow="Şeffaf Fiyatlandırma"
+              title="İhtiyacınıza uygun planı seçin."
+              sub="Gizli ücret yok, taahhüt yok. Ücretsiz başlayın; dilediğinizde uygulama içinden yükseltin."
+            />
+            <View className={`mt-14 gap-6 ${isDesktop ? 'flex-row items-stretch' : ''}`}>
               {(['free', 'pro', 'business'] as const).map((id) => (
                 <PlanCard key={id} id={id} onStart={goRegister} desktop={isDesktop} />
               ))}
             </View>
-            <Text className="mt-5 text-center text-xs text-slate-400">Ücretli planlar yıllık faturalandırılır.</Text>
+            <Text className="mt-6 text-center text-xs text-slate-400">Ücretli planlar yıllık faturalandırılır.</Text>
           </View>
         </View>
 
         {/* ---------- SSS ---------- */}
         <View className="w-full items-center bg-white" onLayout={onSectionLayout('faq')}>
-          <View className="w-full max-w-[820px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
-            <Eyebrow center>SSS</Eyebrow>
-            <Text className="mt-2 text-center font-extrabold tracking-tight text-slate-900" style={{ fontSize: isDesktop ? 40 : 28, letterSpacing: -0.5 }}>
-              Sık Sorulan Sorular
-            </Text>
-            <View className="mt-10 gap-3">
+          <View className="w-full max-w-[860px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
+            <SectionHead
+              desktop={isDesktop}
+              eyebrow="Merak Edilenler"
+              title="Sık Sorulan Sorular"
+              sub="Aklınıza takılan soruların yanıtlarına göz atın."
+            />
+            <View className="mt-12 border-t border-slate-200">
               {FAQ.map((f) => <Accordion key={f.q} q={f.q} a={f.a} />)}
             </View>
           </View>
@@ -438,45 +436,58 @@ export function LandingPage() {
         {/* ---------- FINAL CTA ---------- */}
         <View className="w-full items-center bg-white">
           <View className="w-full max-w-[1200px] px-5 pb-24" {...rw({ dataSet: { reveal: '' } })}>
-            <View className="overflow-hidden rounded-[36px] bg-slate-950 px-6 py-20" style={{ boxShadow: '0 30px 60px rgba(2,6,23,.28)' } as never}>
-              <View className="items-center">
-                <Text className="text-center font-extrabold tracking-tight text-white" style={{ fontSize: isDesktop ? 46 : 30, letterSpacing: -0.5 }}>
+            <View
+              className={`overflow-hidden rounded-[40px] bg-black px-8 py-16 ${isDesktop ? 'flex-row items-center justify-between gap-8' : 'gap-8'}`}
+              style={{ boxShadow: '0 30px 60px rgba(2,6,23,.28)' } as never}
+            >
+              <View className={isDesktop ? 'max-w-[560px]' : ''}>
+                <Text className="font-black tracking-tight text-white" style={{ fontSize: isDesktop ? 44 : 28, lineHeight: isDesktop ? 50 : 34, letterSpacing: -0.6 }}>
                   Kira takibini bugün kolaylaştırın.
                 </Text>
-                <Text className="mt-4 text-center text-lg text-slate-300">İlk sözleşmenizi dakikalar içinde oluşturun.</Text>
-                <Pressable onPress={goRegister} {...rw({ dataSet: { cta: '' } })} className="mt-8 flex-row items-center gap-2 rounded-full bg-white px-8 py-4" style={{ boxShadow: '0 14px 30px rgba(255,255,255,.14)' } as never}>
-                  <Text className="text-base font-bold text-slate-950">Ücretsiz Başla</Text>
-                  <ArrowRight size={17} color="#020617" />
-                </Pressable>
+                <Text className="mt-4 text-base text-slate-400">İlk sözleşmenizi dakikalar içinde oluşturun, kiranızı güvenceye alın.</Text>
               </View>
+              <Pressable onPress={goRegister} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-2 self-start rounded-full bg-white px-9 py-4" style={{ boxShadow: '0 14px 30px rgba(255,255,255,.14)' } as never}>
+                <Text className="text-base font-extrabold text-black">Ücretsiz Başla</Text>
+                <ArrowRight size={17} color="#020617" />
+              </Pressable>
             </View>
           </View>
         </View>
 
         {/* ---------- FOOTER ---------- */}
         <View className="w-full items-center border-t border-slate-200 bg-white">
-          <View className="w-full max-w-[1200px] px-5 py-14">
-            <View className={isDesktop ? 'flex-row justify-between' : 'gap-9'}>
-              <View className="max-w-[300px]">
+          <View className="w-full max-w-[1200px] px-5 pb-12 pt-16">
+            <View className={isDesktop ? 'flex-row justify-between gap-10' : 'gap-10'}>
+              <View className="max-w-[360px]">
                 <View className="flex-row items-center gap-2.5">
                   <View className="h-8 w-8 items-center justify-center rounded-xl bg-black">
                     <Image source={require('../../../assets/icon.png')} style={{ width: 20, height: 20, borderRadius: 5 }} />
                   </View>
-                  <Text className="text-base font-extrabold text-slate-900">Kira Asistan</Text>
+                  <Text className="text-lg font-black tracking-tight text-slate-900">Kira Asistan</Text>
                 </View>
-                <Text className="mt-3 text-sm text-slate-500">Kira takibinden fazlası. Kira, sözleşme ve mülk yönetimini tek platformda toplayın.</Text>
+                <Text className="mt-4 text-xs leading-5 text-slate-500">
+                  Kira takibinden fazlası. Mülk sahipleri, gayrimenkul yatırımcıları ve portföy yöneticileri için
+                  kira, sözleşme ve mülk yönetimini tek platformda toplayın.
+                </Text>
+                <Pressable onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)} className="mt-4">
+                  <Text className="text-xs text-slate-400">İstanbul, Türkiye • Destek: <Text className="font-medium text-slate-600">{SUPPORT_EMAIL}</Text></Text>
+                </Pressable>
               </View>
               <View className={isDesktop ? 'flex-row gap-16' : 'flex-row flex-wrap gap-12'}>
-                <FooterCol title="Ürün" links={[{ label: 'Özellikler', on: () => scrollTo('features') }, { label: 'Fiyatlandırma', on: () => scrollTo('pricing') }, { label: 'Nasıl Çalışır?', on: () => scrollTo('how') }]} />
+                <FooterCol title="Ürün" links={[{ label: 'Özellikler', on: () => scrollTo('features') }, { label: 'Fiyatlandırma', on: () => scrollTo('pricing') }, { label: 'Nasıl Çalışır?', on: () => scrollTo('how') }, { label: 'Kimler İçin?', on: () => scrollTo('who') }]} />
                 <FooterCol title="Hesap" links={[{ label: 'Giriş Yap', on: goLogin }, { label: 'Kayıt Ol', on: goRegister }]} />
                 <FooterCol title="Yasal" links={LEGAL_LINKS.map((l) => ({ label: l.title, on: () => router.push(`/yasal/${l.slug}` as never) }))} />
               </View>
             </View>
-            <View className="mt-12 flex-row flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6">
-              <Text className="text-xs text-slate-400">© {new Date().getFullYear()} Kira Asistan</Text>
-              <Pressable onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}>
-                <Text className="text-xs font-medium text-slate-500">{SUPPORT_EMAIL}</Text>
-              </Pressable>
+            <View className="mt-12 flex-row flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-8">
+              <Text className="text-xs text-slate-400">© {new Date().getFullYear()} Kira Asistan · Tüm hakları saklıdır.</Text>
+              <View className="flex-row items-center gap-6">
+                <Text className="text-xs text-slate-500">Türkçe (TR)</Text>
+                <View className="flex-row items-center gap-1.5">
+                  <View className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <Text className="text-xs text-slate-500">Sistem Durumu: Normal</Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -492,6 +503,19 @@ function Eyebrow({ children, center }: { children: string; center?: boolean }) {
     <Text className={`text-xs font-bold uppercase tracking-[0.16em] text-primary-700 ${center ? 'text-center' : ''}`}>
       {children}
     </Text>
+  );
+}
+
+/** Ortalanmış bölüm başlığı: eyebrow + büyük başlık + alt açıklama (Stitch). */
+function SectionHead({ eyebrow, title, sub, desktop }: { eyebrow: string; title: string; sub?: string; desktop: boolean }) {
+  return (
+    <View className="mx-auto max-w-[720px] items-center">
+      <Text className="text-center text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{eyebrow}</Text>
+      <Text className="mt-3 text-center font-extrabold tracking-tight text-slate-900" style={{ fontSize: desktop ? 44 : 30, lineHeight: desktop ? 50 : 36, letterSpacing: -0.7 }}>
+        {title}
+      </Text>
+      {sub ? <Text className="mt-4 text-center text-base leading-7 text-slate-500">{sub}</Text> : null}
+    </View>
   );
 }
 
@@ -533,12 +557,12 @@ function Feature({
 function Accordion({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <Pressable onPress={() => setOpen((v) => !v)} {...rw({ dataSet: { lift: '' } })} className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+    <Pressable onPress={() => setOpen((v) => !v)} className="border-b border-slate-200 py-5">
       <View className="flex-row items-center justify-between gap-3">
-        <Text className="flex-1 text-base font-semibold text-slate-900">{q}</Text>
-        <ChevronDown size={18} color="#64748b" style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }} />
+        <Text className="flex-1 text-base font-bold text-slate-900">{q}</Text>
+        <ChevronDown size={20} color="#64748b" style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }} />
       </View>
-      {open ? <Text className="mt-2.5 text-sm leading-6 text-slate-500">{a}</Text> : null}
+      {open ? <Text className="mt-3 text-sm leading-6 text-slate-500">{a}</Text> : null}
     </Pressable>
   );
 }
@@ -573,43 +597,49 @@ function FloatChip({ icon: Icon, title, value, tint }: { icon: typeof Check; tit
 function PlanCard({ id, onStart, desktop }: { id: 'free' | 'pro' | 'business'; onStart: () => void; desktop: boolean }) {
   const p = PLANS[id];
   const rec = !!p.recommended;
+  const kicker = id === 'free' ? 'Başlangıç' : id === 'pro' ? 'Profesyonel' : 'Kurumsal & Ofis';
   return (
     <View
       {...rw({ dataSet: { lift: '' } })}
-      className={`flex-1 rounded-[28px] p-7 ${rec ? 'bg-slate-950' : 'border border-slate-200 bg-white'}`}
-      style={{ boxShadow: rec ? '0 24px 50px rgba(2,6,23,.28)' : '0 2px 20px rgba(15,23,42,.05)', ...(desktop && rec ? { transform: [{ scale: 1.03 }] } : {}) } as never}
+      className={`flex-1 rounded-3xl bg-white p-8 ${rec ? 'border-2 border-black' : 'border border-slate-200'}`}
+      style={{ boxShadow: rec ? '0 24px 50px rgba(2,6,23,.14)' : '0 2px 18px rgba(15,23,42,.05)', ...(desktop ? { marginTop: rec ? 0 : 14 } : {}) } as never}
     >
       {rec ? (
-        <View className="mb-2 self-start rounded-full bg-primary px-3 py-1">
-          <Text className="text-[11px] font-bold text-white">Önerilen</Text>
+        <View className="mb-4 self-start rounded-full bg-black px-4 py-1">
+          <Text className="text-[11px] font-bold uppercase tracking-wider text-white">En Çok Tercih Edilen</Text>
         </View>
       ) : null}
-      <Text className={`text-lg font-extrabold ${rec ? 'text-white' : 'text-slate-900'}`}>{p.name}</Text>
-      <Text className={`mt-0.5 text-xs ${rec ? 'text-slate-400' : 'text-slate-500'}`}>{p.tagline}</Text>
-      <View className="mt-5 h-12 justify-center">
+      <Text className={`text-xs font-bold uppercase tracking-wider ${rec ? 'text-black' : 'text-slate-400'}`}>{kicker}</Text>
+      <Text className="mt-2 text-2xl font-black text-slate-900">{p.name}</Text>
+      <Text className="mt-1 text-xs text-slate-500">{p.tagline}</Text>
+      <View className="mt-6 flex-row items-end gap-1">
         {p.price ? (
-          <View className="flex-row items-end gap-1">
-            <Text className={`text-4xl font-extrabold ${rec ? 'text-white' : 'text-slate-900'}`}>₺{FMT.format(p.price.monthlyEquivalent)}</Text>
-            <Text className={`pb-1.5 text-xs ${rec ? 'text-slate-400' : 'text-slate-500'}`}>/ay eşdeğeri</Text>
-          </View>
+          <>
+            <Text className="text-4xl font-black text-slate-900">₺{FMT.format(p.price.monthlyEquivalent)}</Text>
+            <Text className="pb-1.5 text-sm font-medium text-slate-500">/ay eşdeğeri</Text>
+          </>
         ) : (
-          <Text className="text-4xl font-extrabold text-slate-900">Ücretsiz</Text>
+          <Text className="text-4xl font-black text-slate-900">₺0 <Text className="text-sm font-medium text-slate-500">/ süresiz</Text></Text>
         )}
       </View>
-      <Text className={`text-[11px] ${rec ? 'text-slate-500' : 'text-slate-400'}`}>
-        {p.price ? `₺${FMT.format(p.price.yearly)} / yıl` : 'Kredi kartı gerekmez'}
+      <Text className="mt-1 text-[11px] text-slate-400">
+        {p.price ? `₺${FMT.format(p.price.yearly)} / yıl olarak faturalandırılır` : 'Kredi kartı gerekmez'}
       </Text>
-      <Pressable onPress={onStart} {...rw({ dataSet: { cta: '' } })} className={`mt-5 items-center rounded-full py-3.5 ${rec ? 'bg-white' : id === 'free' ? 'bg-slate-900' : 'border border-slate-300 bg-white'}`}>
-        <Text className={`text-sm font-bold ${rec ? 'text-slate-950' : id === 'free' ? 'text-white' : 'text-slate-900'}`}>{id === 'free' ? 'Hemen Başla' : 'Ücretsiz Başla'}</Text>
-      </Pressable>
-      <View className="mt-6 gap-2.5">
+      <View className="mt-6 gap-3 border-t border-slate-100 pt-6">
         {p.features.map((f) => (
           <View key={f} className="flex-row items-start gap-2.5">
-            <Check size={15} color={rec ? '#34d399' : '#2563EB'} style={{ marginTop: 2 }} />
-            <Text className={`flex-1 text-sm ${rec ? 'text-slate-300' : 'text-slate-600'}`}>{f}</Text>
+            <Check size={15} color="#0f172a" style={{ marginTop: 2 }} />
+            <Text className="flex-1 text-xs font-medium text-slate-700">{f}</Text>
           </View>
         ))}
       </View>
+      <Pressable
+        onPress={onStart}
+        {...rw({ dataSet: { cta: '' } })}
+        className={`mt-8 items-center rounded-full py-3.5 ${rec ? 'bg-black' : 'border border-slate-300 bg-white'}`}
+      >
+        <Text className={`text-sm font-bold ${rec ? 'text-white' : 'text-slate-900'}`}>{id === 'free' ? 'Hemen Başla' : 'Ücretsiz Başla'}</Text>
+      </Pressable>
     </View>
   );
 }
@@ -658,6 +688,20 @@ function PhoneFrame({ small }: { small?: boolean }) {
               <Text className={`text-[11px] font-extrabold ${r.late ? 'text-danger' : 'text-emerald-600'}`}>{r.amount}</Text>
             </View>
           ))}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function MiniPhone({ title, tone, children }: { title: string; tone: 'plain' | 'emerald'; children: React.ReactNode }) {
+  return (
+    <View className="rounded-[32px] border-2 border-zinc-800 bg-black p-2.5" style={{ width: 210, height: 420, boxShadow: '0 30px 60px rgba(2,6,23,.30)' } as never}>
+      <View className="h-full w-full overflow-hidden rounded-[24px] bg-white p-3">
+        <View className="mx-auto h-3 w-14 rounded-full bg-black" />
+        <Text className="mt-3 text-center text-xs font-bold text-slate-900">{title}</Text>
+        <View className={`mt-3 rounded-xl border p-2.5 ${tone === 'emerald' ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+          {children}
         </View>
       </View>
     </View>
