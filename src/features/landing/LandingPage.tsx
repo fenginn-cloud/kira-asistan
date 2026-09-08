@@ -19,8 +19,6 @@ import {
   ClipboardList,
   FileText,
   Menu,
-  Send,
-  Sparkles,
   TrendingUp,
   Users,
   Wallet,
@@ -290,33 +288,6 @@ export function LandingPage() {
             points={['Kişisel ve iletişim bilgileri', 'Gelir ve araç / plaka', 'Evde yaşayacak kişiler', 'Acil durum kişisi ve danışman değerlendirmesi']}
             mock={<FormMock />}
           />
-        </View>
-
-        {/* ---------- AI (koyu) ---------- */}
-        <View className="w-full items-center overflow-hidden bg-slate-950">
-          <View className="w-full max-w-[1200px] px-5 py-24" {...rw({ dataSet: { reveal: '' } })}>
-            <View className={isDesktop ? 'flex-row items-center gap-14' : 'gap-10'}>
-              <View className="flex-1">
-                <View className="flex-row items-center gap-2 self-start rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5">
-                  <Sparkles size={13} color="#a5b4fc" />
-                  <Text className="text-xs font-semibold text-slate-200">AI Asistan</Text>
-                </View>
-                <Text className="mt-5 font-extrabold tracking-tight text-white" style={{ fontSize: isDesktop ? 44 : 30, lineHeight: isDesktop ? 48 : 34, letterSpacing: -0.5 }}>
-                  Portföyünüzle konuşun.
-                </Text>
-                <Text className="mt-4 max-w-[560px] text-base leading-7 text-slate-300">
-                  Kira Asistan, portföyünüzün verilerinden bağlamsal finansal öngörüler üretir; geciken tahsilat,
-                  yaklaşan vade ve aylık tahsilat oranı gibi içgörüleri ana sayfanıza taşır.
-                </Text>
-                <Text className="mt-3 text-sm font-medium text-slate-400">
-                  AI Asistan: Pro planda günlük soru hakkıyla, Business planda gelişmiş.
-                </Text>
-              </View>
-              <View className="flex-1">
-                <AiMock />
-              </View>
-            </View>
-          </View>
         </View>
 
         {/* ---------- NASIL ÇALIŞIR ---------- */}
@@ -771,24 +742,6 @@ function FormMock() {
         ))}
       </View>
     </Panel>
-  );
-}
-
-function AiMock() {
-  return (
-    <View className="w-full max-w-[440px] self-center rounded-[26px] border border-white/10 bg-white/5 p-5">
-      <View className="flex-row items-center gap-2.5">
-        <View className="h-9 w-9 items-center justify-center rounded-2xl bg-primary"><Sparkles size={16} color="#fff" /></View>
-        <View><Text className="text-sm font-bold text-white">Finansal Öngörü</Text><Text className="text-[11px] text-slate-400">Portföyünüzden</Text></View>
-      </View>
-      <View className="mt-4 self-start rounded-2xl rounded-tl-md bg-white/10 px-4 py-3" style={{ maxWidth: '85%' }}>
-        <Text className="text-sm leading-6 text-slate-100">Bu ay tahsilatın büyük kısmı tamamlandı; geciken birkaç ödeme için hatırlatma gönderebilirsiniz.</Text>
-      </View>
-      <View className="mt-3 flex-row items-center gap-2 self-end rounded-full border border-white/10 bg-white/5 px-4 py-2.5" style={{ maxWidth: '85%' }}>
-        <Text className="flex-1 text-sm text-slate-400">Geciken tahsilatlar ne durumda?</Text>
-        <Send size={15} color="#a5b4fc" />
-      </View>
-    </View>
   );
 }
 

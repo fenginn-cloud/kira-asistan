@@ -37,15 +37,11 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
       },
       {
         heading: 'Verileri ne için kullanıyoruz?',
-        body: `Kira takibi, cari hesap hesaplaması, ödeme hatırlatmaları (uygulama içi ve mobil bildirim), kiracı ödeme linki ve isteğe bağlı yapay zekâ destekli analiz özelliklerini sunmak için.`,
-      },
-      {
-        heading: 'Yapay zekâ destekli analiz',
-        body: `“AI Asistan” özelliğini kullandığınızda, sorunuzu yanıtlamak için yalnızca sizin şirketinize ait özetlenmiş veriler (kiracı adı, mülk, tutar özetleri) işlenmek üzere AI servis sağlayıcısına iletilir. Kiracı telefon numarası ve kimlik bilgileri AI'ya gönderilmez. AI yanıtları bir öneridir; mali/hukuki tavsiye değildir.`,
+        body: `Kira takibi, cari hesap hesaplaması, ödeme hatırlatmaları (uygulama içi ve mobil bildirim) ve kiracı ödeme linki özelliklerini sunmak için.`,
       },
       {
         heading: 'Verilerin paylaşımı',
-        body: `Verileriniz; barındırma (Supabase), bildirim ve (kullanılırsa) yapay zekâ altyapı sağlayıcıları gibi hizmet sağlayıcılarla, yalnızca hizmetin sunulması amacıyla işlenir. Verileriniz pazarlama amacıyla üçüncü taraflara satılmaz.`,
+        body: `Verileriniz; barındırma (Supabase) ve bildirim altyapı sağlayıcıları gibi hizmet sağlayıcılarla, yalnızca hizmetin sunulması amacıyla işlenir. Verileriniz pazarlama amacıyla üçüncü taraflara satılmaz.`,
       },
       {
         heading: 'Saklama ve güvenlik',
