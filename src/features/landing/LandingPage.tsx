@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
+  Apple,
   ArrowRight,
   Building2,
   Check,
@@ -18,6 +19,7 @@ import {
   ClipboardList,
   FileText,
   Menu,
+  Play,
   TrendingUp,
   Wallet,
   X,
@@ -25,7 +27,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { PLANS } from '@/features/subscription/plans';
 import { LEGAL_LINKS, SUPPORT_EMAIL } from '@/content/legal';
-import { GOOGLE_PLAY_URL } from './config';
+import { APP_STORE_URL, GOOGLE_PLAY_URL } from './config';
 
 const NAV = [
   { key: 'features', label: 'Özellikler' },
@@ -199,9 +201,15 @@ export function LandingPage() {
                     <Text className="text-base font-semibold text-slate-900">Nasıl Çalışır?</Text>
                   </Pressable>
                 </View>
-                <View className="mt-6 flex-row items-center gap-2">
+                <View className="mt-7">
+                  <Text className="text-xs font-semibold uppercase tracking-wider text-slate-400">Mobil uygulamayı indirin</Text>
+                  <View className="mt-3">
+                    <StoreBadges />
+                  </View>
+                </View>
+                <View className="mt-5 flex-row items-center gap-2">
                   <Check size={16} color="#059669" />
-                  <Text className="text-sm font-medium text-slate-500">Kredi kartı gerekmez · Dakikalar içinde başlayın</Text>
+                  <Text className="text-sm font-medium text-slate-500">App Store ve Google Play’de · Kredi kartı gerekmez</Text>
                 </View>
               </View>
 
@@ -372,21 +380,9 @@ export function LandingPage() {
                   Portföyünüzü bilgisayardan, tabletten veya cebinizden yönetin. Anlık bildirimlerle
                   ödemeler yattığı an haberdar olun; kira ve sözleşmelerinizi dilediğiniz yerden takip edin.
                 </Text>
-                {GOOGLE_PLAY_URL ? (
-                  <Pressable onPress={() => Linking.openURL(GOOGLE_PLAY_URL)} {...rw({ dataSet: { cta: '' } })} className="mt-7 flex-row items-center gap-3 self-start rounded-2xl bg-black px-5 py-3">
-                    <Text className="text-2xl">▶</Text>
-                    <View>
-                      <Text className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Google Play’den</Text>
-                      <Text className="text-sm font-bold text-white">İndirin</Text>
-                    </View>
-                  </Pressable>
-                ) : (
-                  <Pressable onPress={goRegister} {...rw({ dataSet: { cta: '' } })} className="mt-7 flex-row items-center gap-2 self-start rounded-full bg-black px-7 py-4" style={{ boxShadow: '0 14px 30px rgba(0,0,0,.2)' } as never}>
-                    <Text className="text-base font-bold text-white">Tarayıcıdan Başla</Text>
-                    <ArrowRight size={16} color="#fff" />
-                  </Pressable>
-                )}
-                <Text className="mt-3 text-xs text-slate-400">Tarayıcıdan açıp ana ekranınıza ekleyerek uygulama gibi de kullanabilirsiniz.</Text>
+                <View className="mt-7">
+                  <StoreBadges />
+                </View>
               </View>
               <View className={isDesktop ? 'flex-1 flex-row items-center justify-center gap-4' : 'flex-row items-center justify-center gap-3'}>
                 <MiniPhone title="Canlı Kira Takibi" tone="plain">
@@ -581,6 +577,29 @@ function FooterCol({ title, links }: { title: string; links: { label: string; on
           <Text className="text-sm font-medium text-slate-600">{l.label}</Text>
         </Pressable>
       ))}
+    </View>
+  );
+}
+
+/** App Store + Google Play indirme rozetleri (linkler config'den; boşsa buton pasif). */
+function StoreBadges({ center }: { center?: boolean }) {
+  const open = (url: string) => { if (url) Linking.openURL(url); };
+  return (
+    <View className={`flex-row flex-wrap gap-3 ${center ? 'justify-center' : ''}`}>
+      <Pressable onPress={() => open(APP_STORE_URL)} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-3 rounded-2xl bg-black px-5 py-3" style={{ boxShadow: '0 8px 20px rgba(0,0,0,.18)' } as never}>
+        <Apple size={26} color="#fff" fill="#fff" />
+        <View>
+          <Text className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">App Store’dan</Text>
+          <Text className="text-sm font-bold tracking-tight text-white">İndirin</Text>
+        </View>
+      </Pressable>
+      <Pressable onPress={() => open(GOOGLE_PLAY_URL)} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-3 rounded-2xl bg-black px-5 py-3" style={{ boxShadow: '0 8px 20px rgba(0,0,0,.18)' } as never}>
+        <Play size={22} color="#fff" fill="#fff" />
+        <View>
+          <Text className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Google Play’den</Text>
+          <Text className="text-sm font-bold tracking-tight text-white">İndirin</Text>
+        </View>
+      </Pressable>
     </View>
   );
 }
@@ -910,6 +929,6 @@ const FAQ = [
   { q: 'Excel dosyamı aktarabilir miyim?', a: 'Evet. Pro ve Business planlarında Excel dosyanızdan sözleşmelerinizi topluca içeri aktarabilirsiniz.' },
   { q: 'Ekibime kullanıcı ekleyebilir miyim?', a: 'Business planında 5 kullanıcıya kadar ekip yönetimi vardır; yönetici ve personel rolleriyle yetkileri belirleyebilirsiniz.' },
   { q: 'Kiracının hesap açması gerekiyor mu?', a: 'Hayır. Kiracınız, gönderdiğiniz güvenli link ile giriş yapmadan ödeme durumunu görüntüleyebilir ve ödeme bildirimi yapabilir.' },
-  { q: 'Telefonumdan kullanabilir miyim?', a: 'Evet. Kira Asistan bir web uygulamasıdır; telefonunuzun tarayıcısından açıp ana ekranınıza ekleyerek uygulama gibi kullanabilirsiniz.' },
+  { q: 'Telefonumdan kullanabilir miyim?', a: 'Evet. Kira Asistan App Store ve Google Play’de yer alır; uygulamayı telefonunuza indirerek her yerden portföyünüze erişebilirsiniz. Dilerseniz bilgisayar tarayıcısından da kullanabilirsiniz.' },
   { q: 'Verilerim nasıl korunuyor?', a: 'Verileriniz Supabase altyapısında, satır bazlı erişim kuralları (RLS) ile yalnızca sizin şirketinize özel olarak saklanır; başka şirketler verilerinize erişemez.' },
 ];
