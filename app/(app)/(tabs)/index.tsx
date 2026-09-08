@@ -39,6 +39,7 @@ import { useToast } from '@/components/ui/Toast';
 import { errorMessage } from '@/lib/utils/error';
 import type { OpenItem } from '@/features/notifications/reminders';
 import { useAuthStore } from '@/store/authStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { queryKeys } from '@/lib/query';
 import { formatCurrency } from '@/lib/utils/format';
@@ -56,6 +57,7 @@ export default function HomeScreen() {
     gate.limit !== null &&
     gate.count >= gate.limit - 1;
   const user = useAuthStore((s) => s.user);
+  const avatarEmoji = useSettingsStore((s) => s.avatarEmoji);
   // Cari hesap / finansal özet yalnızca yöneticide.
   const canSeeLedger = user?.role === 'admin' || user?.role === 'super_admin';
   const scrollRef = useScrollToTop<ScrollView>('index');
@@ -157,7 +159,7 @@ export default function HomeScreen() {
       >
         {/* Header — gerçek kullanıcı bilgisi (initials avatar), arama + bildirim */}
         <View className="flex-row items-center gap-3 pt-2">
-          <Avatar name={user?.fullName ?? 'K'} size={44} />
+          <Avatar name={user?.fullName ?? 'K'} size={44} emoji={avatarEmoji} />
           <View className="flex-1">
             <Text className="text-sm text-muted">Hoş geldiniz,</Text>
             <View className="flex-row items-center gap-2">
