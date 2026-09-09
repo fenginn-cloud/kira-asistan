@@ -51,4 +51,9 @@ export interface AuthProvider {
    * password, then sign out so the user logs in fresh with the new password.
    */
   resetPassword(email: string, code: string, newPassword: string): Promise<void>;
+  /**
+   * Permanently delete the current account and its data (server-side, service
+   * role). Signs out afterwards. Irreversible.
+   */
+  deleteAccount(): Promise<void>;
 }

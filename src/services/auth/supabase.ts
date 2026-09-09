@@ -183,4 +183,14 @@ export const supabaseAuthProvider: AuthProvider = {
     // Log out so the user signs in fresh with the new password.
     await db().auth.signOut();
   },
+
+  async deleteAccount() {
+    // Server-side (service role) deletion of the account + owned data.
+    const { data, error } = await db().functions.invoke('delete-account', { body: {} });
+    if (error || (data as { error?: string })?.error) {
+      throw new Error((data as { error?: string })?.error || 'Hesap silinemedi.');
+    }
+    // Clear the local session after the account is gone.
+    await db().auth.signOut();
+  },
 };

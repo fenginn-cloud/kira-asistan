@@ -10,10 +10,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Trash2 } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useToast } from '@/components/ui/Toast';
 import { ProfileForm } from '@/features/profile/ProfileForm';
 import { ChangePasswordForm } from '@/features/profile/ChangePasswordForm';
@@ -32,11 +33,27 @@ const AVATAR_EMOJIS = [
 export default function ProfileScreen() {
   const router = useRouter();
   const toast = useToast();
-  const { user, updateProfile, changePassword } = useAuthStore();
+  const { user, updateProfile, changePassword, deleteAccount } = useAuthStore();
   const avatarEmoji = useSettingsStore((s) => s.avatarEmoji);
   const setAvatarEmoji = useSettingsStore((s) => s.setAvatarEmoji);
   const [savingPassword, setSavingPassword] = useState(false);
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      setDeleteOpen(false);
+      toast.success('Hesabınız silindi');
+      router.replace('/(auth)/login');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Hesap silinemedi');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (!user) return null;
 
@@ -101,8 +118,36 @@ export default function ProfileScreen() {
               }}
             />
           </Card>
+
+          <SectionHeader title="Hesap" />
+          <Card>
+            <Text className="text-sm font-semibold text-foreground">Hesabı Sil</Text>
+            <Text className="mt-1 text-xs leading-5 text-muted">
+              Hesabınız ve tüm verileriniz (sözleşmeler, kiracılar, ödemeler, belgeler) kalıcı olarak
+              silinir. Bu işlem geri alınamaz.
+            </Text>
+            <Pressable
+              onPress={() => setDeleteOpen(true)}
+              className="mt-4 h-12 flex-row items-center justify-center gap-2 rounded-2xl bg-danger-soft active:opacity-80"
+            >
+              <Trash2 size={17} color="#dc2626" />
+              <Text className="text-sm font-bold text-danger">Hesabımı Sil</Text>
+            </Pressable>
+          </Card>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ConfirmModal
+        visible={deleteOpen}
+        destructive
+        loading={deleting}
+        title="Hesabınızı silmek istiyor musunuz?"
+        message="Hesabınız ve tüm verileriniz kalıcı olarak silinecek. Bu işlem geri alınamaz."
+        confirmLabel="Evet, hesabımı sil"
+        cancelLabel="Vazgeç"
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setDeleteOpen(false)}
+      />
 
       <Modal
         visible={avatarPickerOpen}
