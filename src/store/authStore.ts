@@ -23,6 +23,8 @@ interface AuthState {
   requestPasswordReset: (email: string) => Promise<void>;
   /** Verify the recovery code and set a new password. */
   resetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
+  /** Permanently delete the account and its data, then clear the session. */
+  deleteAccount: () => Promise<void>;
 }
 
 /**
@@ -100,5 +102,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   resetPassword: async (email, code, newPassword) => {
     await authProvider.resetPassword(email, code, newPassword);
+  },
+
+  deleteAccount: async () => {
+    await authProvider.deleteAccount();
+    set({ user: null });
   },
 }));
