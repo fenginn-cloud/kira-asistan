@@ -1,4 +1,5 @@
 import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, X } from 'lucide-react-native';
 import { palette } from '@/lib/theme/colors';
 import type { StatusFilter, SortKey } from '@/store/contractsViewStore';
@@ -46,6 +47,7 @@ export function FilterBottomSheet({
   onClear,
 }: Props) {
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const Chip = ({
     active,
@@ -74,8 +76,8 @@ export function FilterBottomSheet({
       <Pressable onPress={onClose} className="flex-1 justify-end bg-black/40">
         <Pressable onPress={(e) => e.stopPropagation()}>
           <View
-            className="rounded-t-[28px] bg-surface px-5 pb-8 pt-3"
-            style={{ maxHeight: height * 0.85 }}
+            className="rounded-t-[28px] bg-surface px-5 pt-3"
+            style={{ maxHeight: height * 0.85, paddingBottom: insets.bottom + 20 }}
           >
             {/* Grabber + başlık */}
             <View className="items-center">

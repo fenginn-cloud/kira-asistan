@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronDown, X } from 'lucide-react-native';
 import {
   COUNTRIES,
@@ -26,6 +27,7 @@ export function PhoneInput({ label, value, onChange, error }: PhoneInputProps) {
     COUNTRIES.find((c) => c.dial === parsed.dial) ?? COUNTRIES[0]!;
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleDigits = (text: string) => {
     const digits = text.replace(/[^\d]/g, '').slice(0, country.max);
@@ -72,7 +74,7 @@ export function PhoneInput({ label, value, onChange, error }: PhoneInputProps) {
 
       <Modal visible={pickerOpen} transparent animationType="slide" onRequestClose={() => setPickerOpen(false)}>
         <View className="flex-1 justify-end bg-black/40">
-          <View className="max-h-[70%] rounded-t-3xl bg-surface p-5 pb-8">
+          <View className="max-h-[70%] rounded-t-3xl bg-surface p-5" style={{ paddingBottom: insets.bottom + 20 }}>
             <View className="mb-2 flex-row items-center justify-between">
               <Text className="text-lg font-bold text-foreground">Ülke Kodu</Text>
               <Pressable onPress={() => setPickerOpen(false)} className="h-8 w-8 items-center justify-center">

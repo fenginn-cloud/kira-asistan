@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { AlertTriangle, ArrowLeft, DoorClosed, Lock, Plus, X } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
@@ -46,6 +46,7 @@ export default function UnitsInventoryScreen() {
   const router = useRouter();
   const toast = useToast();
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const { width } = useWindowDimensions();
@@ -478,8 +479,8 @@ export default function UnitsInventoryScreen() {
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
-            className="rounded-t-3xl bg-surface px-5 pb-8 pt-3"
-            style={{ maxHeight: '88%' }}
+            className="rounded-t-3xl bg-surface px-5 pt-3"
+            style={{ maxHeight: '88%', paddingBottom: insets.bottom + 20 }}
           >
             <View className="mb-2 items-center">
               <View className="h-1.5 w-10 rounded-full bg-border" />

@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X } from 'lucide-react-native';
 import { foldSearch } from '@/lib/utils/property';
 import { palette } from '@/lib/theme/colors';
@@ -38,6 +39,7 @@ export function ContractPicker({
   noneLabel = 'Sözleşme seçilmedi',
 }: Props) {
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
 
   const sorted = useMemo(
@@ -65,7 +67,7 @@ export function ContractPicker({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} className="flex-1 justify-end bg-black/40">
-        <Pressable onPress={(e) => e.stopPropagation()} className="p-3 pb-8">
+        <Pressable onPress={(e) => e.stopPropagation()} className="p-3" style={{ paddingBottom: insets.bottom + 12 }}>
           <View
             className="overflow-hidden rounded-3xl bg-surface"
             style={{ maxHeight: height * 0.8 }}

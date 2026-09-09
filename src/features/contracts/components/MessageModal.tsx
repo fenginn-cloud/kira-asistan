@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Copy, Check, MessageCircle, X } from 'lucide-react-native';
 import { useToast } from '@/components/ui/Toast';
 import { copyText, openWhatsApp } from '@/lib/utils/contact';
@@ -15,6 +16,7 @@ interface Props {
 export function MessageModal({ visible, message, phone, onClose }: Props) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleCopy = async () => {
     await copyText(message);
@@ -30,7 +32,7 @@ export function MessageModal({ visible, message, phone, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View className="flex-1 justify-end bg-black/40">
-        <View className="rounded-t-3xl bg-surface p-5 pb-10">
+        <View className="rounded-t-3xl bg-surface p-5" style={{ paddingBottom: insets.bottom + 24 }}>
           <View className="mb-4 flex-row items-center justify-between">
             <Text className="text-lg font-bold text-foreground">Hatırlatma Mesajı</Text>
             <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center">

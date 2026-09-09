@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { Modal, Pressable, ScrollView, Switch, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Clock, Plus, X } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
@@ -44,6 +44,7 @@ const emptyDraft: Draft = {
 export default function UsersScreen() {
   const router = useRouter();
   const toast = useToast();
+  const insets = useSafeAreaInsets();
   const currentUser = useAuthStore((s) => s.user);
   const { data: users = [], isLoading } = useUsers();
   const entitlement = useEntitlement();
@@ -174,7 +175,7 @@ export default function UsersScreen() {
       {/* Add / Edit modal */}
       <Modal visible={draft !== null} transparent animationType="slide" onRequestClose={() => setDraft(null)}>
         <View className="flex-1 justify-end bg-black/40">
-          <View className="rounded-t-3xl bg-surface p-5 pb-10">
+          <View className="rounded-t-3xl bg-surface p-5" style={{ paddingBottom: insets.bottom + 24 }}>
             {/* Tutma çubuğu (Stitch) */}
             <View className="mb-3 items-center">
               <View className="h-1.5 w-10 rounded-full bg-border" />
