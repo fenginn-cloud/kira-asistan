@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { BarChart3, Building2, FileText, Home, User } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { palette } from '@/lib/theme/colors';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { triggerScrollTop } from '@/lib/scrollToTop';
@@ -20,6 +21,10 @@ export default function TabsLayout() {
   const isAdmin = role === 'admin' || role === 'super_admin';
   // Geniş ekran + yönetici: gezinme sol menüye taşınır, alt sekme gizlenir.
   const { enabled: desktopShell } = useDesktopShell();
+  const insets = useSafeAreaInsets();
+  // Alt sistem çubuğu (gesture/3-tuş) yüksekliği kadar boşluk bırak; sabit
+  // padding kullanma. Gesture modunda inset küçük, 3-tuşta büyük olur.
+  const bottomPad = Math.max(insets.bottom, 10);
   return (
     <Tabs
       screenOptions={{
@@ -29,9 +34,9 @@ export default function TabsLayout() {
         tabBarStyle: desktopShell
           ? { display: 'none' }
           : {
-              height: 86,
+              height: 58 + bottomPad,
               paddingTop: 8,
-              paddingBottom: 28,
+              paddingBottom: bottomPad,
               borderTopColor: colors.border,
               backgroundColor: colors.surface,
             },

@@ -1,4 +1,5 @@
 import { Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { LucideIcon } from 'lucide-react-native';
 import { palette } from '@/lib/theme/colors';
 
@@ -18,12 +19,17 @@ interface ActionSheetProps {
 
 export function ActionSheet({ visible, title, items, onClose }: ActionSheetProps) {
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   // Uzun listelerde tabaka ekranı taşmasın; içerik kayabilsin.
   const maxListHeight = Math.max(height * 0.6, 240);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable onPress={onClose} className="flex-1 justify-end bg-black/40">
-        <Pressable onPress={(e) => e.stopPropagation()} className="p-3 pb-8">
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          className="p-3"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
           <View className="overflow-hidden rounded-3xl bg-surface">
             {title ? (
               <Text className="px-5 pb-2 pt-4 text-center text-xs font-medium text-muted">

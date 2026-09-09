@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CheckCircle2, X } from 'lucide-react-native';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency, formatMonth } from '@/lib/utils/format';
@@ -26,6 +27,7 @@ interface Props {
 export function MarkReceivedSheet({ contract, submitting, onClose, onConfirm }: Props) {
   const colors = useThemeColors();
   const [note, setNote] = useState('');
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (contract) setNote('');
@@ -47,7 +49,7 @@ export function MarkReceivedSheet({ contract, submitting, onClose, onConfirm }: 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1 justify-end bg-black/40"
       >
-        <View className="rounded-t-[28px] bg-surface p-5 pb-8">
+        <View className="rounded-t-[28px] bg-surface p-5" style={{ paddingBottom: insets.bottom + 20 }}>
           {/* Tutma çubuğu (Stitch) */}
           <View className="mb-3 items-center">
             <View className="h-1.5 w-10 rounded-full bg-border" />

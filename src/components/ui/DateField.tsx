@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -31,6 +32,7 @@ export function DateField({
 }: DateFieldProps) {
   const [show, setShow] = useState(false);
   const [temp, setTemp] = useState<Date>(new Date());
+  const insets = useSafeAreaInsets();
 
   const selected = value ? parseISO(value) : null;
   const display = selected
@@ -100,7 +102,7 @@ export function DateField({
       {Platform.OS === 'ios' ? (
         <Modal visible={show} transparent animationType="slide" onRequestClose={() => setShow(false)}>
           <View className="flex-1 justify-end bg-black/40">
-            <View className="rounded-t-3xl bg-surface p-4 pb-8">
+            <View className="rounded-t-3xl bg-surface p-4" style={{ paddingBottom: insets.bottom + 16 }}>
               <View className="mb-1 flex-row items-center justify-between px-1">
                 <Pressable onPress={() => setShow(false)} hitSlop={8}>
                   <Text className="text-base text-muted">Vazgeç</Text>

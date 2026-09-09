@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, Paperclip, X } from 'lucide-react-native';
 import { format } from 'date-fns';
 import * as ImagePicker from 'expo-image-picker';
@@ -60,6 +61,7 @@ export function AddTransactionModal({
   isSubmitting,
 }: Props) {
   const toast = useToast();
+  const insets = useSafeAreaInsets();
   const [paymentId, setPaymentId] = useState<string>('');
   const [amount, setAmount] = useState(0);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -159,7 +161,7 @@ export function AddTransactionModal({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1 justify-end bg-black/40"
       >
-        <View className="max-h-[88%] rounded-t-[28px] bg-surface p-5 pb-8">
+        <View className="max-h-[88%] rounded-t-[28px] bg-surface p-5" style={{ paddingBottom: insets.bottom + 20 }}>
           {/* Tutma çubuğu (Stitch) */}
           <View className="mb-3 items-center">
             <View className="h-1.5 w-10 rounded-full bg-border" />
