@@ -150,6 +150,33 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
       },
     ],
   },
+
+  'hesap-silme': {
+    slug: 'hesap-silme',
+    title: 'Hesap ve Veri Silme',
+    updated: UPDATED,
+    sections: [
+      {
+        body: `Bu sayfa, Kira Asistan (${OPERATOR}) uygulamasında hesabınızı ve ilişkili verilerinizi nasıl sildirebileceğinizi açıklar.`,
+      },
+      {
+        heading: 'Hesabınızı nasıl silersiniz?',
+        body: `Hesabınızın ve tüm verilerinizin kalıcı olarak silinmesini talep etmek için, hesabınıza kayıtlı e-posta adresinizden ${CONTACT} adresine "Hesap silme talebi" konulu bir e-posta gönderin. Kimliğiniz doğrulandıktan sonra talebiniz en geç 30 gün içinde işleme alınır ve size bilgi verilir.`,
+      },
+      {
+        heading: 'Silinen veriler',
+        body: `Talebiniz üzerine; hesap bilgileriniz (ad-soyad, e-posta, telefon), şirket/portföy kayıtlarınız, sözleşmeler, kiracı ve mülk bilgileri, ödeme/cari hesap kayıtları ve yüklediğiniz belgeler kalıcı olarak silinir.`,
+      },
+      {
+        heading: 'Saklanan veriler',
+        body: `Yasal yükümlülükler (ör. vergi/muhasebe mevzuatı) gereği saklanması zorunlu olan sınırlı kayıtlar, ilgili yasal süre boyunca (genellikle en fazla 10 yıl) mevzuatın gerektirdiği ölçüde tutulabilir; bu süre sonunda silinir. Bunun dışında verileriniz saklanmaz.`,
+      },
+      {
+        heading: 'İletişim',
+        body: `Sorularınız için: ${CONTACT}.`,
+      },
+    ],
+  },
 };
 
 export const LEGAL_LINKS: { slug: string; title: string }[] = [
@@ -157,4 +184,5 @@ export const LEGAL_LINKS: { slug: string; title: string }[] = [
   { slug: 'kullanim', title: 'Kullanım Şartları' },
   { slug: 'kvkk', title: 'KVKK Aydınlatma Metni' },
   { slug: 'abonelik', title: 'Abonelik ve Mesafeli Satış Koşulları' },
+  { slug: 'hesap-silme', title: 'Hesap ve Veri Silme' },
 ];
