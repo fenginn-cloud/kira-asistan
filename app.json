@@ -14,7 +14,7 @@
       "backgroundColor": "#FFFFFF"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.kiraasistan.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
