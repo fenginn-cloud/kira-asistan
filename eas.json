@@ -33,6 +33,10 @@
       "android": {
         "buildType": "app-bundle"
       }
+    },
+    "production-ios": {
+      "extends": "production",
+      "credentialsSource": "local"
     }
   },
   "submit": {
