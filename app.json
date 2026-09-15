@@ -57,7 +57,8 @@
         {
           "photosPermission": "Dekont/makbuz eklemek için fotoğraflarınıza erişim gerekiyor."
         }
-      ]
+      ],
+      "./plugins/withoutApsEnvironment"
     ],
     "experiments": {
       "typedRoutes": true
