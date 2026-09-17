@@ -51,7 +51,7 @@ export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
     tenantPortal: false,
   },
   pro: {
-    maxContracts: 99,
+    maxContracts: 30,
     team: false,
     maxUsers: 1,
     ai: true,

@@ -55,7 +55,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
     name: 'Pro',
     tagline: 'Portföyümü kendim yönetiyorum',
     features: [
-      '99 aktif sözleşmeye kadar',
+      '30 aktif sözleşmeye kadar',
       'Tek kullanıcı',
       'Tüm hatırlatmalar (7/3/1 gün önce dahil)',
       'Cari hesap ve tahsilat takibi',
@@ -63,7 +63,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       'İstatistik ve raporlar',
       'Kiracı ödeme bildirimleri',
     ],
-    price: { yearly: 1799, monthlyEquivalent: 150, period: 'yearly' },
+    price: { yearly: 3999, monthlyEquivalent: 333, period: 'yearly' },
   },
   business: {
     id: 'business',
@@ -78,7 +78,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       'Ekip tahsilat takibi',
       'Öncelikli destek',
     ],
-    price: { yearly: 9599, monthlyEquivalent: 800, period: 'yearly' },
+    price: { yearly: 11999, monthlyEquivalent: 1000, period: 'yearly' },
     recommended: true,
   },
 };
@@ -96,7 +96,7 @@ export interface FeatureRow {
 
 /** "Tüm özellikleri gör" karşılaştırma matrisi (Free / Pro / Business). */
 export const FEATURE_MATRIX: FeatureRow[] = [
-  { label: 'Aktif sözleşme', free: '3', pro: '99', business: 'Sınırsız' },
+  { label: 'Aktif sözleşme', free: '3', pro: '30', business: 'Sınırsız' },
   { label: 'Kullanıcı', free: '1', pro: '1', business: '5' },
   { label: 'Kira ve tahsilat takibi', free: true, pro: true, business: true },
   { label: 'Cari hesap / devreden bakiye', free: true, pro: true, business: true },

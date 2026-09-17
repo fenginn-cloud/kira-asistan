@@ -122,7 +122,7 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
       },
       {
         heading: 'Planlar ve ücretler',
-        body: `• Free: 0 TL — en fazla 3 aktif sözleşme, tek kullanıcı.\n• Pro: 1.799 TL/yıl (≈150 TL/ay) — 99 aktif sözleşmeye kadar, tek kullanıcı.\n• Business: 9.599 TL/yıl (≈800 TL/ay) — sınırsız sözleşme, 5 kullanıcı dahil, ekip yönetimi.\nÜcretler yıllık faturalanır. Fiyatlar uygulama içinde güncel olarak gösterilir; değişiklikler yürürlükten önce bildirilir.`,
+        body: `• Free: 0 TL — en fazla 3 aktif sözleşme, tek kullanıcı.\n• Pro: 3.999 TL/yıl (≈333 TL/ay) — 30 aktif sözleşmeye kadar, tek kullanıcı.\n• Business: 11.999 TL/yıl (≈1.000 TL/ay) — sınırsız sözleşme, 5 kullanıcı dahil, ekip yönetimi.\nÜcretler yıllık faturalanır. Fiyatlar uygulama içinde güncel olarak gösterilir; değişiklikler yürürlükten önce bildirilir.`,
       },
       {
         heading: 'Satın alma ve faturalama',

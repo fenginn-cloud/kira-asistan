@@ -1047,7 +1047,7 @@ function FormMock() {
 
 const FAQ = [
   { q: 'Kira Asistan ücretsiz mi?', a: 'Evet, Free planla ücretsiz başlayabilirsiniz. Free planda en fazla 3 aktif sözleşme yönetebilirsiniz; daha fazlası için Pro veya Business planına geçebilirsiniz.' },
-  { q: 'Kaç sözleşme ekleyebilirim?', a: 'Free planda 3, Pro planda 99 aktif sözleşme; Business planında ise sınırsız sözleşme ekleyebilirsiniz.' },
+  { q: 'Kaç sözleşme ekleyebilirim?', a: 'Free planda 3, Pro planda 30 aktif sözleşme; Business planında ise sınırsız sözleşme ekleyebilirsiniz.' },
   { q: 'Excel dosyamı aktarabilir miyim?', a: 'Evet. Pro ve Business planlarında Excel dosyanızdan sözleşmelerinizi topluca içeri aktarabilirsiniz.' },
   { q: 'Ekibime kullanıcı ekleyebilir miyim?', a: 'Business planında 5 kullanıcıya kadar ekip yönetimi vardır; yönetici ve personel rolleriyle yetkileri belirleyebilirsiniz.' },
   { q: 'Kiracının hesap açması gerekiyor mu?', a: 'Hayır. Kiracınız, gönderdiğiniz güvenli link ile giriş yapmadan ödeme durumunu görüntüleyebilir ve ödeme bildirimi yapabilir.' },
