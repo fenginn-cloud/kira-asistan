@@ -46,7 +46,7 @@ const FMT = new Intl.NumberFormat('tr-TR');
 const web = (o: object) => o as never; // web-only style (RN tip uyumu)
 const rw = (o: object) => o as { [k: string]: unknown }; // dataSet vb. web props
 
-const CSS = `
+export const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 html.landing-web, html.landing-web *:not(svg):not(path){font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif !important}
 html.landing-web{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
@@ -108,6 +108,7 @@ export function LandingPage() {
   const goRegister = () => router.push('/(auth)/register');
   const goLogin = () => router.push('/(auth)/login');
   const goApp = () => router.push('/(app)/(tabs)');
+  const goFeatures = () => router.push('/ozellikler');
 
   return (
     <View className="flex-1 bg-white">
@@ -303,6 +304,20 @@ export function LandingPage() {
             points={['Kişisel ve iletişim bilgileri', 'Gelir ve araç / plaka', 'Evde yaşayacak kişiler', 'Acil durum kişisi ve danışman değerlendirmesi']}
             mock={<FormMock />}
           />
+
+          {/* Tüm özellikler sayfasına köprü */}
+          <View className="w-full items-center bg-white pb-24">
+            <Pressable
+              onPress={goFeatures}
+              {...rw({ dataSet: { cta: '' } })}
+              className="flex-row items-center gap-2 rounded-full border border-slate-300 bg-white px-7 py-3.5"
+              style={{ boxShadow: '0 2px 14px rgba(15,23,42,.06)' } as never}
+            >
+              <Text className="text-sm font-bold text-slate-900">Tüm özellikleri keşfedin</Text>
+              <ArrowRight size={16} color="#0f172a" />
+            </Pressable>
+            <Text className="mt-3 text-xs text-slate-400">Günlük kullanım senaryoları ve ekip yapısı — adım adım.</Text>
+          </View>
         </View>
 
         {/* ---------- NASIL ÇALIŞIR ---------- */}
@@ -417,6 +432,12 @@ export function LandingPage() {
               ))}
             </View>
             <Text className="mt-6 text-center text-xs text-slate-400">Ücretli planlar yıllık faturalandırılır.</Text>
+            <View className="mt-5 items-center">
+              <Pressable onPress={goFeatures} {...rw({ dataSet: { nav: '' } })} className="flex-row items-center gap-1.5">
+                <Text className="text-sm font-bold text-primary-700">Hangi plan size uygun? Ayrıntıları görün</Text>
+                <ArrowRight size={15} color="#1D4ED8" />
+              </Pressable>
+            </View>
           </View>
         </View>
 
@@ -498,7 +519,7 @@ export function LandingPage() {
 
 // ============================ helpers ============================
 
-function Eyebrow({ children, center }: { children: string; center?: boolean }) {
+export function Eyebrow({ children, center }: { children: string; center?: boolean }) {
   return (
     <Text className={`text-xs font-bold uppercase tracking-[0.16em] text-primary-700 ${center ? 'text-center' : ''}`}>
       {children}
@@ -507,7 +528,7 @@ function Eyebrow({ children, center }: { children: string; center?: boolean }) {
 }
 
 /** Ortalanmış bölüm başlığı: eyebrow + büyük başlık + alt açıklama (Stitch). */
-function SectionHead({ eyebrow, title, sub, desktop }: { eyebrow: string; title: string; sub?: string; desktop: boolean }) {
+export function SectionHead({ eyebrow, title, sub, desktop }: { eyebrow: string; title: string; sub?: string; desktop: boolean }) {
   return (
     <View className="mx-auto max-w-[720px] items-center">
       <Text className="text-center text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{eyebrow}</Text>
@@ -554,7 +575,7 @@ function Feature({
   );
 }
 
-function Accordion({ q, a }: { q: string; a: string }) {
+export function Accordion({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
     <Pressable onPress={() => setOpen((v) => !v)} className="border-b border-slate-200 py-5">
@@ -567,7 +588,7 @@ function Accordion({ q, a }: { q: string; a: string }) {
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: { label: string; on: () => void }[] }) {
+export function FooterCol({ title, links }: { title: string; links: { label: string; on: () => void }[] }) {
   return (
     <View className="gap-2.5">
       <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</Text>
@@ -581,7 +602,7 @@ function FooterCol({ title, links }: { title: string; links: { label: string; on
 }
 
 /** App Store + Google Play indirme rozetleri (linkler config'den; boşsa buton pasif). */
-function StoreBadges({ center }: { center?: boolean }) {
+export function StoreBadges({ center }: { center?: boolean }) {
   const open = (url: string) => { if (url) Linking.openURL(url); };
   return (
     <View className={`flex-row flex-wrap gap-3 ${center ? 'justify-center' : ''}`}>
@@ -603,7 +624,7 @@ function StoreBadges({ center }: { center?: boolean }) {
   );
 }
 
-function PlanCard({ id, onStart, desktop }: { id: 'free' | 'pro' | 'business'; onStart: () => void; desktop: boolean }) {
+export function PlanCard({ id, onStart, desktop }: { id: 'free' | 'pro' | 'business'; onStart: () => void; desktop: boolean }) {
   const p = PLANS[id];
   const rec = !!p.recommended;
   const kicker = id === 'free' ? 'Başlangıç' : id === 'pro' ? 'Profesyonel' : 'Kurumsal & Ofis';
@@ -655,7 +676,7 @@ function PlanCard({ id, onStart, desktop }: { id: 'free' | 'pro' | 'business'; o
 
 // ---- mockups (nötr, gerçek kişisel veri yok) ----
 
-function Panel({ children, className, wide }: { children: React.ReactNode; className?: string; wide?: boolean }) {
+export function Panel({ children, className, wide }: { children: React.ReactNode; className?: string; wide?: boolean }) {
   return (
     <View className={`w-full ${wide ? 'max-w-[520px]' : 'max-w-[420px]'} rounded-[26px] border border-slate-200 bg-white p-5 ${className ?? ''}`} style={{ boxShadow: '0 24px 60px rgba(15,23,42,.10)' } as never}>
       {children}
