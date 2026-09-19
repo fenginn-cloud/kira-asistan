@@ -16,8 +16,8 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://vhwbjyfuzrgtwsxirryl.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_fxI7Mm9pbtlZgkmU_L-J0A_4XyAmrUf",
-        "EXPO_PUBLIC_RC_IOS_KEY": "",
-        "EXPO_PUBLIC_RC_ANDROID_KEY": ""
+        "EXPO_PUBLIC_RC_IOS_KEY": "test_awDUVSKQRaCKgHTolKZUKQegNDg",
+        "EXPO_PUBLIC_RC_ANDROID_KEY": "test_awDUVSKQRaCKgHTolKZUKQegNDg"
       },
       "android": {
         "buildType": "apk"
