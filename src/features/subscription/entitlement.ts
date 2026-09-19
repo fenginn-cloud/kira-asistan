@@ -116,10 +116,26 @@ export function resolveEntitlement(company: Company | null | undefined): Entitle
   }
 
   // 2) / 3) Active paid subscription.
-  const active =
-    ACTIVE_STATUSES.has(company.subscriptionStatus) &&
-    (company.plan === 'business' || company.plan === 'pro');
-  if (active) {
+  //
+  // Bir plan iki durumda "erişilebilir" sayılır:
+  //   a) subscription_status active/trialing, VEYA
+  //   b) İPTAL EDİLMİŞ AMA DÖNEM SONU GELMEMİŞ / ödeme sorunu (grace):
+  //      current_period_end gelecekteyse erişim sürer. Böylece kullanıcı
+  //      yenilemeyi iptal etse bile dönem sonuna kadar Pro/Business kalır.
+  //      EXPIRATION (webhook) plan'ı 'free'ye çektiğinde erişim kapanır.
+  const paid = company.plan === 'business' || company.plan === 'pro';
+  const activeByStatus = ACTIVE_STATUSES.has(company.subscriptionStatus);
+  const periodEndMs = company.currentPeriodEnd
+    ? new Date(company.currentPeriodEnd).getTime()
+    : null;
+  const withinPaidPeriod =
+    periodEndMs != null &&
+    Number.isFinite(periodEndMs) &&
+    periodEndMs > Date.now() &&
+    // 'none' = hiç abone olunmamış; süreye rağmen hak verme.
+    company.subscriptionStatus !== 'none';
+
+  if (paid && (activeByStatus || withinPaidPeriod)) {
     return {
       plan: company.plan,
       source: 'subscription',
@@ -130,4 +146,35 @@ export function resolveEntitlement(company: Company | null | undefined): Entitle
 
   // 4) Free.
   return { plan: 'free', source: 'free', isLegacy: false, limits: PLAN_LIMITS.free };
+}
+
+/**
+ * Merkezî özellik erişim yardımcıları. Uygulamanın her yerinde dağınık
+ * `if (plan === 'pro')` yerine bunları kullanın. Kaynak yine PLAN_LIMITS'tir.
+ */
+export interface FeatureAccess {
+  canUseExcel: boolean;
+  canUseAdvancedReports: boolean;
+  canUseTeamManagement: boolean;
+  canUseAdvancedNotifications: boolean;
+  /** AI destekli öneriler (Pro+). */
+  canUseAi: boolean;
+  /** Gelişmiş AI destekli analizler (Business). */
+  canUseAdvancedAi: boolean;
+  maxContracts: number | null;
+  maxUsers: number | null;
+}
+
+export function featureAccess(entitlement: Entitlement): FeatureAccess {
+  const l = entitlement.limits;
+  return {
+    canUseExcel: l.excel,
+    canUseAdvancedReports: l.stats,
+    canUseTeamManagement: l.team,
+    canUseAdvancedNotifications: l.advanceReminders,
+    canUseAi: l.ai,
+    canUseAdvancedAi: l.aiAdvanced,
+    maxContracts: l.maxContracts,
+    maxUsers: l.maxUsers,
+  };
 }

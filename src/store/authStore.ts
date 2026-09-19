@@ -1,6 +1,19 @@
 import { create } from 'zustand';
 import { authProvider } from '@/services/auth';
+import { purchases } from '@/services/purchases';
 import type { AppUser } from '@/types';
+
+/**
+ * RevenueCat App User ID'yi Supabase auth UUID ile eşitle. Web'de no-op.
+ * Auth akışını asla bloklamaz / hata fırlatmaz.
+ */
+function identifyPurchases(user: AppUser | null): void {
+  if (!user) return;
+  void purchases.identify(user.id).catch(() => {});
+}
+function resetPurchases(): void {
+  void purchases.reset().catch(() => {});
+}
 
 interface AuthState {
   user: AppUser | null;
@@ -40,6 +53,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   restore: async () => {
     try {
       const user = await authProvider.restore();
+      identifyPurchases(user);
       set({ user, isRestoring: false });
     } catch {
       set({ isRestoring: false });
@@ -50,6 +64,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       const user = await authProvider.signIn(email, password);
+      identifyPurchases(user);
       set({ user, isLoading: false });
     } catch (e) {
       set({ isLoading: false });
@@ -59,6 +74,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: () => {
     void authProvider.signOut();
+    resetPurchases();
     set({ user: null });
   },
 
@@ -85,6 +101,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await authProvider.verifyOtp(email, code);
       const user = await authProvider.completeAccountSetup();
+      identifyPurchases(user);
       set({ user, isLoading: false });
     } catch (e) {
       set({ isLoading: false });
@@ -106,6 +123,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   deleteAccount: async () => {
     await authProvider.deleteAccount();
+    resetPurchases();
     set({ user: null });
   },
 }));
