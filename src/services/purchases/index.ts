@@ -7,9 +7,10 @@
 //
 // Böylece `react-native-purchases` native modülü WEB paketine hiç girmez.
 
-export * from './types';
-export { purchases } from './provider';
-
 import { purchases } from './provider';
+
+export * from './types';
+export { purchases };
+
 /** Kısayol: bu derleme satın almayı destekliyor mu? */
 export const purchasesAvailable = purchases.available;
