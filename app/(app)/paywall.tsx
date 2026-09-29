@@ -141,17 +141,6 @@ export default function PaywallScreen() {
           <Text className="mt-2 text-center text-sm text-muted">{header.subtitle}</Text>
         </View>
 
-        {/* Web / satın alma kapalı bilgilendirmesi */}
-        {!purchasesAvailable ? (
-          <View className="mt-6 rounded-2xl border border-border bg-surface p-4">
-            <Text className="text-center text-sm text-muted">
-              Planınızı <Text className="font-semibold text-foreground">mobil uygulama</Text>{' '}
-              üzerinden yükseltebilirsiniz. Satın aldığınız plan bu hesapla web dahil her yerde
-              geçerli olur.
-            </Text>
-          </View>
-        ) : null}
-
         {/* Plan kartları */}
         <View className="mt-8 gap-6">
           {CARDS.map((plan) => (
@@ -233,9 +222,9 @@ export default function PaywallScreen() {
 
         <View className="mt-6 rounded-2xl border border-border bg-surface p-4">
           <Text className="text-center text-xs text-muted">
-            Abonelikler yıllık olarak faturalanır ve dönem sonunda otomatik yenilenir. Yenilemeyi
-            istediğiniz zaman mağaza hesabınızdan iptal edebilirsiniz; erişiminiz dönem sonuna
-            kadar devam eder.
+            {purchasesAvailable
+              ? 'Abonelikler yıllık olarak faturalanır ve dönem sonunda otomatik yenilenir. Yenilemeyi istediğiniz zaman mağaza hesabınızdan iptal edebilirsiniz; erişiminiz dönem sonuna kadar devam eder.'
+              : 'Ücretli planlar yakında eklenecek. Şu an tüm temel özellikleri ücretsiz kullanabilirsiniz.'}
           </Text>
         </View>
       </ScrollView>
@@ -299,9 +288,17 @@ function PlanCard({
             <Text className="mt-1.5 text-center text-sm text-muted">{plan.tagline}</Text>
           </View>
 
-          {/* Fiyat */}
+          {/* Fiyat — ücretli planlarda YALNIZCA satın alma açıkken (production'da
+              gizli; Apple, fiyat/satın-al görünürse IAP ürünü ister). */}
           <View className="mt-5 items-center">
-            {plan.price ? (
+            {!plan.price ? (
+              <>
+                <Text className="text-4xl font-extrabold tracking-tight text-foreground">
+                  Ücretsiz
+                </Text>
+                <Text className="mt-1 text-xs text-muted">Süre sınırı yok</Text>
+              </>
+            ) : purchasesAvailable ? (
               <>
                 <Text className="text-4xl font-extrabold tracking-tight text-foreground">
                   {storePrice ?? formatCurrency(plan.price.yearly)}
@@ -311,12 +308,7 @@ function PlanCard({
                 </Text>
               </>
             ) : (
-              <>
-                <Text className="text-4xl font-extrabold tracking-tight text-foreground">
-                  Ücretsiz
-                </Text>
-                <Text className="mt-1 text-xs text-muted">Süre sınırı yok</Text>
-              </>
+              <Text className="mt-1 text-sm font-semibold text-muted">Yakında</Text>
             )}
           </View>
 
@@ -330,7 +322,9 @@ function PlanCard({
             ))}
           </View>
 
-          {/* CTA */}
+          {/* CTA — satın al/"Yükselt" butonu YALNIZCA satın alma açıkken çıkar.
+              Production'da (IAP kapalı) hiçbir satın-alma butonu gösterilmez;
+              böylece Apple satın alınabilir bir ürün görmez. */}
           <View className="mt-7">
             {current ? (
               <View className="items-center rounded-2xl border border-border bg-background py-3">
@@ -340,7 +334,7 @@ function PlanCard({
               <View className="items-center rounded-2xl border border-border bg-background py-3">
                 <Text className="text-base font-semibold text-muted">Ücretsiz</Text>
               </View>
-            ) : (
+            ) : purchasesAvailable ? (
               <Pressable
                 onPress={() => canBuy && onBuy(plan.id as PaidPlanId)}
                 disabled={!canBuy || thisBuying}
@@ -356,15 +350,11 @@ function PlanCard({
                       popular ? 'text-white' : 'text-primary-700'
                     }`}
                   >
-                    {!purchasesAvailable
-                      ? 'Mobil uygulamadan yükseltin'
-                      : !storePkg
-                        ? 'Yakında'
-                        : `${plan.name}'a Yükselt`}
+                    {!storePkg ? 'Yakında' : `${plan.name}'a Yükselt`}
                   </Text>
                 )}
               </Pressable>
-            )}
+            ) : null}
           </View>
         </View>
       </View>

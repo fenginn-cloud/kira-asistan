@@ -27,6 +27,7 @@ import { useContracts } from '@/features/contracts/hooks';
 import { useStats } from '@/features/stats/useStats';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { PLAN_LABELS } from '@/features/subscription/entitlement';
+import { purchasesAvailable } from '@/features/subscription/usePurchases';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { formatCurrency } from '@/lib/utils/format';
 import type { ThemePreference } from '@/types';
@@ -104,7 +105,11 @@ export default function SettingsScreen() {
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
-  const canUpgrade = !entitlement.isLegacy && entitlement.plan !== 'business';
+  // "Yükselt" butonu yalnızca satın alma açıkken (preview/test) görünür.
+  // Production'da IAP kapalı olduğundan gizlenir (Apple, satın-al butonu
+  // görünürse IAP ürünü ister).
+  const canUpgrade =
+    !entitlement.isLegacy && entitlement.plan !== 'business' && purchasesAvailable;
 
   // Profil başlığındaki 3 metrik + plan kotası yalnızca yönetici için (finansal).
   const stats = useStats();
