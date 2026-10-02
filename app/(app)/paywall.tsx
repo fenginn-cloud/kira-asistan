@@ -121,6 +121,31 @@ export default function PaywallScreen() {
     }
   }
 
+  // Production (IAP kapalı): plan / fiyat / tier GÖSTERME. Paywall normalde
+  // erişilemez; güvenlik için nötr bir ekran gösterir (hiçbir plan referansı yok).
+  if (!purchasesAvailable) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="px-6 pt-2">
+          <Pressable onPress={() => router.back()} className="h-10 w-10 justify-center">
+            <ArrowLeft size={24} color={fgColor()} />
+          </Pressable>
+        </View>
+        <View className="flex-1 items-center justify-center px-8">
+          <View className="h-16 w-16 items-center justify-center rounded-3xl bg-primary">
+            <Star size={30} color="#FFFFFF" fill="#FFFFFF" />
+          </View>
+          <Text className="mt-5 text-center text-xl font-bold text-foreground">
+            Tüm özellikler aktif
+          </Text>
+          <Text className="mt-2 text-center text-sm text-muted">
+            Şu an tüm temel özellikleri ücretsiz kullanabilirsiniz.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="px-6 pt-2">

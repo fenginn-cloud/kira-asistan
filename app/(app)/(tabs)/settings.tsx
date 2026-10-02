@@ -201,7 +201,10 @@ export default function SettingsScreen() {
         {/* HESAP */}
         <SectionLabel>Hesap</SectionLabel>
 
-        {/* Plan kartı (Stitch) — kota çubuğu + özellik listesi */}
+        {/* Plan kartı — yalnızca satın alma açıkken gösterilir. Production'da
+            (IAP kapalı) plan/kilit/yükseltme referansı gösterilmez (Apple
+            Guideline 2.1(b)). */}
+        {purchasesAvailable ? (
         <View className="mt-3">
           <Card>
             <View className="flex-row items-center gap-3">
@@ -271,6 +274,7 @@ export default function SettingsScreen() {
             </View>
           </Card>
         </View>
+        ) : null}
 
         {/* Şirket (yalnızca süper admin) */}
         {isSuperAdmin ? (
@@ -282,8 +286,9 @@ export default function SettingsScreen() {
           />
         ) : null}
 
-        {/* Kullanıcı yönetimi (yönetici; Business özelliği) */}
-        {isAdmin ? (
+        {/* Kullanıcı yönetimi (yönetici; Business özelliği). Production'da ekip
+            kapalıysa kart tamamen gizlenir (plan rozeti/referansı gösterilmez). */}
+        {isAdmin && (entitlement.limits.team || purchasesAvailable) ? (
           <NavCard
             icon={Users}
             title="Kullanıcı Yönetimi"
