@@ -21,6 +21,7 @@ import {
   buildingNameMap,
   type EffectiveUnit,
 } from '@/features/units/occupancy';
+import { blockKey, normalizeBlock } from '@/lib/utils/block';
 
 type Filter = 'all' | 'occupied' | 'vacant';
 
@@ -131,16 +132,17 @@ export default function UnitsInventoryScreen() {
     return [...byBuilding.values()]
       .map(({ display, list }) => {
         const name = display;
-        const byBlock = new Map<string, EffectiveUnit[]>();
+        // Yazıma duyarsız grup: "b Blok" ile "B Blok" aynı bloğa iner.
+        const byBlock = new Map<string, { label: string; list: EffectiveUnit[] }>();
         for (const u of list) {
-          const b = u.block || '';
-          const arr = byBlock.get(b);
-          if (arr) arr.push(u);
-          else byBlock.set(b, [u]);
+          const key = blockKey(u.block);
+          const g = byBlock.get(key);
+          if (g) g.list.push(u);
+          else byBlock.set(key, { label: normalizeBlock(u.block), list: [u] });
         }
-        const blocks = [...byBlock.entries()]
-          .map(([b, l]) => ({
-            block: b,
+        const blocks = [...byBlock.values()]
+          .map(({ label, list: l }) => ({
+            block: label,
             list: l.sort((x, y) => x.unitLabel.localeCompare(y.unitLabel, 'tr', { numeric: true })),
           }))
           .sort((a, b) => a.block.localeCompare(b.block, 'tr', { numeric: true }));
@@ -175,7 +177,7 @@ export default function UnitsInventoryScreen() {
     setSaving(true);
     try {
       for (const label of list) {
-        await upsert.mutateAsync({ building: b, block: block.trim(), unitLabel: label });
+        await upsert.mutateAsync({ building: b, block: normalizeBlock(block), unitLabel: label });
       }
       toast.success(`${list.length} daire eklendi`);
       setLabels('');

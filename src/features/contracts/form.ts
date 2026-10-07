@@ -1,4 +1,5 @@
 import type { Contract } from '@/types';
+import { normalizeBlock } from '@/lib/utils/block';
 import type { ContractFormValues } from './schema';
 
 export const emptyContractForm: ContractFormValues = {
@@ -55,7 +56,7 @@ export function formValuesToContractInput(
 ): Omit<Contract, 'id' | 'createdAt' | 'companyId' | 'assignedUserId' | 'documentUrl'> {
   return {
     propertyName: values.propertyName,
-    block: values.block || null,
+    block: normalizeBlock(values.block) || null,
     unit: values.unit || null,
     tenantName: values.tenantName,
     tenantPhone: values.tenantPhone,

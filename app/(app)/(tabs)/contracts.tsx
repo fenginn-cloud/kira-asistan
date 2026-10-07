@@ -22,6 +22,7 @@ import { palette } from '@/lib/theme/colors';
 import { formatCurrencyTRY, getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
 import { buildingName, foldSearch } from '@/lib/utils/property';
+import { blockKey, normalizeBlock } from '@/lib/utils/block';
 import { conflictingContractIds } from '@/features/contracts/duplicates';
 import { useDesktopShell } from '@/lib/useDesktopShell';
 import {
@@ -160,15 +161,17 @@ export default function ContractsScreen() {
   // Seçili mülkün blokları (blok filtresi yalnızca legacy'de gösterilir).
   const blockOptions = useMemo(() => {
     if (property === 'all') return [] as string[];
-    const blocks = [
-      ...new Set(
-        contracts
-          .filter((c) => buildingName(c.propertyName) === property)
-          .map((c) => (c.block ?? '').trim())
-          .filter(Boolean)
-      ),
-    ];
-    blocks.sort((a, b) => a.localeCompare(b, 'tr'));
+    // Yazıma duyarsız benzersiz blok listesi: "b Blok" ile "B Blok" tek seçenek.
+    const byKey = new Map<string, string>(); // blockKey -> kanonik etiket
+    for (const c of contracts) {
+      if (buildingName(c.propertyName) !== property) continue;
+      const key = blockKey(c.block);
+      if (!key) continue;
+      if (!byKey.has(key)) byKey.set(key, normalizeBlock(c.block));
+    }
+    const blocks = [...byKey.values()].sort((a, b) =>
+      a.localeCompare(b, 'tr', { numeric: true })
+    );
     return blocks.length ? ['all', ...blocks] : [];
   }, [contracts, property]);
 
@@ -230,8 +233,8 @@ export default function ContractsScreen() {
       }
       // Bina filtresi (mülk adının bina kısmına göre)
       if (property !== 'all' && buildingName(c.propertyName) !== property) return false;
-      // Blok filtresi (bir mülk seçiliyken; filtre sheet'inden)
-      if (property !== 'all' && block !== 'all' && (c.block ?? '').trim() !== block)
+      // Blok filtresi (bir mülk seçiliyken; filtre sheet'inden) — yazıma duyarsız.
+      if (property !== 'all' && block !== 'all' && blockKey(c.block) !== blockKey(block))
         return false;
 
       // Status / cari hesap filter
