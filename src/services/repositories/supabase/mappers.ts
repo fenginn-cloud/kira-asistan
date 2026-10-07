@@ -10,6 +10,7 @@ import type {
   PaymentTransaction,
   TenantClaim,
 } from '@/types';
+import { normalizeBlock } from '@/lib/utils/block';
 
 export const contractColumns =
   'id, company_id, assigned_user_id, property_name, block, unit, tenant_name, tenant_phone, tenant_national_id, owner_name, owner_phone, rent_amount, dues_amount, deposit_amount, commission_amount, start_date, end_date, payment_day, notes, status, document_url, notify_owner, notify_tenant, notify_staff, card_note, created_at';
@@ -69,7 +70,9 @@ export function fromContract(c: Partial<Contract>): Record<string, unknown> {
   set('company_id', c.companyId);
   set('assigned_user_id', c.assignedUserId);
   set('property_name', c.propertyName);
-  set('block', c.block);
+  // Blok adını MERKEZÎ olarak normalize et (tüm yazma yolları: form, Excel,
+  // tenant-form). "b Blok"/"B BLOK" → "B Blok"; boş → null.
+  set('block', c.block === undefined ? undefined : normalizeBlock(c.block) || null);
   set('unit', c.unit);
   set('tenant_name', c.tenantName);
   set('tenant_phone', c.tenantPhone);

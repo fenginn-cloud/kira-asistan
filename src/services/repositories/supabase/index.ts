@@ -3,6 +3,7 @@ import type { Repositories } from '../types';
 import type { Contract, Payment } from '@/types';
 import { derivePaymentStatus } from '@/lib/utils/payments';
 import { recentPaymentPeriods } from '@/lib/utils/paymentPeriods';
+import { normalizeBlock } from '@/lib/utils/block';
 import {
   contractColumns,
   fromCompany,
@@ -542,7 +543,7 @@ export const supabaseRepositories: Repositories = {
       const row = {
         company_id,
         building: input.building,
-        block: input.block ?? '',
+        block: normalizeBlock(input.block),
         unit_label: input.unitLabel,
         status: input.status ?? 'vacant',
         vacant_since: input.vacantSince ?? null,
