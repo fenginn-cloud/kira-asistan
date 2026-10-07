@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Switch, Text, View } from 'react-native';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +18,12 @@ interface ContractFormProps {
   defaultValues: ContractFormValues;
   submitLabel: string;
   submitting?: boolean;
+  /**
+   * Yeni sözleşmede, kullanıcı ödeme gününe elle dokunmadıysa ödeme gününü
+   * başlangıç tarihinin günüyle otomatik doldur (mantıklı varsayılan; "1'de
+   * takılı kalma" sorununu önler). Düzenleme ekranında kapalı tutulur.
+   */
+  autoFillPaymentDayFromStart?: boolean;
   onSubmit: (values: ContractFormValues) => void;
 }
 
@@ -25,16 +31,36 @@ export function ContractForm({
   defaultValues,
   submitLabel,
   submitting,
+  autoFillPaymentDayFromStart,
   onSubmit,
 }: ContractFormProps) {
   const {
     control,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
     defaultValues,
   });
+
+  // Ödeme günü = başlangıç günü (yalnızca kullanıcı elle değiştirmediyse).
+  const startDate = useWatch({ control, name: 'startDate' });
+  const autoDayRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!autoFillPaymentDayFromStart || !startDate) return;
+    const day = new Date(startDate).getDate();
+    if (!(day >= 1 && day <= 31)) return;
+    const current = Number(getValues('paymentDay'));
+    // Kullanıcı ödeme gününe dokunmadıysa (hâlâ 1 veya son otomatik değerde)
+    // güncelle; elle farklı bir değer girdiyse bir daha dokunma.
+    const untouched = autoDayRef.current === null ? current === 1 : current === autoDayRef.current;
+    if (untouched) {
+      setValue('paymentDay', day, { shouldValidate: false });
+      autoDayRef.current = day;
+    }
+  }, [startDate, autoFillPaymentDayFromStart, getValues, setValue]);
 
   return (
     <View>

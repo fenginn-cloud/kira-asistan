@@ -103,6 +103,7 @@ export default function NewContractScreen() {
             defaultValues={emptyContractForm}
             submitLabel="Sözleşmeyi Kaydet"
             submitting={createContract.isPending}
+            autoFillPaymentDayFromStart
             onSubmit={handleSubmit}
           />
         </ScrollView>
