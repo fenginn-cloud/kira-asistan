@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
   Linking,
@@ -33,6 +33,7 @@ import { useAuthStore } from '@/store/authStore';
 import { PLANS } from '@/features/subscription/plans';
 import { LEGAL_LINKS, SUPPORT_EMAIL } from '@/content/legal';
 import { APP_STORE_URL, GOOGLE_PLAY_URL } from './config';
+import { HowItWorksVideo } from './HowItWorksVideo';
 
 const NAV = [
   { key: 'features', label: 'Özellikler' },
@@ -75,6 +76,8 @@ export function LandingPage() {
   const scrollRef = useRef<ScrollView>(null);
   const offsets = useRef<Record<string, number>>({});
   const [menuOpen, setMenuOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
+  const closeVideo = useCallback(() => setVideoOpen(false), []);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -208,7 +211,7 @@ export function LandingPage() {
                   <Text className="text-base font-bold text-white">Ücretsiz Başla</Text>
                   <ArrowRight size={17} color="#fff" />
                 </Pressable>
-                <Pressable onPress={() => scrollTo('how')} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-6 py-4">
+                <Pressable onPress={() => setVideoOpen(true)} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-6 py-4">
                   <View className="h-7 w-7 items-center justify-center rounded-full bg-slate-900"><Play size={12} color="#fff" fill="#fff" /></View>
                   <Text className="text-base font-semibold text-slate-900">Nasıl Çalışır?</Text>
                 </Pressable>
@@ -329,6 +332,12 @@ export function LandingPage() {
               title="Kira Asistan nasıl çalışır?"
               sub="Karmaşık kurulum yok. Üç basit adımda profesyonel kira ve mülk yönetimine geçin."
             />
+            <View className="mt-8 items-center">
+              <Pressable onPress={() => setVideoOpen(true)} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-2.5 rounded-full border border-slate-200 bg-white px-5 py-3">
+                <View className="h-7 w-7 items-center justify-center rounded-full bg-slate-900"><Play size={12} color="#fff" fill="#fff" /></View>
+                <Text className="text-sm font-semibold text-slate-900">1 dakikalık videoyu izleyin</Text>
+              </Pressable>
+            </View>
             <View className={`mt-14 gap-6 ${isDesktop ? 'flex-row' : ''}`}>
               {[
                 { n: '01', t: 'Hesabınızı oluşturun', d: 'Dakikalar içinde ücretsiz kaydolun; bireysel mülk sahibi veya ofis profilinizi seçin.' },
@@ -513,6 +522,7 @@ export function LandingPage() {
           </View>
         </View>
       </ScrollView>
+      <HowItWorksVideo open={videoOpen} onClose={closeVideo} />
     </View>
   );
 }
