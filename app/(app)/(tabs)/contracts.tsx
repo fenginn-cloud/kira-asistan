@@ -313,7 +313,10 @@ export default function ContractsScreen() {
               <Text className="text-[11px] font-semibold uppercase tracking-wide text-white/50">
                 Aylık Hacim
               </Text>
-              <Text className="mt-1 text-lg font-extrabold text-white" numberOfLines={1}
+              <Text
+                // Web'de adjustsFontSizeToFit çalışmaz: uzun tutarda yazıyı küçült.
+                className={`mt-1 font-extrabold text-white ${formatCompactTRY(headerStats.monthlyVolume).length > 8 ? 'text-sm' : 'text-lg'}`}
+                numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
                 accessibilityLabel={formatCurrencyTRY(headerStats.monthlyVolume)}
@@ -326,7 +329,10 @@ export default function ContractsScreen() {
               <Text className="text-[11px] font-semibold uppercase tracking-wide text-white/50">
                 Geciken
               </Text>
-              <Text className="mt-1 text-lg font-extrabold text-danger" numberOfLines={1}
+              <Text
+                // Web'de adjustsFontSizeToFit çalışmaz: uzun tutarda yazıyı küçült.
+                className={`mt-1 font-extrabold text-danger ${formatCompactTRY(headerStats.overdueAmount).length > 8 ? 'text-sm' : 'text-lg'}`}
+                numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
                 accessibilityLabel={formatCurrencyTRY(headerStats.overdueAmount)}
