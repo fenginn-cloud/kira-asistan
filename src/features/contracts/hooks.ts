@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { repositories } from '@/services';
 import { queryKeys } from '@/lib/query';
 import type { Contract } from '@/types';
+import type { RentChangeInput, TerminateInput } from '@/services/repositories/types';
+import { decideUnitLink } from '@/features/units/linking';
 
 export function useContracts() {
   return useQuery({
@@ -78,5 +80,116 @@ export function useDeleteContract() {
   return useMutation({
     mutationFn: (id: string) => repositories.contracts.remove(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.contracts }),
+  });
+}
+
+function invalidateContractAndPayments(qc: ReturnType<typeof useQueryClient>, id: string) {
+  qc.invalidateQueries({ queryKey: queryKeys.contracts });
+  qc.invalidateQueries({ queryKey: queryKeys.contract(id) });
+  qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(id) });
+  qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
+}
+
+/** Kira artışı / düzeltmesi: seçilen aydan itibaren yeni tutar. */
+export function useApplyRentChange() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: RentChangeInput }) =>
+      repositories.contracts.applyRentChange(id, input),
+    onSuccess: (_d, { id }) => invalidateContractAndPayments(qc, id),
+  });
+}
+
+/**
+ * Sözleşmeyi uzat: yeni bitiş tarihi (+ isteğe bağlı kira artışı). Sözleşme
+ * aktif kalır; takip yeni bitişe kadar kesintisiz sürer.
+ */
+export function useExtendContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      endDate,
+      autoRenew,
+      rentChange,
+    }: {
+      id: string;
+      endDate: string | null;
+      autoRenew: boolean;
+      rentChange?: RentChangeInput | null;
+    }) => {
+      await repositories.contracts.update(id, { endDate, autoRenew, status: 'active' });
+      if (rentChange) await repositories.contracts.applyRentChange(id, rentChange);
+    },
+    onSuccess: (_d, { id }) => invalidateContractAndPayments(qc, id),
+  });
+}
+
+/** Kiracı çıkışı: sonlandır + depozito; istenirse daireyi boş işaretle. */
+export function useTerminateContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      contract,
+      input,
+      markUnitVacant,
+    }: {
+      contract: Contract;
+      input: TerminateInput;
+      markUnitVacant: boolean;
+    }) => {
+      await repositories.contracts.terminate(contract.id, input);
+      if (markUnitVacant && contract.unitId) {
+        await repositories.units.setStatus(contract.unitId, 'vacant', input.exitDate);
+      }
+    },
+    onSuccess: (_d, { contract }) => {
+      invalidateContractAndPayments(qc, contract.id);
+      qc.invalidateQueries({ queryKey: ['units'] });
+    },
+  });
+}
+
+/**
+ * Yeni sözleşme kaydı + (varsa) başlangıç bakiyesi + daire envanterine bağlama.
+ * Daire belirsizse bağlanmaz; envanter ekranı kullanıcıya seçtirir.
+ */
+export function useCreateContractFull() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      input,
+      openingBalance,
+    }: {
+      input: Omit<Contract, 'id' | 'createdAt'>;
+      openingBalance: number;
+    }) => {
+      const created = await repositories.contracts.create(input);
+      if (openingBalance > 0) {
+        await repositories.payments.addOpeningBalance(created, openingBalance);
+      }
+      let unitLink: string = 'none';
+      try {
+        const units = await repositories.units.list();
+        const d = decideUnitLink(units, created);
+        unitLink = d.kind;
+        if (d.kind === 'link') {
+          await repositories.contracts.update(created.id, { unitId: d.unitId });
+          await repositories.units.setStatus(d.unitId, 'occupied', null);
+        } else if (d.kind === 'create') {
+          const unit = await repositories.units.upsert(d.input);
+          await repositories.contracts.update(created.id, { unitId: unit.id });
+        }
+      } catch {
+        // Envanter bağlantısı ana kaydı engellemez (ör. personel yetkisi yok).
+        unitLink = 'failed';
+      }
+      return { created, unitLink };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.contracts });
+      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
+      qc.invalidateQueries({ queryKey: ['units'] });
+    },
   });
 }

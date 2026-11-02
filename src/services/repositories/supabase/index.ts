@@ -1,11 +1,21 @@
 import { supabase } from '@/lib/supabase/client';
 import type { Repositories } from '../types';
 import type { Contract, Payment } from '@/types';
+import { addMonths, format, parseISO } from 'date-fns';
 import { derivePaymentStatus } from '@/lib/utils/payments';
-import { recentPaymentPeriods } from '@/lib/utils/paymentPeriods';
+import {
+  amountForMonth,
+  dueDateFor,
+  isVirtualPaymentId,
+  parseVirtualPaymentId,
+  trackingStartMonth,
+  withExpectedPayments,
+  withExpectedPaymentsAll,
+} from '@/lib/ledger/accrual';
 import { normalizeBlock } from '@/lib/utils/block';
 import {
   contractColumns,
+  contractLifecycleColumns,
   fromCompany,
   fromContract,
   fromUser,
@@ -41,30 +51,81 @@ async function currentCompanyId(): Promise<string> {
   return data.company_id as string;
 }
 
+/**
+ * Sanal (henüz kaydı olmayan) ay için satırı oluşturur ve gerçek id döner.
+ * Gerçek id verilirse olduğu gibi döner.
+ */
+async function materializePayment(paymentId: string): Promise<string> {
+  const v = parseVirtualPaymentId(paymentId);
+  if (!v) return paymentId;
+  const contract = await supabaseRepositories.contracts.getById(v.contractId);
+  if (!contract) throw new Error('Sözleşme bulunamadı');
+  const { error: upErr } = await db()
+    .from('payments')
+    .upsert(
+      {
+        contract_id: contract.id,
+        period_month: v.periodMonth,
+        due_date: dueDateFor(v.periodMonth, contract.paymentDay),
+        amount_due: amountForMonth(contract, v.periodMonth),
+        amount_paid: 0,
+        status: 'pending',
+      },
+      { onConflict: 'contract_id,period_month', ignoreDuplicates: true }
+    );
+  if (upErr) throw upErr;
+  const { data, error } = await db()
+    .from('payments')
+    .select('id')
+    .eq('contract_id', contract.id)
+    .eq('period_month', v.periodMonth)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error('Bu ay için tahakkuk oluşturulamadı (sözleşme aralığı dışında)');
+  return data.id as string;
+}
+
+/**
+ * Migration 0023 uygulanmadan önce de okuma çalışsın: yeni kolonlar yoksa
+ * (42703) eski kolon listesiyle tekrar dener.
+ */
+let lifecycleColumns: boolean | null = null;
+async function withContractColumns<T>(
+  run: (cols: string) => PromiseLike<{ data: T; error: any }>
+): Promise<T> {
+  if (lifecycleColumns !== false) {
+    const res = await run(`${contractColumns}, ${contractLifecycleColumns}`);
+    if (!res.error) {
+      lifecycleColumns = true;
+      return res.data;
+    }
+    if (res.error?.code !== '42703') throw res.error;
+    lifecycleColumns = false;
+  }
+  const res = await run(contractColumns);
+  if (res.error) throw res.error;
+  return res.data;
+}
+
 export const supabaseRepositories: Repositories = {
   contracts: {
     async list() {
-      const { data, error } = await db()
-        .from('contracts')
-        .select(contractColumns)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map(toContract);
+      const data = await withContractColumns((cols) =>
+        db().from('contracts').select(cols).order('created_at', { ascending: false })
+      );
+      return ((data as any[]) ?? []).map(toContract);
     },
     async getById(id) {
-      const { data, error } = await db()
-        .from('contracts')
-        .select(contractColumns)
-        .eq('id', id)
-        .maybeSingle();
-      if (error) throw error;
+      const data = await withContractColumns((cols) =>
+        db().from('contracts').select(cols).eq('id', id).maybeSingle()
+      );
       return data ? toContract(data) : null;
     },
     async create(input) {
       const { data, error } = await db()
         .from('contracts')
         .insert(fromContract(input as Partial<Contract>))
-        .select(contractColumns)
+        .select(lifecycleColumns === false ? contractColumns : `${contractColumns}, ${contractLifecycleColumns}`)
         .single();
       if (error) {
         // Server-side plan limit (migration 0012). Surface a typed, friendly
@@ -84,7 +145,7 @@ export const supabaseRepositories: Repositories = {
         .from('contracts')
         .update(fromContract(patch))
         .eq('id', id)
-        .select(contractColumns)
+        .select(lifecycleColumns === false ? contractColumns : `${contractColumns}, ${contractLifecycleColumns}`)
         .single();
       if (error) throw error;
       return toContract(data);
@@ -107,43 +168,85 @@ export const supabaseRepositories: Repositories = {
         return null;
       }
     },
+    async applyRentChange(id, input) {
+      const { error } = await db().rpc('apply_rent_change', {
+        p_contract: id,
+        p_effective: input.effectiveMonth,
+        p_rent: input.rentAmount,
+        p_dues: input.duesAmount,
+      });
+      if (error) throw error;
+    },
+    async terminate(id, input) {
+      const { error } = await db().rpc('terminate_contract', {
+        p_contract: id,
+        p_exit: input.exitDate,
+        p_deposit_returned: input.depositReturned,
+        p_deposit_deduction: input.depositDeduction,
+        p_note: input.depositNote,
+      });
+      if (error) throw error;
+    },
   },
 
   payments: {
     async listByContract(contractId) {
-      const { data, error } = await db()
-        .from('payments')
-        .select('*')
-        .eq('contract_id', contractId)
-        .order('period_month', { ascending: false });
+      const [{ data, error }, contract] = await Promise.all([
+        db()
+          .from('payments')
+          .select('*')
+          .eq('contract_id', contractId)
+          .order('period_month', { ascending: false }),
+        supabaseRepositories.contracts.getById(contractId),
+      ]);
       if (error) throw error;
-      return (data ?? []).map(toPayment).map(normalizeStatus);
+      const stored = (data ?? []).map(toPayment).map(normalizeStatus);
+      // Görüntüleme veritabanına YAZMAZ: eksik beklenen aylar sanal döner.
+      const all = contract ? withExpectedPayments(contract, stored) : stored;
+      return all.sort((a, b) => b.periodMonth.localeCompare(a.periodMonth));
     },
     async listAll() {
-      const { data, error } = await db().from('payments').select('*');
+      const [{ data, error }, contracts] = await Promise.all([
+        db().from('payments').select('*'),
+        supabaseRepositories.contracts.list(),
+      ]);
       if (error) throw error;
-      return (data ?? []).map(toPayment).map(normalizeStatus);
+      const stored = (data ?? []).map(toPayment).map(normalizeStatus);
+      return withExpectedPaymentsAll(contracts, stored);
     },
-    async addTransaction(input) {
-      const { error: txError } = await db().from('payment_transactions').insert({
-        payment_id: input.paymentId,
-        amount: input.amount,
-        paid_at: input.paidAt,
-        method: input.method,
-        description: input.description,
-        receipt_url: input.receiptUrl,
-      });
-      if (txError) throw txError;
-      // The recalc_payment trigger updates the payment; re-fetch it.
+    async collect(input) {
+      if (!(input.amount > 0)) throw new Error('Tutar sıfırdan büyük olmalı');
+      const paymentId = await materializePayment(input.paymentId);
       const { data, error } = await db()
-        .from('payments')
-        .select('*')
-        .eq('id', input.paymentId)
+        .from('payment_transactions')
+        .insert({
+          payment_id: paymentId,
+          amount: input.amount,
+          paid_at: input.paidAt,
+          method: input.method,
+          description: input.description,
+          receipt_url: input.receiptUrl,
+          client_ref: input.clientRef,
+        })
+        .select('id')
         .single();
-      if (error) throw error;
-      return normalizeStatus(toPayment(data));
+      if (error) {
+        // Aynı işlem ikinci kez geldi (çift tıklama / ağ tekrarı) → mevcut kayıt.
+        if ((error as { code?: string }).code === '23505') {
+          const { data: existing, error: e2 } = await db()
+            .from('payment_transactions')
+            .select('id')
+            .eq('client_ref', input.clientRef)
+            .single();
+          if (e2) throw e2;
+          return { transactionId: existing.id as string };
+        }
+        throw error;
+      }
+      return { transactionId: data.id as string };
     },
     async listTransactions(paymentId) {
+      if (isVirtualPaymentId(paymentId)) return [];
       const { data, error } = await db()
         .from('payment_transactions')
         .select('*')
@@ -168,73 +271,6 @@ export const supabaseRepositories: Repositories = {
         .delete()
         .eq('id', id);
       if (error) throw error;
-    },
-    async markCurrentMonthReceived(contract, note) {
-      const now = new Date();
-      const y = now.getFullYear();
-      const mo = now.getMonth(); // 0-based
-      const period = `${y}-${String(mo + 1).padStart(2, '0')}-01`;
-      const dim = new Date(y, mo + 1, 0).getDate();
-      const day = Math.min(contract.paymentDay, dim);
-      const dueDate = `${y}-${String(mo + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const due = contract.rentAmount + contract.duesAmount;
-
-      // Ensure the current month's charge exists.
-      await db()
-        .from('payments')
-        .upsert(
-          {
-            contract_id: contract.id,
-            period_month: period,
-            due_date: dueDate,
-            amount_due: due,
-            amount_paid: 0,
-            status: 'pending',
-          },
-          { onConflict: 'contract_id,period_month', ignoreDuplicates: true }
-        );
-
-      const { data: pay, error: getErr } = await db()
-        .from('payments')
-        .select('id, amount_due, amount_paid')
-        .eq('contract_id', contract.id)
-        .eq('period_month', period)
-        .single();
-      if (getErr) throw getErr;
-
-      const remaining = Number(pay.amount_due) - Number(pay.amount_paid);
-      if (remaining <= 0) return; // zaten alınmış
-
-      const { error: txErr } = await db().from('payment_transactions').insert({
-        payment_id: pay.id,
-        amount: remaining,
-        paid_at: new Date().toISOString().slice(0, 10),
-        method: null,
-        description: note && note.trim() ? note.trim() : 'Alındı olarak işaretlendi',
-        receipt_url: null,
-      });
-      if (txErr) throw txErr;
-    },
-    async settlePayment(paymentId, note) {
-      const { data: pay, error: getErr } = await db()
-        .from('payments')
-        .select('id, amount_due, amount_paid')
-        .eq('id', paymentId)
-        .single();
-      if (getErr) throw getErr;
-
-      const remaining = Number(pay.amount_due) - Number(pay.amount_paid);
-      if (remaining <= 0) return; // zaten alınmış
-
-      const { error: txErr } = await db().from('payment_transactions').insert({
-        payment_id: pay.id,
-        amount: remaining,
-        paid_at: new Date().toISOString().slice(0, 10),
-        method: null,
-        description: note && note.trim() ? note.trim() : 'Alındı olarak işaretlendi',
-        receipt_url: null,
-      });
-      if (txErr) throw txErr;
     },
     async syncPaidMonth({ contractId, periodMonth, amountDue, paymentDay }) {
       const y = Number(periodMonth.slice(0, 4));
@@ -279,47 +315,40 @@ export const supabaseRepositories: Repositories = {
       });
       if (txErr) throw txErr;
     },
-    async setMonthlyPaid(paymentId, amountPaid) {
-      // Clear backing transactions so the trigger doesn't overwrite our value.
-      const { error: delErr } = await db()
+    async resetMonth(paymentId) {
+      if (isVirtualPaymentId(paymentId)) return; // zaten tahsilatsız
+      // Tahsilatlar silinir; recalc_payment tetikleyicisi amount_paid/status'u
+      // kendisi sıfırlar (elle amount_paid yazılmaz → tetikleyiciyle çelişmez).
+      const { error } = await db()
         .from('payment_transactions')
         .delete()
         .eq('payment_id', paymentId);
-      if (delErr) throw delErr;
-
-      const { data: pay, error: getErr } = await db()
-        .from('payments')
-        .select('amount_due')
-        .eq('id', paymentId)
-        .single();
-      if (getErr) throw getErr;
-
-      const due = Number(pay.amount_due);
-      const status =
-        amountPaid >= due ? 'paid' : amountPaid > 0 ? 'partial' : 'pending';
-      const { error } = await db()
-        .from('payments')
-        .update({
-          amount_paid: amountPaid,
-          paid_at: amountPaid > 0 ? new Date().toISOString().slice(0, 10) : null,
-          status,
-        })
-        .eq('id', paymentId);
       if (error) throw error;
-    },
-    async ensureRecentPayments(contract) {
-      const rows = recentPaymentPeriods(contract).map((s) => ({
-        contract_id: s.contractId,
-        period_month: s.periodMonth,
-        due_date: s.dueDate,
-        amount_due: s.amountDue,
-        amount_paid: 0,
-        status: 'pending',
-      }));
-      if (rows.length === 0) return;
-      const { error } = await db()
+      const { error: updErr } = await db()
         .from('payments')
-        .upsert(rows, { onConflict: 'contract_id,period_month', ignoreDuplicates: true });
+        .update({ amount_paid: 0, paid_at: null })
+        .eq('id', paymentId);
+      if (updErr) throw updErr;
+    },
+    async addOpeningBalance(contract, amount) {
+      if (!(amount > 0)) return;
+      const period = format(
+        addMonths(parseISO(trackingStartMonth(contract)), -1),
+        'yyyy-MM-dd'
+      );
+      const { error } = await db().from('payments').upsert(
+        {
+          contract_id: contract.id,
+          period_month: period,
+          due_date: period,
+          amount_due: amount,
+          amount_paid: 0,
+          status: 'overdue',
+          kind: 'opening',
+          note: 'Başlangıç bakiyesi (takip öncesinden devreden)',
+        },
+        { onConflict: 'contract_id,period_month', ignoreDuplicates: true }
+      );
       if (error) throw error;
     },
   },

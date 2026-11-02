@@ -39,6 +39,11 @@ function normId(...parts: (string | null | undefined)[]): string {
     .replace(/\d+/g, (m) => String(parseInt(m, 10)));
 }
 
+/** Envanter dairesinin yazıma duyarsız kimliği (sözleşmenin locationId'si ile kıyaslanır). */
+export function unitKey(un: Pick<Unit, 'building' | 'block' | 'unitLabel'>): string {
+  return normId(un.building, un.block, un.unitLabel);
+}
+
 /** Bina adını yazıma duyarsız gruplama anahtarı. */
 export function buildingKey(name: string): string {
   return foldSearch(name).replace(/[^a-z0-9]/g, '');
@@ -155,10 +160,18 @@ export function hasUnitIdentity(
  * türetme. Yeni sözleşme yapılınca daire otomatik "dolu" olur.
  */
 export function mergeUnitsWithContracts(units: Unit[], contracts: Contract[]): EffectiveUnit[] {
+  // Önce KALICI bağ (contract.unitId), yoksa yazıma duyarsız metin eşleşmesi.
+  const contractByUnitId = new Map<string, Contract>();
   const contractByKey = new Map<string, Contract>();
   for (const c of contracts) {
     if (c.status !== 'active') continue;
-    contractByKey.set(contractId(c), c);
+    if (c.unitId) contractByUnitId.set(c.unitId, c);
+    else contractByKey.set(contractId(c), c);
+  }
+  const unitIds = new Set(units.map((u) => u.id));
+  // Bağlı olduğu daire envanterden silinmişse metin eşleşmesine düş.
+  for (const [uid, c] of contractByUnitId) {
+    if (!unitIds.has(uid)) contractByKey.set(contractId(c), c);
   }
 
   const out: EffectiveUnit[] = [];
@@ -167,8 +180,8 @@ export function mergeUnitsWithContracts(units: Unit[], contracts: Contract[]): E
   // 1) Kayıtlı envanter daireleri — durum sözleşmeye göre.
   for (const un of units) {
     const k = normId(un.building, un.block, un.unitLabel);
-    const c = contractByKey.get(k);
-    if (c) usedKeys.add(k);
+    const c = contractByUnitId.get(un.id) ?? contractByKey.get(k);
+    if (c && !contractByUnitId.has(un.id)) usedKeys.add(k);
     out.push({
       id: un.id,
       building: un.building,

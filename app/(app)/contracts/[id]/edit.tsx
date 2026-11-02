@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, Text, View, ScrollView } from 'react-native';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,7 +6,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { ContractForm } from '@/features/contracts/components/ContractForm';
 import { contractToFormValues, formValuesToContractInput } from '@/features/contracts/form';
-import { useContract, useUpdateContract } from '@/features/contracts/hooks';
+import { useApplyRentChange, useContract, useUpdateContract } from '@/features/contracts/hooks';
+import { errorMessage } from '@/lib/utils/error';
+import { monthStart } from '@/lib/ledger/accrual';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
@@ -17,6 +20,8 @@ export default function EditContractScreen() {
   const toast = useToast();
   const { data: contract, isLoading } = useContract(id);
   const updateContract = useUpdateContract();
+  const applyRentChange = useApplyRentChange();
+  const [saving, setSaving] = useState(false);
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -44,18 +49,38 @@ export default function EditContractScreen() {
             <ContractForm
               defaultValues={contractToFormValues(contract)}
               submitLabel="Değişiklikleri Kaydet"
-              submitting={updateContract.isPending}
-              onSubmit={(values) =>
-                updateContract.mutate(
-                  { id: contract.id, patch: formValuesToContractInput(values) },
-                  {
-                    onSuccess: () => {
-                      toast.success('Sözleşme güncellendi');
-                      router.back();
-                    },
+              mode="edit"
+              submitting={saving}
+              onSubmit={async (values) => {
+                const patch = formValuesToContractInput(values);
+                const rentChanged =
+                  values.rentAmount !== contract.rentAmount ||
+                  values.duesAmount !== contract.duesAmount;
+                setSaving(true);
+                try {
+                  if (rentChanged) {
+                    // Kira değişikliği seçilen aydan itibaren uygulanır; geçmiş korunur.
+                    const { rentAmount: _r, duesAmount: _d, ...rest } = patch;
+                    await updateContract.mutateAsync({ id: contract.id, patch: rest });
+                    await applyRentChange.mutateAsync({
+                      id: contract.id,
+                      input: {
+                        effectiveMonth: values.rentEffectiveMonth || monthStart(new Date()),
+                        rentAmount: values.rentAmount,
+                        duesAmount: values.duesAmount,
+                      },
+                    });
+                  } else {
+                    await updateContract.mutateAsync({ id: contract.id, patch });
                   }
-                )
-              }
+                  toast.success('Sözleşme güncellendi');
+                  router.back();
+                } catch (e) {
+                  toast.error(errorMessage(e, 'Güncellenemedi'));
+                } finally {
+                  setSaving(false);
+                }
+              }}
             />
           )}
         </ScrollView>

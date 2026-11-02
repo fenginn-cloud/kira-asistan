@@ -7,6 +7,7 @@ import type {
   Reminder,
 } from '@/types';
 import { remainingDebt } from '@/lib/utils/payments';
+import { overdueDebt, type DebtSummary } from '@/lib/ledger/accrual';
 
 /** Day offset (relative to due date) at which each trigger fires. */
 export const TRIGGER_OFFSET: Record<NotificationTrigger, number> = {
@@ -110,20 +111,28 @@ export function computeTodayReminders({
 
 export interface OpenItem {
   contract: Contract;
+  /** En eski açık ay (gecikme günü buna göre). */
   payment: Payment;
   daysUntil: number;
+  /** Kiracının vadesi geçmiş TÜM borcu (toplam + ay sayısı + döküm). */
+  debt: DebtSummary;
 }
 
 function openItems(contracts: Contract[], payments: Payment[], today: Date): OpenItem[] {
   const items: OpenItem[] = [];
   for (const contract of contracts) {
-    if (contract.status !== 'active') continue;
-    const open = openPaymentFor(payments.filter((p) => p.contractId === contract.id), today);
+    const own = payments.filter((p) => p.contractId === contract.id);
+    const debt = overdueDebt(own, today);
+    // Sonlandırılmış/pasif sözleşmede yeni borç yok; ama geçmişten kalan gerçek
+    // borç tahsil edilebilsin diye listede kalır.
+    if (contract.status !== 'active' && debt.total <= 0) continue;
+    const open = openPaymentFor(own, today);
     if (!open) continue;
     items.push({
       contract,
       payment: open,
       daysUntil: differenceInCalendarDays(parseISO(open.dueDate), today),
+      debt,
     });
   }
   return items;

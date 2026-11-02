@@ -34,13 +34,16 @@ export default function TabsLayout() {
         tabBarStyle: desktopShell
           ? { display: 'none' }
           : {
-              height: 58 + bottomPad,
-              paddingTop: 8,
+              // İkon (24) + etiket satırı (15) + boşluklar: harflerin alt
+              // kısmı (ş, ğ, y…) kırpılmasın.
+              height: 64 + bottomPad,
+              paddingTop: 6,
               paddingBottom: bottomPad,
               borderTopColor: colors.border,
               backgroundColor: colors.surface,
             },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 11, lineHeight: 15, fontWeight: '600', paddingBottom: 1 },
+        tabBarItemStyle: { overflow: 'visible' },
       }}
     >
       {/* 1 — Ana Sayfa */}

@@ -15,6 +15,12 @@ import { normalizeBlock } from '@/lib/utils/block';
 export const contractColumns =
   'id, company_id, assigned_user_id, property_name, block, unit, tenant_name, tenant_phone, tenant_national_id, owner_name, owner_phone, rent_amount, dues_amount, deposit_amount, commission_amount, start_date, end_date, payment_day, notes, status, document_url, notify_owner, notify_tenant, notify_staff, card_note, created_at';
 
+/** Migration 0023 kolonları (yaşam döngüsü + takip). */
+export const contractLifecycleColumns =
+  'tracking_start, auto_renew, terminated_at, deposit_returned, deposit_deduction, deposit_note, next_rent_amount, next_dues_amount, next_rent_from, unit_id';
+
+const numOrNull = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+
 export function toContract(r: any): Contract {
   return {
     id: r.id,
@@ -43,6 +49,16 @@ export function toContract(r: any): Contract {
     notifyStaff: r.notify_staff,
     publicToken: r.public_token ?? null,
     cardNote: r.card_note ?? null,
+    trackingStart: r.tracking_start ?? null,
+    autoRenew: r.auto_renew ?? true,
+    terminatedAt: r.terminated_at ?? null,
+    depositReturned: numOrNull(r.deposit_returned),
+    depositDeduction: numOrNull(r.deposit_deduction),
+    depositNote: r.deposit_note ?? null,
+    nextRentAmount: numOrNull(r.next_rent_amount),
+    nextDuesAmount: numOrNull(r.next_dues_amount),
+    nextRentFrom: r.next_rent_from ?? null,
+    unitId: r.unit_id ?? null,
     createdAt: r.created_at,
   };
 }
@@ -93,6 +109,12 @@ export function fromContract(c: Partial<Contract>): Record<string, unknown> {
   set('notify_tenant', c.notifyTenant);
   set('notify_staff', c.notifyStaff);
   set('card_note', c.cardNote);
+  set('tracking_start', c.trackingStart);
+  set('auto_renew', c.autoRenew);
+  set('terminated_at', c.terminatedAt);
+  set('unit_id', c.unitId);
+  // Depozito ve ileri tarihli kira yalnızca RPC (terminate_contract /
+  // apply_rent_change) ile yazılır; genel güncellemede gönderilmez.
   return out;
 }
 
@@ -107,6 +129,7 @@ export function toPayment(r: any): Payment {
     status: r.status,
     paidAt: r.paid_at,
     note: r.note,
+    kind: r.kind === 'opening' ? 'opening' : 'rent',
   };
 }
 

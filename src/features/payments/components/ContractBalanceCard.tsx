@@ -1,3 +1,4 @@
+import { paymentDayLabel } from '@/lib/utils/format';
 import { Pressable, Text, View } from 'react-native';
 import { Download, Plus, ShieldCheck } from 'lucide-react-native';
 import { formatCurrencyTRY, type ContractBalance } from '@/lib/ledger/ledger';
@@ -95,7 +96,7 @@ export function ContractBalanceCard({
           <Text className="mt-1 text-lg font-extrabold text-white" numberOfLines={1}>
             {formatCurrencyTRY(monthlyRent)}
           </Text>
-          <Text className="text-[11px] text-white/60">{`Her ayın ${paymentDay}'i`}</Text>
+          <Text className="text-[11px] text-white/60">{paymentDayLabel(paymentDay)}</Text>
         </View>
         <View className="flex-1 rounded-2xl bg-white/10 p-3">
           <Text className="text-[11px] font-medium uppercase tracking-wide text-white/60">

@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Building2, CheckCircle2, MessageCircle, Phone } from 'lucide-react-native';
+import { Building2, CheckCircle2, ChevronDown, ChevronUp, MessageCircle, Phone } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { CardNote } from '@/features/contracts/components/CardNote';
 import { StatusPill, type PillTone } from '@/features/dashboard/components/StatusPill';
 import { formatCurrency } from '@/lib/utils/format';
 import { remainingDebt } from '@/lib/utils/payments';
+import { periodLabel } from '@/lib/ledger/ledger';
+import { CONTRACT_PHASE_LABEL, contractPhase } from '@/lib/ledger/accrual';
 import { callPhone, openWhatsApp } from '@/lib/utils/contact';
 import { buildMessage } from '@/lib/utils/message';
 import { palette } from '@/lib/theme/colors';
@@ -34,6 +37,11 @@ export function CollectionCard({ item, onPress, showContact, onMarkReceived }: P
     ? `${contract.propertyName} • ${contract.tenantName}`
     : contract.tenantName;
   const st = statusPill(daysUntil);
+  const [expanded, setExpanded] = useState(false);
+  const { debt } = item;
+  // Toplam borç (tüm geciken aylar); vadesi gelmemişse o ayın kalanı.
+  const amount = debt.total > 0 ? debt.total : remainingDebt(payment);
+  const phase = contractPhase(contract);
 
   const message = () =>
     openWhatsApp(
@@ -61,12 +69,51 @@ export function CollectionCard({ item, onPress, showContact, onMarkReceived }: P
           </View>
         </View>
         <View className="items-end gap-1.5">
-          <Text className="text-base font-bold text-foreground">
-            {formatCurrency(remainingDebt(payment))}
-          </Text>
+          <Text className="text-base font-bold text-foreground">{formatCurrency(amount)}</Text>
           <StatusPill tone={st.tone} label={st.label} />
         </View>
       </View>
+
+      {phase === 'terminated' || phase === 'passive' ? (
+        <Text className="mt-2 text-xs font-semibold text-muted">
+          {CONTRACT_PHASE_LABEL[phase]} · geçmişten kalan borç
+        </Text>
+      ) : null}
+
+      {/* Birden fazla ay borçluysa toplam + ay sayısı; dokununca ay bazlı döküm. */}
+      {debt.months > 1 ? (
+        <Pressable
+          onPress={() => setExpanded((v) => !v)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          className="mt-2 rounded-2xl bg-danger-soft px-3 py-2 active:opacity-80"
+        >
+          <View className="flex-row items-center justify-between">
+            <Text className="text-xs font-bold text-danger">
+              Toplam {formatCurrency(debt.total)} · {debt.months} ay borçlu
+            </Text>
+            {expanded ? (
+              <ChevronUp size={16} color={palette.danger} />
+            ) : (
+              <ChevronDown size={16} color={palette.danger} />
+            )}
+          </View>
+          {expanded ? (
+            <View className="mt-1.5 gap-1">
+              {debt.items.map((d) => (
+                <View key={d.payment.id} className="flex-row justify-between">
+                  <Text className="text-xs capitalize text-foreground">
+                    {periodLabel(d.payment)} · {d.daysLate} gün
+                  </Text>
+                  <Text className="text-xs font-semibold text-foreground">
+                    {formatCurrency(d.remaining)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </Pressable>
+      ) : null}
 
       {hasActions ? (
         <View className="mt-3 flex-row gap-2 border-t border-border/60 pt-3">

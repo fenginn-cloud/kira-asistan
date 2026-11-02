@@ -11,6 +11,7 @@ import {
 } from '@/lib/utils/format';
 import { formatCurrencyTRY, type ContractBalance, type LedgerStatus } from '@/lib/ledger/ledger';
 import { palette } from '@/lib/theme/colors';
+import { CONTRACT_PHASE_LABEL, contractPhase, isClosedContract } from '@/lib/ledger/accrual';
 import type { Contract } from '@/types';
 
 interface ContractCardProps {
@@ -52,6 +53,11 @@ export function ContractCard({
   const status: LedgerStatus = balance?.currentMonth.status ?? 'pending';
   const tone = TONE[status] ?? DEFAULT_TONE;
   const received = status === 'paid' || status === 'overpaid';
+  const phase = contractPhase(contract);
+  // Sonlandırılmış/pasif: yeni kira borcu yok; yalnızca geçmişten kalan borç.
+  const closed = isClosedContract(contract);
+  const totalDebt = balance?.totalDebt ?? 0;
+  const canCollect = closed ? totalDebt > 0 : !received || totalDebt > 0;
 
   const due = balance?.currentMonth.due ?? 0;
   const paid = balance?.currentMonth.paid ?? 0;
@@ -80,7 +86,9 @@ export function ContractCard({
             </View>
           </View>
         </View>
-        {balance ? (
+        {phase !== 'active' ? (
+          <PhaseBadge label={CONTRACT_PHASE_LABEL[phase]} tone={phase === 'expired_stopped' ? 'danger' : phase === 'expired_renewing' ? 'warning' : 'muted'} />
+        ) : balance ? (
           showLedger ? (
             <BalanceBadge status={balance.status} />
           ) : (
@@ -91,8 +99,20 @@ export function ContractCard({
         )}
       </View>
 
+      {/* Kapalı sözleşme: yalnızca kalan gerçek borç (yeni ay yok). */}
+      {balance && closed ? (
+        <View className="mt-3 flex-row items-center justify-between rounded-2xl bg-background p-3.5">
+          <Text className="text-sm text-muted">
+            {contract.terminatedAt ? `Çıkış ${formatShortDate(contract.terminatedAt)}` : 'Yeni kira borcu oluşmaz'}
+          </Text>
+          <Text className={`text-sm font-bold ${totalDebt > 0 ? 'text-danger' : 'text-success'}`}>
+            {totalDebt > 0 ? `${formatCurrencyTRY(totalDebt)} kalan borç` : 'Açık borç yok'}
+          </Text>
+        </View>
+      ) : null}
+
       {/* İç ödeme kartı — aylık kira / ödenen / kalan + progress */}
-      {balance ? (
+      {balance && !closed ? (
         <View className="mt-3 rounded-2xl bg-background p-3.5">
           <View className="flex-row items-center justify-between">
             <Text className="text-sm text-muted">Aylık Kira Bedeli</Text>
@@ -135,7 +155,7 @@ export function ContractCard({
             {contract.endDate ? ` · Bitiş ${formatShortDate(contract.endDate)}` : ''}
           </Text>
         </View>
-        {balance && onMarkReceived && !received ? (
+        {balance && onMarkReceived && canCollect ? (
           <Pressable
             onPress={onMarkReceived}
             className="flex-row items-center gap-1.5 rounded-xl bg-success px-3.5 py-2 active:opacity-80"
@@ -143,7 +163,7 @@ export function ContractCard({
             <CheckCircle2 size={14} color="#FFFFFF" />
             <Text className="text-xs font-bold text-white">Tahsilat Gir</Text>
           </Pressable>
-        ) : received && balance ? (
+        ) : received && balance && !closed ? (
           <View className="flex-row items-center gap-1 rounded-xl bg-success-soft px-3 py-2">
             <CheckCircle2 size={14} color={palette.success} />
             <Text className="text-xs font-bold text-success">Alındı</Text>
@@ -170,5 +190,22 @@ export function ContractCard({
       {/* Kart notu — detaya girmeden yazılır/görünür */}
       <CardNote contract={contract} />
     </Card>
+  );
+}
+
+function PhaseBadge({ label, tone }: { label: string; tone: 'danger' | 'warning' | 'muted' }) {
+  const cls =
+    tone === 'danger'
+      ? 'bg-danger-soft text-danger'
+      : tone === 'warning'
+        ? 'bg-warning-soft text-warning'
+        : 'bg-background text-muted';
+  const [bg, fg] = cls.split(' ');
+  return (
+    <View className={`rounded-full px-2.5 py-1 ${bg}`}>
+      <Text className={`text-[11px] font-bold ${fg}`} numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
   );
 }

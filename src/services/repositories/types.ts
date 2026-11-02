@@ -21,44 +21,61 @@ export interface ContractRepository {
   remove(id: string): Promise<void>;
   /** Tenant-link token. Returns null if unavailable (e.g. migration not yet applied). */
   getPublicToken(id: string): Promise<string | null>;
+  /**
+   * Kira artışı / düzeltmesi: `effectiveMonth` ve sonrası yeni tutara geçer.
+   * Önceki aylar eski tutarla korunur; tahsilatlara dokunulmaz.
+   */
+  applyRentChange(id: string, input: RentChangeInput): Promise<void>;
+  /** Kiracı çıkışı: sözleşmeyi sonlandır + depozito iadesi/kesintisi kaydet. */
+  terminate(id: string, input: TerminateInput): Promise<void>;
+}
+
+export interface RentChangeInput {
+  effectiveMonth: string; // YYYY-MM-01
+  rentAmount: number;
+  duesAmount: number;
+}
+
+export interface TerminateInput {
+  exitDate: string; // YYYY-MM-DD
+  depositReturned: number;
+  depositDeduction: number;
+  depositNote: string | null;
+}
+
+export interface CollectInput {
+  /** Gerçek ödeme satırı ya da sanal (`v:` önekli) beklenen ay. */
+  paymentId: string;
+  amount: number;
+  paidAt: string;
+  method: PaymentMethod | null;
+  description: string | null;
+  receiptUrl: string | null;
+  /**
+   * Tekrar koruması: aynı işlem (çift tıklama / bağlantı tekrarı) aynı
+   * anahtarla gelirse ikinci kayıt OLUŞMAZ.
+   */
+  clientRef: string;
 }
 
 export interface PaymentRepository {
   listByContract(contractId: string): Promise<Payment[]>;
   listAll(): Promise<Payment[]>;
-  addTransaction(input: {
-    paymentId: string;
-    amount: number;
-    paidAt: string;
-    method: PaymentMethod | null;
-    description: string | null;
-    receiptUrl: string | null;
-  }): Promise<Payment>;
+  /**
+   * Tahsilat kaydet (tüm ekranların TEK yolu). Sanal ay ise önce satırı
+   * oluşturur. Aynı clientRef ikinci kez gelirse mevcut kaydı döndürür.
+   */
+  collect(input: CollectInput): Promise<{ transactionId: string }>;
   listTransactions(paymentId: string): Promise<PaymentTransaction[]>;
   listTransactionsByContract(contractId: string): Promise<PaymentTransaction[]>;
   /** Delete a single collection; the ledger recomputes automatically. */
   deleteTransaction(id: string): Promise<void>;
   /**
-   * Manually set a month's collected amount (correction / undo). Clears any
-   * backing transactions first, then sets amount_paid + status directly.
-   * amountPaid = 0 → "Ödenmedi"; = amountDue → "Ödendi".
+   * Bir ayın TÜM tahsilatlarını silip "ödenmedi"ye döndürür (açık onayla).
    */
-  setMonthlyPaid(paymentId: string, amountPaid: number): Promise<void>;
-  /**
-   * One-tap "Alındı": mark the CURRENT month fully received for a contract
-   * (creates the charge row if missing, records the remaining as collected).
-   * Optional note is stored on the collection record.
-   */
-  markCurrentMonthReceived(contract: Contract, note: string | null): Promise<void>;
-  /**
-   * Settle a SPECIFIC month's remaining debt in one tap. Records the remaining
-   * amount as collected on exactly that payment row. Used by the dashboard
-   * "Alındı" so the exact overdue/upcoming card the user tapped is settled
-   * (not always the current month).
-   */
-  settlePayment(paymentId: string, note: string | null): Promise<void>;
-  /** Create any missing payment rows for the contract's recent months. */
-  ensureRecentPayments(contract: Contract): Promise<void>;
+  resetMonth(paymentId: string): Promise<void>;
+  /** Takip öncesinden devreden borç (yeni sözleşmede bir kez). */
+  addOpeningBalance(contract: Contract, amount: number): Promise<void>;
   /**
    * Excel senkron: bir ayı "ödendi" yap. Güvenli — mevcut ödeme/dekont varsa
    * DOKUNMAZ, asla "ödenmedi"ye çevirmez; yalnızca kalan borcu tahsil eder.

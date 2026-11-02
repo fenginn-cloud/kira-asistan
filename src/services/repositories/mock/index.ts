@@ -12,17 +12,42 @@ import type {
   Payment,
   PaymentTransaction,
 } from '@/types';
+import { addMonths, format, parseISO } from 'date-fns';
 import { derivePaymentStatus } from '@/lib/utils/payments';
-import { recentPaymentPeriods } from '@/lib/utils/paymentPeriods';
-import type { DeviceSession, Repositories, Unit } from '../types';
+import {
+  amountForMonth,
+  dueDateFor,
+  monthStart,
+  parseVirtualPaymentId,
+  trackingStartMonth,
+  withExpectedPayments,
+  withExpectedPaymentsAll,
+} from '@/lib/ledger/accrual';
+import type { DeviceSession, RentChangeInput, Repositories, Unit } from '../types';
+
+type MockTx = PaymentTransaction & { clientRef?: string };
 
 // In-memory stores (cloned so we can mutate without touching the seed data).
-let contracts: Contract[] = structuredClone(mockContracts);
 let payments: Payment[] = structuredClone(mockPayments);
+/**
+ * Migration 0023 ile AYNI varsayılanlar: takip başlangıcı = en eski kayıtlı ay
+ * (yoksa oluşturulma ayı); bitişi geçmiş sözleşmede autoRenew=false.
+ */
+let contracts: Contract[] = structuredClone(mockContracts).map((c) => {
+  const own = payments.filter((p) => p.contractId === c.id).map((p) => p.periodMonth).sort();
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    ...c,
+    trackingStart: c.trackingStart ?? own[0] ?? monthStart(c.createdAt),
+    autoRenew: c.autoRenew ?? !(c.endDate && c.endDate < today),
+    // Migration 0023 gibi: eski sonlandırılmış sözleşmeye çıkış tarihi yazılmaz.
+    terminatedAt: c.terminatedAt ?? null,
+  };
+});
 let buildingUnits: { building: string; total: number }[] = [];
 let units: Unit[] = [];
 let deviceSessions: DeviceSession[] = [];
-let transactions: PaymentTransaction[] = structuredClone(mockTransactions);
+let transactions: MockTx[] = structuredClone(mockTransactions);
 let users: AppUser[] = structuredClone(mockUsers);
 let company: Company = structuredClone(mockCompany);
 
@@ -57,74 +82,62 @@ export const mockRepositories: Repositories = {
       return delay(undefined);
     },
     getPublicToken: () => delay(null),
+    applyRentChange: (id, input) => {
+      const c = contracts.find((x) => x.id === id);
+      if (!c) throw new Error('Sözleşme bulunamadı');
+      applyRentChangeInMemory(c, input);
+      return delay(undefined);
+    },
+    terminate: (id, input) => {
+      contracts = contracts.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              status: 'terminated',
+              terminatedAt: input.exitDate,
+              depositReturned: input.depositReturned,
+              depositDeduction: input.depositDeduction,
+              depositNote: input.depositNote?.trim() || null,
+            }
+          : c
+      );
+      return delay(undefined);
+    },
   },
 
   payments: {
-    listByContract: (contractId) =>
-      delay(
-        payments
-          .filter((p) => p.contractId === contractId)
-          .map(normalizeStatus)
-          .sort((a, b) => b.periodMonth.localeCompare(a.periodMonth))
-      ),
-    listAll: () => delay(payments.map(normalizeStatus)),
-    addTransaction: (input) => {
-      const tx: PaymentTransaction = { ...input, id: uid('t') };
+    listByContract: (contractId) => {
+      const c = contracts.find((x) => x.id === contractId);
+      const stored = payments.filter((p) => p.contractId === contractId).map(normalizeStatus);
+      const all = c ? withExpectedPayments(c, stored) : stored;
+      return delay(all.sort((a, b) => b.periodMonth.localeCompare(a.periodMonth)));
+    },
+    listAll: () => delay(withExpectedPaymentsAll(contracts, payments.map(normalizeStatus))),
+    collect: (input) => {
+      if (!(input.amount > 0)) throw new Error('Tutar sıfırdan büyük olmalı');
+      const existing = transactions.find((t) => t.clientRef === input.clientRef);
+      if (existing) return delay({ transactionId: existing.id });
+      const paymentId = materialize(input.paymentId);
+      const tx: MockTx = {
+        id: uid('t'),
+        paymentId,
+        amount: input.amount,
+        paidAt: input.paidAt,
+        method: input.method,
+        description: input.description,
+        receiptUrl: input.receiptUrl,
+        clientRef: input.clientRef,
+      };
       transactions = [tx, ...transactions];
-      payments = payments.map((p) =>
-        p.id === input.paymentId
-          ? {
-              ...p,
-              amountPaid: p.amountPaid + input.amount,
-              paidAt: input.paidAt,
-            }
-          : p
-      );
-      const updated = payments.find((p) => p.id === input.paymentId);
-      if (!updated) throw new Error('Ödeme bulunamadı');
-      return delay(normalizeStatus(updated));
+      recalc(paymentId);
+      return delay({ transactionId: tx.id });
     },
     listTransactions: (paymentId) =>
       delay(transactions.filter((t) => t.paymentId === paymentId)),
     deleteTransaction: (id) => {
       const tx = transactions.find((t) => t.id === id);
       transactions = transactions.filter((t) => t.id !== id);
-      if (tx) {
-        payments = payments.map((p) =>
-          p.id === tx.paymentId
-            ? { ...p, amountPaid: Math.max(p.amountPaid - tx.amount, 0) }
-            : p
-        );
-      }
-      return delay(undefined);
-    },
-    markCurrentMonthReceived: (contract, _note) => {
-      const now = new Date();
-      const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      const due = contract.rentAmount + contract.duesAmount;
-      const existing = payments.find(
-        (p) => p.contractId === contract.id && p.periodMonth === period
-      );
-      if (existing) {
-        payments = payments.map((p) =>
-          p.id === existing.id ? { ...p, amountPaid: p.amountDue, paidAt: period } : p
-        );
-      } else {
-        payments = [
-          ...payments,
-          {
-            id: uid('p'),
-            contractId: contract.id,
-            periodMonth: period,
-            dueDate: period,
-            amountDue: due,
-            amountPaid: due,
-            status: 'paid',
-            paidAt: period,
-            note: null,
-          },
-        ];
-      }
+      if (tx) recalc(tx.paymentId);
       return delay(undefined);
     },
     syncPaidMonth: ({ contractId, periodMonth, amountDue }) => {
@@ -146,30 +159,34 @@ export const mockRepositories: Repositories = {
       }
       return delay(undefined);
     },
-    settlePayment: (paymentId, _note) => {
+    resetMonth: (paymentId) => {
+      transactions = transactions.filter((t) => t.paymentId !== paymentId);
       payments = payments.map((p) =>
-        p.id === paymentId
-          ? {
-              ...p,
-              amountPaid: p.amountDue,
-              status: 'paid',
-              paidAt: new Date().toISOString().slice(0, 10),
-            }
-          : p
+        p.id === paymentId ? { ...p, amountPaid: 0, paidAt: null } : p
       );
       return delay(undefined);
     },
-    setMonthlyPaid: (paymentId, amountPaid) => {
-      transactions = transactions.filter((t) => t.paymentId !== paymentId);
-      payments = payments.map((p) =>
-        p.id === paymentId
-          ? {
-              ...p,
-              amountPaid,
-              paidAt: amountPaid > 0 ? new Date().toISOString().slice(0, 10) : null,
-            }
-          : p
-      );
+    addOpeningBalance: (contract, amount) => {
+      if (amount > 0) {
+        const period = format(addMonths(parseISO(trackingStartMonth(contract)), -1), 'yyyy-MM-dd');
+        if (!payments.some((p) => p.contractId === contract.id && p.periodMonth === period)) {
+          payments = [
+            ...payments,
+            {
+              id: uid('p'),
+              contractId: contract.id,
+              periodMonth: period,
+              dueDate: period,
+              amountDue: amount,
+              amountPaid: 0,
+              status: 'overdue',
+              paidAt: null,
+              note: 'Başlangıç bakiyesi (takip öncesinden devreden)',
+              kind: 'opening',
+            },
+          ];
+        }
+      }
       return delay(undefined);
     },
     listTransactionsByContract: (contractId) => {
@@ -181,30 +198,6 @@ export const mockRepositories: Repositories = {
           .filter((t) => ids.has(t.paymentId))
           .sort((a, b) => b.paidAt.localeCompare(a.paidAt))
       );
-    },
-    ensureRecentPayments: (contract) => {
-      for (const s of recentPaymentPeriods(contract)) {
-        const exists = payments.some(
-          (p) => p.contractId === s.contractId && p.periodMonth === s.periodMonth
-        );
-        if (!exists) {
-          payments = [
-            ...payments,
-            {
-              id: uid('p'),
-              contractId: s.contractId,
-              periodMonth: s.periodMonth,
-              dueDate: s.dueDate,
-              amountDue: s.amountDue,
-              amountPaid: 0,
-              status: 'pending',
-              paidAt: null,
-              note: null,
-            },
-          ];
-        }
-      }
-      return delay(undefined);
     },
   },
 
@@ -348,6 +341,75 @@ export const mockRepositories: Repositories = {
     },
   },
 };
+
+/** Sanal ay → satır oluştur (DB'deki materializePayment ile aynı). */
+function materialize(paymentId: string): string {
+  const v = parseVirtualPaymentId(paymentId);
+  if (!v) return paymentId;
+  const existing = payments.find(
+    (p) => p.contractId === v.contractId && p.periodMonth === v.periodMonth
+  );
+  if (existing) return existing.id;
+  const c = contracts.find((x) => x.id === v.contractId);
+  if (!c) throw new Error('Sözleşme bulunamadı');
+  const row: Payment = {
+    id: uid('p'),
+    contractId: c.id,
+    periodMonth: v.periodMonth,
+    dueDate: dueDateFor(v.periodMonth, c.paymentDay),
+    amountDue: amountForMonth(c, v.periodMonth),
+    amountPaid: 0,
+    status: 'pending',
+    paidAt: null,
+    note: null,
+    kind: 'rent',
+  };
+  payments = [...payments, row];
+  return row.id;
+}
+
+/** recalc_payment tetikleyicisinin karşılığı: amount_paid = tahsilat toplamı. */
+function recalc(paymentId: string) {
+  const own = transactions.filter((t) => t.paymentId === paymentId);
+  const total = own.reduce((s, t) => s + t.amount, 0);
+  const last = own.map((t) => t.paidAt).sort().pop() ?? null;
+  payments = payments.map((p) =>
+    p.id === paymentId ? { ...p, amountPaid: total, paidAt: total > 0 ? last : null } : p
+  );
+}
+
+/** apply_rent_change (0023) ile aynı kurallar. */
+function applyRentChangeInMemory(c: Contract, input: RentChangeInput) {
+  const eff = monthStart(input.effectiveMonth);
+  const cur = monthStart(new Date());
+  const horizon = monthStart(addMonths(new Date(), 1));
+  // Artıştan önceki ayları eski tutarla dondur.
+  let m = trackingStartMonth(c);
+  while (m < eff && m <= horizon) {
+    materialize(`v:${c.id}:${m}`);
+    m = monthStart(addMonths(parseISO(m), 1));
+  }
+  const patch: Partial<Contract> =
+    eff <= cur
+      ? {
+          rentAmount: input.rentAmount,
+          duesAmount: input.duesAmount,
+          nextRentAmount: null,
+          nextDuesAmount: null,
+          nextRentFrom: null,
+        }
+      : {
+          nextRentAmount: input.rentAmount,
+          nextDuesAmount: input.duesAmount,
+          nextRentFrom: eff,
+        };
+  contracts = contracts.map((x) => (x.id === c.id ? { ...x, ...patch } : x));
+  payments = payments.map((p) =>
+    p.contractId === c.id && p.kind !== 'opening' && p.periodMonth >= eff
+      ? { ...p, amountDue: input.rentAmount + input.duesAmount }
+      : p
+  );
+}
 
 function normalizeStatus(p: Payment): Payment {
   return { ...p, status: derivePaymentStatus(p) };

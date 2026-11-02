@@ -10,6 +10,7 @@ import {
   ChevronRight,
   DoorClosed,
   FilePlus2,
+  FileSpreadsheet,
   Inbox,
   Lock,
   Search,
@@ -30,21 +31,17 @@ import { QuickActions, type QuickAction } from '@/features/dashboard/components/
 import { CollectionHome } from '@/features/dashboard/CollectionHome';
 import { useContractGate } from '@/features/subscription/useContractGate';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
-import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
+import { useCollectFlow } from '@/features/payments/useCollectFlow';
 import { useNotificationCenter } from '@/features/notifications/useNotificationCenter';
 import { useContracts } from '@/features/contracts/hooks';
-import { useAllPayments, usePendingClaims, useSettlePayment } from '@/features/payments/hooks';
-import { notifyTeamPaymentReceived } from '@/services/notifyTeam';
-import { useToast } from '@/components/ui/Toast';
-import { errorMessage } from '@/lib/utils/error';
-import type { OpenItem } from '@/features/notifications/reminders';
+import { useAllPayments, usePendingClaims } from '@/features/payments/hooks';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { queryKeys } from '@/lib/query';
 import { formatCurrency } from '@/lib/utils/format';
 import { formatCurrencyTRY, getDashboardFinancialSummary } from '@/lib/ledger/ledger';
-import { expiringContracts } from '@/lib/utils/contractExpiry';
+import { expiredContracts, upcomingExpirations } from '@/lib/utils/contractExpiry';
 import { palette } from '@/lib/theme/colors';
 
 export default function HomeScreen() {
@@ -64,32 +61,18 @@ export default function HomeScreen() {
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const { isLoading, upcoming, overdue } = useNotificationCenter();
-  const { data: contracts = [] } = useContracts();
+  const { data: contracts = [], isLoading: contractsLoading } = useContracts();
   const { data: payments = [] } = useAllPayments();
   const finance = getDashboardFinancialSummary(contracts, payments);
-  const expiring = expiringContracts(contracts);
+  // Yaklaşan bitişler ile süresi GEÇMİŞ sözleşmeler ayrı gösterilir.
+  const expiring = upcomingExpirations(contracts);
+  const expired = expiredContracts(contracts);
   const { data: pendingClaims = [] } = usePendingClaims();
   const { data: units = [] } = useUnits();
   const inv = computeInventoryStats(units, contracts);
-  const toast = useToast();
-  const settlePayment = useSettlePayment();
-  const [receiveTarget, setReceiveTarget] = useState<OpenItem | null>(null);
-
-  const confirmReceived = (note: string | null) => {
-    const item = receiveTarget;
-    if (!item) return;
-    settlePayment.mutate(
-      { payment: item.payment, note },
-      {
-        onSuccess: () => {
-          setReceiveTarget(null);
-          toast.success('Kira alındı olarak işaretlendi');
-          void notifyTeamPaymentReceived(item.contract.id, note);
-        },
-        onError: (e) => toast.error(errorMessage(e, 'İşaretlenemedi')),
-      }
-    );
-  };
+  // "Alındı" = Sözleşmeler'deki "Tahsilat Gir" ile AYNI akış (ay + tutar seçimi).
+  const collectFlow = useCollectFlow(payments);
+  const contractsLoaded = !contractsLoading;
 
   // Pull-to-refresh: refetch contracts + payments (Supabase or mock).
   const onRefresh = async () => {
@@ -194,7 +177,9 @@ export default function HomeScreen() {
           >
             <View className="flex-1 pr-3">
               <Text className="text-sm font-semibold text-primary-700">
-                {gate.count}/{gate.limit} sözleşme kullanıldı
+                {gate.atLimit
+                  ? `${gate.limit} sözleşme hakkınız doldu (${gate.count} kayıtlı)`
+                  : `${gate.count}/${gate.limit} sözleşme hakkı kullanıldı`}
               </Text>
               <Text className="text-xs text-muted">
                 Sınırsız sözleşme için planınızı yükseltin.
@@ -202,6 +187,13 @@ export default function HomeScreen() {
             </View>
             <Text className="text-sm font-semibold text-primary-700">Yükselt</Text>
           </Pressable>
+        ) : null}
+
+        {canSeeLedger && contractsLoaded && contracts.length === 0 ? (
+          <GettingStartedCard
+            onNew={() => router.push(gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall')}
+            onImport={() => router.push('/(app)/excel-import')}
+          />
         ) : null}
 
         {isLoading ? (
@@ -291,10 +283,30 @@ export default function HomeScreen() {
               overdue={overdue}
               upcoming={upcoming}
               onContractPress={goToContract}
-              onMarkReceived={(item) => setReceiveTarget(item)}
+              onMarkReceived={(item) => collectFlow.open(item.contract)}
             />
 
-            {/* Contracts ending soon (renewal / rent-increase opportunity) */}
+            {/* Süresi geçmiş sözleşmeler: Uzat / Çıkış kararı bekleyenler */}
+            {canSeeLedger && expired.length > 0 ? (
+              <>
+                <SectionHeader title="Süresi Geçmiş Sözleşmeler" />
+                <Text className="-mt-1 mb-2 text-xs text-muted">
+                  Uzatıldı mı, kiracı çıktı mı? Karar verilene kadar uzayanlarda takip aynı
+                  koşullarla sürer.
+                </Text>
+                {expired.map((item) => (
+                  <ContractExpiryRow
+                    key={item.contract.id}
+                    item={item}
+                    onPress={() => goToContract(item.contract.id)}
+                    onRenew={() => router.push(`/(app)/contracts/${item.contract.id}?action=extend`)}
+                    onExit={() => router.push(`/(app)/contracts/${item.contract.id}?action=exit`)}
+                  />
+                ))}
+              </>
+            ) : null}
+
+            {/* Yaklaşan bitişler (yenileme / kira artışı fırsatı) */}
             {canSeeLedger && expiring.length > 0 ? (
               <>
                 <SectionHeader title="Yaklaşan Sözleşme Bitişleri" />
@@ -303,6 +315,8 @@ export default function HomeScreen() {
                     key={item.contract.id}
                     item={item}
                     onPress={() => goToContract(item.contract.id)}
+                    onRenew={() => router.push(`/(app)/contracts/${item.contract.id}?action=extend`)}
+                    onExit={() => router.push(`/(app)/contracts/${item.contract.id}?action=exit`)}
                   />
                 ))}
               </>
@@ -371,14 +385,53 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {/* Yönetici: tek tuş "Alındı" onayı */}
-      <MarkReceivedSheet
-        contract={receiveTarget?.contract ?? null}
-        submitting={settlePayment.isPending}
-        onClose={() => setReceiveTarget(null)}
-        onConfirm={confirmReceived}
-      />
+      {/* Yönetici: "Alındı" → ay + tutar seçilebilen ortak tahsilat penceresi */}
+      {collectFlow.element}
     </SafeAreaView>
+  );
+}
+
+/**
+ * Boş hesap: ilk sözleşmeyi ekleme / Excel'den aktarma yönlendirmesi.
+ * Sözleşme eklendiği anda kaybolur.
+ */
+function GettingStartedCard({ onNew, onImport }: { onNew: () => void; onImport: () => void }) {
+  const steps = [
+    'Sözleşme ekleyin ya da Excel listenizi aktarın',
+    'Hangi aydan itibaren takip edileceğini seçin',
+    'Kira geldikçe "Alındı" ile tahsilatı girin',
+  ];
+  return (
+    <View className="mt-5 rounded-3xl border border-primary/30 bg-surface p-5 shadow-sm shadow-black/5">
+      <Text className="text-lg font-bold text-foreground">Kira takibine başlayın</Text>
+      <Text className="mt-1 text-sm text-muted">Henüz sözleşme yok. 3 adımda hazırsınız:</Text>
+      <View className="mt-3 gap-2">
+        {steps.map((t, i) => (
+          <View key={t} className="flex-row items-center gap-3">
+            <View className="h-6 w-6 items-center justify-center rounded-full bg-primary">
+              <Text className="text-xs font-bold text-white">{i + 1}</Text>
+            </View>
+            <Text className="flex-1 text-sm text-foreground">{t}</Text>
+          </View>
+        ))}
+      </View>
+      <View className="mt-4 flex-row gap-2">
+        <Pressable
+          onPress={onNew}
+          className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary py-3 active:opacity-80"
+        >
+          <FilePlus2 size={16} color="#FFFFFF" />
+          <Text className="text-sm font-semibold text-white">İlk sözleşmeyi ekle</Text>
+        </Pressable>
+        <Pressable
+          onPress={onImport}
+          className="flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-3 active:opacity-80"
+        >
+          <FileSpreadsheet size={16} color={palette.primary} />
+          <Text className="text-sm font-semibold text-primary-700">{"Excel'den aktar"}</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 

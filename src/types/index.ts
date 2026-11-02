@@ -91,6 +91,31 @@ export interface Contract {
   /** Kısa hızlı not — kartlarda görünür (ör. "10 gün sonra ödeyecek"). */
   cardNote?: string | null;
 
+  // --- Takip / yaşam döngüsü (migration 0023) ---
+  /**
+   * Kira takibinin başladığı ay (YYYY-MM-01). Bu aydan önceki aylar için
+   * otomatik tahakkuk OLUŞTURULMAZ (bilinmeyen geçmiş borç/tahsilat sayılmaz).
+   * Yoksa sözleşme başlangıç ayı kullanılır.
+   */
+  trackingStart?: string | null;
+  /**
+   * Bitiş tarihi geçtiğinde aynı koşullarla takibe devam edilsin mi?
+   * (Türkiye'de konut sözleşmeleri genelde kendiliğinden uzar.) Varsayılan: true.
+   */
+  autoRenew?: boolean;
+  /** Kiracı çıkış tarihi (sonlandırılan sözleşmede). Sonraki aylar tahakkuk etmez. */
+  terminatedAt?: string | null;
+  /** Çıkışta iade edilen depozito / yapılan kesinti / açıklama. */
+  depositReturned?: number | null;
+  depositDeduction?: number | null;
+  depositNote?: string | null;
+  /** İleri tarihli kira artışı: `nextRentFrom` ayından itibaren geçerli tutarlar. */
+  nextRentAmount?: number | null;
+  nextDuesAmount?: number | null;
+  nextRentFrom?: string | null;
+  /** Daire envanterindeki kalıcı kayıt (units.id). Yoksa metinle eşleşir. */
+  unitId?: string | null;
+
   createdAt: string;
 }
 
@@ -122,6 +147,14 @@ export interface Payment {
   status: PaymentStatus;
   paidAt: string | null;
   note: string | null;
+  /** 'rent' = aylık tahakkuk, 'opening' = takip öncesinden devreden başlangıç borcu. */
+  kind?: 'rent' | 'opening';
+  /**
+   * true → veritabanında henüz satırı yok; sözleşme kurallarından hesaplanan
+   * beklenen tahakkuk. Görüntülemek veritabanına yazmaz; tahsilat girilince
+   * satır oluşturulur.
+   */
+  virtual?: boolean;
 }
 
 export type PaymentMethod = 'cash' | 'transfer' | 'card' | 'other';
