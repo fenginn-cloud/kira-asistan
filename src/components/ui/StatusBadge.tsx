@@ -1,5 +1,6 @@
+import { CONTRACT_PHASE_LABEL, contractPhase, type ContractPhase } from '@/lib/ledger/accrual';
 import { Text, View } from 'react-native';
-import type { ContractStatus, PaymentStatus } from '@/types';
+import type { Contract, ContractStatus, PaymentStatus } from '@/types';
 import { CONTRACT_STATUS_LABEL, PAYMENT_STATUS_LABEL } from '@/lib/utils/payments';
 import {
   CONTRACT_LEDGER_LABEL,
@@ -80,6 +81,28 @@ export function BalanceBadge({ status }: { status: ContractLedgerStatus }) {
     <View className={`rounded-full px-3 py-1 ${s.bg}`}>
       <Text className={`text-xs font-semibold ${s.text}`}>
         {CONTRACT_LEDGER_LABEL[status]}
+      </Text>
+    </View>
+  );
+}
+
+// --- Sözleşme yaşam döngüsü (Aktif / Süresi doldu / Sonlandırıldı) ---------
+
+const phaseStyles: Record<ContractPhase, { bg: string; text: string }> = {
+  active: { bg: 'bg-success-soft', text: 'text-success' },
+  expired_renewing: { bg: 'bg-warning-soft', text: 'text-warning' },
+  expired_stopped: { bg: 'bg-danger-soft', text: 'text-danger' },
+  terminated: { bg: 'bg-background', text: 'text-muted' },
+  passive: { bg: 'bg-background', text: 'text-muted' },
+};
+
+export function PhaseBadge({ contract }: { contract: Contract }) {
+  const phase = contractPhase(contract);
+  const s = phaseStyles[phase];
+  return (
+    <View className={`rounded-full px-3 py-1 ${s.bg}`}>
+      <Text className={`text-xs font-semibold ${s.text}`} numberOfLines={1}>
+        {CONTRACT_PHASE_LABEL[phase]}
       </Text>
     </View>
   );

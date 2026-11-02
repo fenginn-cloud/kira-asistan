@@ -46,3 +46,29 @@ export function isExpiringSoon(contract: Contract, today = new Date()): boolean 
   const d = daysUntilEnd(contract, today);
   return d !== null && d <= 30;
 }
+
+/**
+ * Yaklaşan bitişler (bugün dahil, önümüzdeki `withinDays` gün). Süresi geçmişler
+ * burada YOK — onlar `expiredContracts` ile ayrı listelenir.
+ */
+export function upcomingExpirations(
+  contracts: Contract[],
+  withinDays = 60,
+  today = new Date()
+): ExpiringContract[] {
+  return expiringContracts(contracts, withinDays, 0, today).filter((e) => e.daysLeft >= 0);
+}
+
+/**
+ * Bitiş tarihi geçmiş, hâlâ aktif (sonlandırılmamış) sözleşmeler: kullanıcıdan
+ * "Uzatıldı mı, kiracı çıktı mı?" kararı beklenir. En eskisi önce.
+ */
+export function expiredContracts(contracts: Contract[], today = new Date()): ExpiringContract[] {
+  const out: ExpiringContract[] = [];
+  for (const c of contracts) {
+    if (c.status !== 'active') continue;
+    const d = daysUntilEnd(c, today);
+    if (d !== null && d < 0) out.push({ contract: c, daysLeft: d });
+  }
+  return out.sort((a, b) => a.daysLeft - b.daysLeft);
+}

@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "build:web": "expo export --platform web && node scripts/pwa-postbuild.js",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -65,7 +66,8 @@
     "patch-package": "^8.0.1",
     "prettier": "^3.3.3",
     "sharp": "^0.35.3",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^2.1.9"
   },
   "private": true
 }

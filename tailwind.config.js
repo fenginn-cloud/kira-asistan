@@ -23,9 +23,11 @@ module.exports = {
           800: '#1E40AF',
           900: '#1E3A8A',
         },
-        success: { DEFAULT: '#16A34A', soft: '#DCFCE7' },
-        warning: { DEFAULT: '#D97706', soft: '#FEF3C7' },
-        danger: { DEFAULT: '#DC2626', soft: '#FEE2E2' },
+        // "soft" zeminler koyu temada koyu tona döner (global.css); aksi halde
+        // açık zemin üzerindeki açık renkli yazılar okunmuyordu.
+        success: { DEFAULT: '#16A34A', soft: 'rgb(var(--success-soft) / <alpha-value>)' },
+        warning: { DEFAULT: '#D97706', soft: 'rgb(var(--warning-soft) / <alpha-value>)' },
+        danger: { DEFAULT: '#DC2626', soft: 'rgb(var(--danger-soft) / <alpha-value>)' },
         // Structural tokens — flip between light/dark via CSS variables.
         surface: 'rgb(var(--surface) / <alpha-value>)',
         background: 'rgb(var(--background) / <alpha-value>)',

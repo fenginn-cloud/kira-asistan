@@ -84,7 +84,14 @@ export async function applyPlan(plan: ImportPlan, ctx: ApplyContext): Promise<Ap
         });
       } else if (row.kind === 'new') {
         const e = row.extracted;
+        // Takip, Excel'de bilgisi olan EN ESKİ aydan başlar (yoksa bu ay).
+        // Excel'de olmayan geçmiş aylar bilinmiyor sayılır; borç yazılmaz.
+        const excelMonths = e.months.map((m) => m.periodMonth.slice(0, 10)).sort();
+        const thisMonth = `${new Date().toISOString().slice(0, 7)}-01`;
+        const trackingStart = excelMonths[0] && excelMonths[0] < thisMonth ? excelMonths[0] : thisMonth;
         const created = await repositories.contracts.create({
+          trackingStart,
+          autoRenew: true,
           companyId: ctx.companyId,
           assignedUserId: ctx.assignedUserId,
           propertyName: e.propertyName!,

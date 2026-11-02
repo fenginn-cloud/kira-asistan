@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { formatCurrency } from '@/lib/utils/format';
 import { remainingDebt } from '@/lib/utils/payments';
-import { formatMonthTR } from '@/lib/ledger/ledger';
+import { periodLabel } from '@/lib/ledger/ledger';
 import { PAYMENT_METHOD_LABEL, type Payment, type PaymentMethod } from '@/types';
 import { palette } from '@/lib/theme/colors';
 
@@ -199,7 +199,7 @@ export function AddTransactionModal({
                             active ? 'text-white' : 'text-muted'
                           }`}
                         >
-                          {formatMonthTR(m.periodMonth)}
+                          {periodLabel(m)}
                         </Text>
                         <Text
                           className={`text-xs ${active ? 'text-white/80' : 'text-muted'}`}
@@ -216,7 +216,7 @@ export function AddTransactionModal({
             {selected ? (
               <View className="mb-4 rounded-2xl bg-background p-3">
                 <Text className="text-sm text-muted capitalize">
-                  {formatMonthTR(selected.periodMonth)} dönemi
+                  {periodLabel(selected)}
                 </Text>
                 <Text className="text-sm font-semibold text-danger">
                   Kalan borç: {formatCurrency(remainingDebt(selected))}

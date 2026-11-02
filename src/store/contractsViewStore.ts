@@ -13,6 +13,8 @@ export type StatusFilter =
   | 'unpaid_month'
   | 'overdue'
   | 'expiring'
+  | 'expired'
+  | 'terminated'
   | 'conflicts';
 
 export type SortKey =

@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import { ContractForm } from '@/features/contracts/components/ContractForm';
 import { emptyContractForm, formValuesToContractInput } from '@/features/contracts/form';
-import { useContracts, useCreateContract } from '@/features/contracts/hooks';
+import { useContracts, useCreateContractFull } from '@/features/contracts/hooks';
 import {
   contractLabel,
   findContractConflicts,
@@ -21,17 +21,22 @@ export default function NewContractScreen() {
   const router = useRouter();
   const toast = useToast();
   const user = useAuthStore((s) => s.user);
-  const createContract = useCreateContract();
+  const createContract = useCreateContractFull();
+  const [pendingOpening, setPendingOpening] = useState(0);
   const { data: contracts = [] } = useContracts();
 
   // Çakışma onayı için beklemedeki sözleşme girdisi + uyarı metni.
   const [pending, setPending] = useState<Omit<Contract, 'id' | 'createdAt'> | null>(null);
   const [conflictMsg, setConflictMsg] = useState('');
 
-  const doCreate = (input: Omit<Contract, 'id' | 'createdAt'>) => {
-    createContract.mutate(input, {
-      onSuccess: () => {
-        toast.success('Sözleşme oluşturuldu');
+  const doCreate = (input: Omit<Contract, 'id' | 'createdAt'>, openingBalance: number) => {
+    createContract.mutate({ input, openingBalance }, {
+      onSuccess: ({ unitLink }) => {
+        toast.success(
+          unitLink === 'ambiguous'
+            ? 'Sözleşme oluşturuldu · daireyi Daire Envanteri\'nden seçin'
+            : 'Sözleşme oluşturuldu'
+        );
         router.back();
       },
       onError: (e) => {
@@ -51,6 +56,7 @@ export default function NewContractScreen() {
       documentUrl: null,
       ...formValuesToContractInput(values),
     };
+    const opening = values.openingBalance || 0;
 
     const conflicts = findContractConflicts(contracts, {
       propertyName: input.propertyName,
@@ -78,10 +84,11 @@ export default function NewContractScreen() {
       parts.push('Yine de yeni bir sözleşme oluşturmak istiyor musunuz?');
       setConflictMsg(parts.join('\n\n'));
       setPending(input);
+      setPendingOpening(opening);
       return;
     }
 
-    doCreate(input);
+    doCreate(input, opening);
   };
 
   return (
@@ -117,7 +124,7 @@ export default function NewContractScreen() {
         onConfirm={() => {
           const input = pending;
           setPending(null);
-          if (input) doCreate(input);
+          if (input) doCreate(input, pendingOpening);
         }}
         onCancel={() => setPending(null)}
       />

@@ -176,25 +176,9 @@ export default function StatsScreen() {
                 <Text className="text-sm font-medium text-muted">
                   Toplam Tahakkuk (Beklenen Kira)
                 </Text>
-                {s.momDeltaPct !== null ? (
-                  <View
-                    className={`flex-row items-center gap-1 rounded-full px-2.5 py-1 ${
-                      s.momDeltaPct >= 0 ? 'bg-success-soft' : 'bg-danger-soft'
-                    }`}
-                  >
-                    {s.momDeltaPct >= 0 ? (
-                      <TrendingUp size={12} color={palette.success} />
-                    ) : (
-                      <TrendingDown size={12} color={palette.danger} />
-                    )}
-                    <Text
-                      className={`text-xs font-bold ${
-                        s.momDeltaPct >= 0 ? 'text-success' : 'text-danger'
-                      }`}
-                    >
-                      {s.momDeltaPct >= 0 ? '+' : ''}
-                      {Math.round(s.momDeltaPct)}%
-                    </Text>
+                {s.isCurrentMonth ? (
+                  <View className="rounded-full bg-background px-2.5 py-1">
+                    <Text className="text-xs font-semibold text-muted">Ay devam ediyor</Text>
                   </View>
                 ) : null}
               </View>
@@ -212,13 +196,15 @@ export default function StatsScreen() {
                     {formatCurrency(s.collected)}
                   </Text>
                   <Text className="text-[11px] text-muted">
-                    %{Math.round(s.collectionRate)} toplam tahsilat
+                    {`Tahsil oranı: %${Math.round(s.collectionRate)}`}
                   </Text>
                 </View>
                 <View className="flex-1 rounded-2xl bg-danger-soft/60 p-3">
                   <View className="flex-row items-center gap-1.5">
                     <Dot color={palette.danger} />
-                    <Text className="text-xs font-medium text-muted">Bu Ay Kalan</Text>
+                    <Text className="text-xs font-medium text-muted">
+                      {s.isCurrentMonth ? 'Bu Ay Kalan' : 'Kalan'}
+                    </Text>
                   </View>
                   <Text className="mt-1 text-lg font-extrabold text-danger" numberOfLines={1}>
                     {formatCurrency(s.overdue + s.pending)}
@@ -228,6 +214,22 @@ export default function StatsScreen() {
                   </Text>
                 </View>
               </View>
+
+              {/* Kıyas kapsamı açıkça: aynı ölçü (tahsilat oranı), iki ay. */}
+              {s.prevCollectionRate !== null ? (
+                <View className="mt-3 flex-row items-center gap-1.5">
+                  {s.collectionRate >= s.prevCollectionRate ? (
+                    <TrendingUp size={13} color={palette.success} />
+                  ) : (
+                    <TrendingDown size={13} color={palette.danger} />
+                  )}
+                  <Text className="flex-1 text-xs text-muted">
+                    Tahsilat oranı %{Math.round(s.collectionRate)} · geçen ay ({s.prevMonthLong}) %
+                    {Math.round(s.prevCollectionRate)}
+                    {s.isCurrentMonth ? ' — bu ay henüz bitmedi' : ''}
+                  </Text>
+                </View>
+              ) : null}
 
               <View className="mt-4">
                 <SegmentedBarLight

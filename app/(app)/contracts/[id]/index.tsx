@@ -21,7 +21,9 @@ import {
   Pencil,
   Phone,
   Plus,
-  RefreshCw,
+  TrendingUp,
+  LogOut,
+  CalendarPlus,
   Trash2,
   Upload,
   User,
@@ -31,7 +33,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { ContractBadge, LedgerBadge } from '@/components/ui/StatusBadge';
+import { LedgerBadge, PhaseBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
@@ -48,23 +50,28 @@ import {
   type AddTransactionInput,
 } from '@/features/payments/components/AddTransactionModal';
 import {
+  useApplyRentChange,
   useContract,
   useContracts,
   useContractToken,
   useDeleteContract,
+  useExtendContract,
+  useTerminateContract,
   useUpdateContract,
 } from '@/features/contracts/hooks';
+import { ExitSheet, ExtendSheet, RentChangeSheet } from '@/features/contracts/components/LifecycleSheets';
 import { findContractConflicts } from '@/features/contracts/duplicates';
 import {
   usePaymentsByContract,
-  useAddTransaction,
+  useCollectPayment,
+  useUndoCollection,
+  newClientRef,
   useContractTransactions,
   useDeleteTransaction,
-  useEnsureRecentPayments,
   usePendingClaims,
   useApproveClaim,
   useRejectClaim,
-  useSetMonthlyPaid,
+  useResetMonth,
 } from '@/features/payments/hooks';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -80,10 +87,18 @@ import { useTenantForms } from '@/features/tenant-forms/hooks';
 import { STATUS_COLORS, STATUS_LABELS, RESULT_LABELS } from '@/features/tenant-forms/config';
 import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { errorMessage } from '@/lib/utils/error';
-import { formatCurrency, formatMonth, formatShortDate } from '@/lib/utils/format';
+import { formatCurrency, formatMonth, formatShortDate, paymentDayLabel } from '@/lib/utils/format';
 import { derivePaymentStatus } from '@/lib/utils/payments';
 import { recentPeriodCutoff } from '@/lib/utils/paymentPeriods';
-import { generateLedgerRows, getContractBalance } from '@/lib/ledger/ledger';
+import { generateLedgerRows, getContractBalance, periodLabel } from '@/lib/ledger/ledger';
+import {
+  CONTRACT_PHASE_LABEL,
+  contractPhase,
+  defaultCollectionMonth,
+  isClosedContract,
+  overdueDebt,
+  remainingOf,
+} from '@/lib/ledger/accrual';
 import { daysUntilEnd, expiryLabel } from '@/lib/utils/contractExpiry';
 import { palette } from '@/lib/theme/colors';
 import type { Payment, PaymentTransaction } from '@/types';
@@ -97,7 +112,11 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function ContractDetailScreen() {
-  const { id, tab: tabParam } = useLocalSearchParams<{ id: string; tab?: string }>();
+  const { id, tab: tabParam, action: actionParam } = useLocalSearchParams<{
+    id: string;
+    tab?: string;
+    action?: string;
+  }>();
   const router = useRouter();
   const toast = useToast();
   const role = useAuthStore((s) => s.user?.role);
@@ -113,12 +132,17 @@ export default function ContractDetailScreen() {
   const entitlement = useEntitlement();
   const { data: payments = [] } = usePaymentsByContract(id);
   const { data: transactions = [] } = useContractTransactions(id);
-  const addTransaction = useAddTransaction(id);
+  const collectPayment = useCollectPayment();
+  const undoCollection = useUndoCollection();
   const deleteTransaction = useDeleteTransaction(id);
-  const setMonthlyPaid = useSetMonthlyPaid(id);
+  const resetMonth = useResetMonth(id);
   const updateContract = useUpdateContract();
   const deleteContract = useDeleteContract();
-  const ensureRecent = useEnsureRecentPayments(id);
+  const extendContract = useExtendContract();
+  const applyRentChange = useApplyRentChange();
+  const terminateContract = useTerminateContract();
+  // Ödeme penceresi her açıldığında yeni tekrar-koruma anahtarı.
+  const clientRef = useRef<string>(newClientRef());
   const { data: allClaims = [] } = usePendingClaims();
   const approveClaim = useApproveClaim();
   const rejectClaim = useRejectClaim();
@@ -127,15 +151,8 @@ export default function ContractDetailScreen() {
     [allClaims, id]
   );
 
-  // Backfill recent + upcoming charge months once the contract loads, so past
-  // months with no record show up as overdue/pending (never silently paid).
-  const ensuredFor = useRef<string | null>(null);
-  useEffect(() => {
-    if (contract && contract.status === 'active' && ensuredFor.current !== contract.id) {
-      ensuredFor.current = contract.id;
-      ensureRecent.mutate(contract);
-    }
-  }, [contract, ensureRecent]);
+  // NOT: Ekranı açmak veritabanına YAZMAZ. Eksik beklenen aylar repository
+  // katmanında sanal olarak hesaplanır; bakiye her ekranda aynıdır.
 
   const [tab, setTab] = useState<Tab>(tabParam === 'odemeler' ? 'odemeler' : 'genel');
   // Personel yalnızca "Genel"i görür (Ödemeler + Cari Hesap yönetici için).
@@ -150,6 +167,12 @@ export default function ContractDetailScreen() {
   const [monthActions, setMonthActions] = useState<Payment | null>(null);
   const [resetTarget, setResetTarget] = useState<Payment | null>(null);
   const [savingPayment, setSavingPayment] = useState(false);
+  const [lifecycle, setLifecycle] = useState<'extend' | 'rent' | 'exit' | null>(null);
+  // Ana sayfadaki "Uzat" / "Kiracı Çıkışı" kısayolları doğrudan pencereyi açar.
+  useEffect(() => {
+    if (actionParam === 'extend') setLifecycle('extend');
+    else if (actionParam === 'exit') setLifecycle('exit');
+  }, [actionParam]);
 
   // "Ödeme Geçmişi": geçmiş + içinde bulunulan ay (gelecek aylar hariç), yeni→eski.
   const recentPayments = useMemo(() => {
@@ -187,11 +210,9 @@ export default function ContractDetailScreen() {
     [contract, payments]
   );
 
-  // The most relevant unpaid period drives the reminder message + default month.
-  const outstanding = useMemo(
-    () => payments.find((p) => derivePaymentStatus(p) === 'overdue' || derivePaymentStatus(p) === 'partial') ?? payments[0],
-    [payments]
-  );
+  // Varsayılan tahsilat ayı: TÜM ekranlarla aynı kural (en eski açık ay).
+  const outstanding = useMemo(() => defaultCollectionMonth(payments) ?? undefined, [payments]);
+  const debt = useMemo(() => overdueDebt(payments), [payments]);
 
   if (isLoading) {
     return (
@@ -215,9 +236,12 @@ export default function ContractDetailScreen() {
   const location = [contract.block, contract.unit].filter(Boolean).join(' / ');
 
   const openPaymentSheet = (p: Payment | null) => {
+    clientRef.current = newClientRef();
     setActivePayment(p);
     setPaymentSheetOpen(true);
   };
+  const phase = contractPhase(contract);
+  const closed = isClosedContract(contract);
 
   const setStatus = (status: 'active' | 'passive', label: string) => {
     updateContract.mutate(
@@ -226,12 +250,6 @@ export default function ContractDetailScreen() {
     );
   };
 
-  const refreshLedger = () => {
-    ensureRecent.mutate(contract, {
-      onSuccess: () => toast.success('Cari hesap güncellendi'),
-      onError: (e) => toast.error(errorMessage(e, 'Güncellenemedi')),
-    });
-  };
 
   const handlePickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({
@@ -292,17 +310,23 @@ export default function ContractDetailScreen() {
           mimeType: input.receipt.mimeType,
         });
       }
-      await addTransaction.mutateAsync({
+      const target = payments.find((p) => p.id === input.paymentId);
+      const { transactionId } = await collectPayment.mutateAsync({
+        contractId: contract.id,
         paymentId: input.paymentId,
         amount: input.amount,
         paidAt: input.paidAt,
         method: input.method,
         description: input.description,
         receiptUrl,
+        clientRef: clientRef.current,
       });
       setPaymentSheetOpen(false);
       setActivePayment(null);
-      toast.success('Ödeme kaydedildi');
+      toast.success(
+        `${target ? periodLabel(target) : 'Ödeme'} · ${formatCurrency(input.amount)} kaydedildi`,
+        { action: { label: 'Geri al', onPress: () => undo(transactionId) } }
+      );
     } catch (e) {
       console.warn('Ödeme kaydı hatası:', e);
       toast.error(errorMessage(e, 'Ödeme kaydedilemedi'));
@@ -365,12 +389,37 @@ export default function ContractDetailScreen() {
     }
   };
 
+  const undo = (transactionId: string) =>
+    undoCollection.mutate(
+      { transactionId, contractId: contract.id },
+      {
+        onSuccess: () => toast.info('Tahsilat geri alındı'),
+        onError: (e) => toast.error(errorMessage(e, 'Geri alınamadı')),
+      }
+    );
+
+  // "Ödendi olarak işaretle": kalan tutar KADAR tahsilat eklenir; mevcut
+  // tahsilatlar/dekontlar silinmez (eski sürüm siliyordu).
   const markMonthPaid = (p: Payment) => {
     setMonthActions(null);
-    setMonthlyPaid.mutate(
-      { paymentId: p.id, amountPaid: p.amountDue },
+    const amount = remainingOf(p);
+    if (amount <= 0) return;
+    collectPayment.mutate(
       {
-        onSuccess: () => toast.success('Ay ödendi olarak işaretlendi'),
+        contractId: contract.id,
+        paymentId: p.id,
+        amount,
+        paidAt: new Date().toISOString().slice(0, 10),
+        method: null,
+        description: 'Ödendi olarak işaretlendi',
+        receiptUrl: null,
+        clientRef: newClientRef(),
+      },
+      {
+        onSuccess: ({ transactionId }) =>
+          toast.success(`${periodLabel(p)} · ${formatCurrency(amount)} kaydedildi`, {
+            action: { label: 'Geri al', onPress: () => undo(transactionId) },
+          }),
         onError: (e) => toast.error(errorMessage(e, 'İşlem başarısız')),
       }
     );
@@ -378,8 +427,8 @@ export default function ContractDetailScreen() {
 
   const confirmResetMonth = () => {
     if (!resetTarget) return;
-    setMonthlyPaid.mutate(
-      { paymentId: resetTarget.id, amountPaid: 0 },
+    resetMonth.mutate(
+      resetTarget.id,
       {
         onSuccess: () => {
           setResetTarget(null);
@@ -428,6 +477,13 @@ export default function ContractDetailScreen() {
     : [];
 
   const actionItems: ActionSheetItem[] = [
+    ...(!closed
+      ? [
+          { label: 'Sözleşmeyi Uzat', icon: CalendarPlus, onPress: () => setLifecycle('extend') },
+          { label: 'Kira Artışı', icon: TrendingUp, onPress: () => setLifecycle('rent') },
+          { label: 'Kiracı Çıkışı', icon: LogOut, onPress: () => setLifecycle('exit') },
+        ]
+      : []),
     {
       label: 'Düzenle',
       icon: Pencil,
@@ -471,16 +527,16 @@ export default function ContractDetailScreen() {
           <View className="flex-row items-center gap-3">
             <Avatar name={contract.tenantName} size={52} />
             <View className="flex-1">
-              <View className="flex-row items-center gap-2">
-                <Text className="flex-shrink text-lg font-bold text-foreground" numberOfLines={1}>
-                  {contract.tenantName}
-                </Text>
-                <ContractBadge status={contract.status} />
-              </View>
+              <Text className="text-lg font-bold text-foreground" numberOfLines={1}>
+                {contract.tenantName}
+              </Text>
               <Text className="mt-0.5 text-sm text-muted" numberOfLines={1}>
                 {contract.propertyName}
                 {location ? ` · ${location}` : ''}
               </Text>
+              <View className="mt-1.5 flex-row">
+                <PhaseBadge contract={contract} />
+              </View>
             </View>
           </View>
           <View className="mt-3 flex-row flex-wrap items-center gap-x-2 gap-y-1 border-t border-border/60 pt-3">
@@ -545,7 +601,7 @@ export default function ContractDetailScreen() {
               onPress={() => callPhone(contract.tenantPhone)}
             />
           </View>
-          {canSeeLedger ? (
+          {canSeeLedger && (!closed || debt.total > 0) ? (
             <View className="flex-1">
               <Button
                 label="Ödeme"
@@ -565,30 +621,92 @@ export default function ContractDetailScreen() {
           </View>
         ) : null}
 
-        {/* Contract expiry banner (renewal / rent-increase reminder) */}
+        {/* Süre dolumu / yaklaşan bitiş: durum açıkça + Uzat / Çıkış */}
         {(() => {
-          if (contract.status !== 'active') return null;
+          if (closed) return null;
           const d = daysUntilEnd(contract);
           if (d === null || d > 60) return null;
-          const overdue = d < 0;
+          const expired = d < 0;
           return (
             <View
-              className={`mt-4 flex-row items-center gap-3 rounded-2xl p-3 ${
-                overdue || d <= 15 ? 'bg-warning-soft' : 'bg-primary-50'
+              className={`mt-4 rounded-2xl p-3 ${
+                phase === 'expired_stopped' ? 'bg-danger-soft' : expired || d <= 15 ? 'bg-warning-soft' : 'bg-primary-50'
               }`}
             >
-              <CalendarX2 size={20} color={palette.warning} />
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-foreground">
-                  Sözleşme {expiryLabel(d)}
-                </Text>
-                <Text className="text-xs text-muted">
-                  Yenileme veya kira artışı için uygun zaman.
-                </Text>
+              <View className="flex-row items-center gap-3">
+                <CalendarX2 size={20} color={phase === 'expired_stopped' ? palette.danger : palette.warning} />
+                <View className="flex-1">
+                  <Text className={`text-sm font-semibold ${expired || d <= 15 ? 'text-foreground' : 'text-primary-800'}`}>
+                    Sözleşme {expiryLabel(d)}
+                  </Text>
+                  <Text className={`text-xs ${expired || d <= 15 ? 'text-muted' : 'text-primary-700'}`}>
+                    {phase === 'expired_renewing'
+                      ? 'Uzatıldı mı, kiracı çıktı mı? Karar verene kadar kira takibi aynı koşullarla sürüyor.'
+                      : phase === 'expired_stopped'
+                        ? 'Kira takibi bitiş ayında durdu. Kiracı devam ediyorsa uzatın; çıktıysa çıkışı kaydedin.'
+                        : contract.autoRenew === false
+                          ? 'Bitişte takip duracak. Uzatma veya kira artışı için uygun zaman.'
+                          : 'Bitişte aynı koşullarla uzayacak. Kira artışı için uygun zaman.'}
+                  </Text>
+                </View>
               </View>
+              {canSeeLedger ? (
+                <View className="mt-3 flex-row gap-2">
+                  <Pressable
+                    onPress={() => setLifecycle('extend')}
+                    className="flex-1 items-center rounded-2xl bg-surface py-2.5 active:opacity-80"
+                  >
+                    <Text className="text-sm font-semibold text-primary-700">Uzat</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setLifecycle('rent')}
+                    className="flex-1 items-center rounded-2xl bg-surface py-2.5 active:opacity-80"
+                  >
+                    <Text className="text-sm font-semibold text-primary-700">Kira Artışı</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setLifecycle('exit')}
+                    className="flex-1 items-center rounded-2xl bg-surface py-2.5 active:opacity-80"
+                  >
+                    <Text className="text-sm font-semibold text-foreground">Çıkış</Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
           );
         })()}
+
+        {/* Sonlandırılmış: çıkış + depozito özeti; geçmiş borç tahsil edilebilir */}
+        {contract.status === 'terminated' ? (
+          <View className="mt-4 rounded-2xl border border-border bg-surface p-4">
+            <Text className="text-sm font-bold text-foreground">
+              {CONTRACT_PHASE_LABEL.terminated}
+              {contract.terminatedAt ? ` · çıkış ${formatShortDate(contract.terminatedAt)}` : ''}
+            </Text>
+            <Text className="mt-1 text-xs text-muted">
+              Yeni kira borcu oluşmaz.
+              {debt.total > 0 ? ` Kalan borç ${formatCurrency(debt.total)} tahsil edilebilir.` : ' Açık borç yok.'}
+            </Text>
+            {contract.depositReturned != null || contract.depositDeduction != null ? (
+              <Text className="mt-1 text-xs text-foreground">
+                Depozito: {formatCurrency(contract.depositReturned ?? 0)} iade ·{' '}
+                {formatCurrency(contract.depositDeduction ?? 0)} kesinti
+                {contract.depositNote ? ` (${contract.depositNote})` : ''}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Planlı (ileri tarihli) kira artışı */}
+        {contract.nextRentFrom && !closed ? (
+          <View className="mt-4 rounded-2xl bg-primary-50 p-3">
+            <Text className="text-xs font-semibold text-primary-800">
+              {formatMonth(contract.nextRentFrom)} itibarıyla kira{' '}
+              {formatCurrency((contract.nextRentAmount ?? contract.rentAmount) + (contract.nextDuesAmount ?? contract.duesAmount))}{' '}
+              olacak.
+            </Text>
+          </View>
+        ) : null}
 
         {/* Cari hesap özeti — yalnızca yönetici */}
         {balance && canSeeLedger ? (
@@ -664,7 +782,7 @@ export default function ContractDetailScreen() {
                 label="Bitiş"
                 value={contract.endDate ? formatShortDate(contract.endDate) : '—'}
               />
-              <InfoRow label="Ödeme Günü" value={`Her ayın ${contract.paymentDay}.`} />
+              <InfoRow label="Ödeme Günü" value={paymentDayLabel(contract.paymentDay)} />
               <InfoRow label="Notlar" value={contract.notes ?? '—'} last />
             </Card>
 
@@ -925,18 +1043,13 @@ export default function ContractDetailScreen() {
         {/* --- CARI HESAP --- */}
         {activeTab === 'cari' ? (
           <>
-            <View className="mt-5 flex-row items-center justify-between">
+            <View className="mt-5">
               <Text className="text-base font-bold text-foreground">Cari Hesap Defteri</Text>
-              <Pressable
-                onPress={refreshLedger}
-                disabled={ensureRecent.isPending}
-                className="flex-row items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-2 active:opacity-80"
-              >
-                <RefreshCw size={14} color={palette.primary} />
-                <Text className="text-xs font-semibold text-primary-700">
-                  {ensureRecent.isPending ? 'Yenileniyor…' : 'Yenile'}
-                </Text>
-              </Pressable>
+              <Text className="mt-0.5 text-xs text-muted">
+                Takip başlangıcı:{' '}
+                {formatMonth(contract.trackingStart ?? contract.startDate)} · öncesi için otomatik
+                borç yazılmaz.
+              </Text>
             </View>
 
             {ledgerRows.length === 0 ? (
@@ -944,7 +1057,7 @@ export default function ContractDetailScreen() {
                 <EmptyState
                   icon={FileText}
                   title="Cari hesap boş"
-                  description="Eksik ayları oluşturmak için Yenile'ye dokunun."
+                  description="Takip başlangıcından itibaren aylar burada görünür."
                 />
               </View>
             ) : (
@@ -992,6 +1105,66 @@ export default function ContractDetailScreen() {
         onSubmit={handleAddPayment}
       />
 
+      <ExtendSheet
+        contract={contract}
+        visible={lifecycle === 'extend'}
+        submitting={extendContract.isPending}
+        onClose={() => setLifecycle(null)}
+        onSubmit={(v) =>
+          extendContract.mutate(
+            { id: contract.id, endDate: v.endDate, autoRenew: v.autoRenew, rentChange: v.rentChange },
+            {
+              onSuccess: () => {
+                setLifecycle(null);
+                toast.success(
+                  v.endDate ? `Sözleşme ${formatShortDate(v.endDate)} tarihine uzatıldı` : 'Sözleşme uzatıldı'
+                );
+              },
+              onError: (e) => toast.error(errorMessage(e, 'Uzatılamadı')),
+            }
+          )
+        }
+      />
+      <RentChangeSheet
+        contract={contract}
+        visible={lifecycle === 'rent'}
+        submitting={applyRentChange.isPending}
+        onClose={() => setLifecycle(null)}
+        onSubmit={(input) =>
+          applyRentChange.mutate(
+            { id: contract.id, input },
+            {
+              onSuccess: () => {
+                setLifecycle(null);
+                toast.success(
+                  `${formatMonth(input.effectiveMonth)} itibarıyla ${formatCurrency(input.rentAmount + input.duesAmount)}`
+                );
+              },
+              onError: (e) => toast.error(errorMessage(e, 'Kira artışı kaydedilemedi')),
+            }
+          )
+        }
+      />
+      <ExitSheet
+        contract={contract}
+        visible={lifecycle === 'exit'}
+        openDebt={debt.total}
+        submitting={terminateContract.isPending}
+        onClose={() => setLifecycle(null)}
+        onSubmit={({ input, markUnitVacant }) =>
+          terminateContract.mutate(
+            { contract, input, markUnitVacant },
+            {
+              onSuccess: () => {
+                setLifecycle(null);
+                toast.success('Kiracı çıkışı kaydedildi');
+              },
+              onError: (e) => toast.error(errorMessage(e, 'Çıkış kaydedilemedi')),
+            }
+          )
+        }
+      />
+
       <ActionSheet
         visible={actionsOpen}
         title="Sözleşme İşlemleri"
@@ -1010,7 +1183,7 @@ export default function ContractDetailScreen() {
         message="Bu ayın ödemesi silinip 'ödenmedi' olarak işaretlenecek (varsa tahsilat kayıtları da silinir). Emin misiniz?"
         confirmLabel="Sıfırla"
         destructive
-        loading={setMonthlyPaid.isPending}
+        loading={resetMonth.isPending}
         onCancel={() => setResetTarget(null)}
         onConfirm={confirmResetMonth}
       />

@@ -1,6 +1,11 @@
-import { useMemo, useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
-import { Controller, useForm } from 'react-hook-form';
+import { useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { addMonths, format, parseISO } from 'date-fns';
+import { tr } from 'date-fns/locale';
+import { Info } from 'lucide-react-native';
+import { monthStart } from '@/lib/ledger/accrual';
+import { suggestedTrackingStart } from '../form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -19,6 +24,8 @@ interface ContractFormProps {
   submitLabel: string;
   submitting?: boolean;
   onSubmit: (values: ContractFormValues) => void;
+  /** 'edit' → başlangıç bakiyesi gizlenir; kira değişirse geçerlilik ayı sorulur. */
+  mode?: 'create' | 'edit';
 }
 
 export function ContractForm({
@@ -26,15 +33,36 @@ export function ContractForm({
   submitLabel,
   submitting,
   onSubmit,
+  mode = 'create',
 }: ContractFormProps) {
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
     defaultValues,
   });
+  const [startDate, trackingStart, rentAmount, duesAmount] = useWatch({
+    control,
+    name: ['startDate', 'trackingStart', 'rentAmount', 'duesAmount'],
+  });
+  const startMonth = startDate ? monthStart(startDate) : '';
+  // Yeni sözleşmede takip başlangıcı otomatik önerilir; kullanıcı değiştirebilir.
+  const effectiveTracking =
+    trackingStart && startMonth && trackingStart >= startMonth
+      ? trackingStart
+      : suggestedTrackingStart(startDate);
+  const trackingOptions = useMemo(() => monthOptions(startMonth), [startMonth]);
+  const rentChanged =
+    mode === 'edit' &&
+    (Number(rentAmount) !== defaultValues.rentAmount ||
+      Number(duesAmount) !== defaultValues.duesAmount);
+  const effectiveOptions = useMemo(
+    () => monthOptions(defaultValues.trackingStart || startMonth, 6),
+    [defaultValues.trackingStart, startMonth]
+  );
 
   return (
     <View>
@@ -89,13 +117,81 @@ export function ContractForm({
         <DateFieldControlled control={control} name="endDate" label="Bitiş Tarihi" optional errors={errors} />
         <Field control={control} name="paymentDay" label="Ödeme Günü (1-31) *" keyboardType="number-pad" errors={errors} />
         <Field control={control} name="notes" label="Notlar" errors={errors} />
+        <Card>
+          <ToggleRow
+            control={control}
+            name="autoRenew"
+            label="Bitişte aynı koşullarla uzasın"
+          />
+          <Text className="pb-1 text-xs text-muted">
+            Açıkken bitiş tarihinden sonra da kira takibi sürer; süre dolunca size “Uzatıldı
+            mı, kiracı çıktı mı?” diye sorulur.
+          </Text>
+        </Card>
       </View>
 
-      <SectionHeader title="Bildirim Ayarları" />
+      {rentChanged ? (
+        <View className="mt-4 rounded-2xl border border-warning/40 bg-warning-soft p-4">
+          <Text className="text-sm font-bold text-foreground">Yeni kira hangi aydan geçerli?</Text>
+          <Text className="mb-2 mt-0.5 text-xs text-muted">
+            Önceki aylar ve alınan tahsilatlar değişmez.
+          </Text>
+          <Controller
+            control={control}
+            name="rentEffectiveMonth"
+            render={({ field: { value, onChange } }) => (
+              <MonthChips options={effectiveOptions} value={value || monthStart(new Date())} onChange={onChange} />
+            )}
+          />
+        </View>
+      ) : null}
+
+      <SectionHeader title="Kira Takibi" />
       <Card>
-        <ToggleRow control={control} name="notifyOwner" label="Mülk sahibine bildirim" />
-        <ToggleRow control={control} name="notifyTenant" label="Kiracıya bildirim" border />
-        <ToggleRow control={control} name="notifyStaff" label="Personel bildirimi" border />
+        <Text className="text-sm font-semibold text-foreground">
+          Hangi aydan itibaren takip edilsin?
+        </Text>
+        <Text className="mb-2 mt-0.5 text-xs text-muted">
+          Seçilen aydan önceki aylar için otomatik borç veya tahsilat yazılmaz.
+        </Text>
+        {startMonth ? (
+          <MonthChips
+            options={trackingOptions}
+            value={effectiveTracking}
+            onChange={(v) => setValue('trackingStart', v, { shouldDirty: true })}
+          />
+        ) : (
+          <Text className="text-xs text-muted">Önce başlangıç tarihini seçin.</Text>
+        )}
+        {mode === 'create' ? (
+          <View className="mt-3">
+            <MoneyField
+              control={control}
+              name="openingBalance"
+              label="Takip öncesinden kalan borç (varsa)"
+              errors={errors}
+            />
+            <Text className="mt-1 text-xs text-muted">
+              Girerseniz “Başlangıç bakiyesi” olarak tek satırda borca eklenir.
+            </Text>
+          </View>
+        ) : null}
+      </Card>
+
+      {/* Bildirimler: neyin otomatik olduğunu açıkça söyle (sahte ayar yok). */}
+      <SectionHeader title="Hatırlatmalar" />
+      <Card>
+        <View className="flex-row gap-2">
+          <Info size={16} color={palette.primary} />
+          <View className="flex-1 gap-1">
+            <Text className="text-sm text-foreground">
+              Ödeme günü yaklaşınca ve geciktiğinde hatırlatma <Text className="font-bold">size ve ekibinize</Text> bildirim olarak gelir (Bildirim Ayarları).
+            </Text>
+            <Text className="text-sm text-foreground">
+              Kiracıya veya mülk sahibine <Text className="font-bold">otomatik mesaj gönderilmez</Text>. Mesajı sözleşme ekranındaki “Mesaj” ile WhatsApp üzerinden siz gönderirsiniz.
+            </Text>
+          </View>
+        </View>
       </Card>
 
       <View className="mt-6">
@@ -310,7 +406,7 @@ function ToggleRow({
   border = false,
 }: {
   control: any;
-  name: 'notifyOwner' | 'notifyTenant' | 'notifyStaff';
+  name: 'autoRenew';
   label: string;
   border?: boolean;
 }) {
@@ -333,5 +429,79 @@ function ToggleRow({
         </View>
       )}
     />
+  );
+}
+
+/** Takip / geçerlilik ayı seçenekleri: `from` ayından (en fazla son 12 ay) → bugün + `ahead`. */
+function monthOptions(from: string, ahead = 1): { value: string; label: string }[] {
+  const cur = monthStart(new Date());
+  const end = monthStart(addMonths(new Date(), ahead));
+  const out: { value: string; label: string }[] = [];
+  if (!from) return out;
+  const earliest = monthStart(addMonths(new Date(), -12));
+  let m = from > earliest ? from : earliest;
+  if (from < earliest) out.push({ value: from, label: `${fmtMonth(from)} (başlangıç)` });
+  if (from > end) return [{ value: from, label: `${fmtMonth(from)} (başlangıç)` }];
+  for (let i = 0; m <= end && i < 40; i++) {
+    out.push({
+      value: m,
+      label: m === from ? `${fmtMonth(m)} (başlangıç)` : m === cur ? `${fmtMonth(m)} (bu ay)` : fmtMonth(m),
+    });
+    m = monthStart(addMonths(parseISO(m), 1));
+  }
+  return out;
+}
+
+function fmtMonth(iso: string): string {
+  return format(parseISO(iso), 'MMM yyyy', { locale: tr });
+}
+
+export function MonthChips({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  // Seçili ay ekran dışında kalmasın: ilk yerleşimde ona kaydır.
+  const scrollRef = useRef<ScrollView>(null);
+  const scrolled = useRef(false);
+  return (
+    <ScrollView
+      ref={scrollRef}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ gap: 8 }}
+    >
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            onLayout={
+              active
+                ? (e) => {
+                    if (scrolled.current) return;
+                    scrolled.current = true;
+                    scrollRef.current?.scrollTo({
+                      x: Math.max(e.nativeEvent.layout.x - 16, 0),
+                      animated: false,
+                    });
+                  }
+                : undefined
+            }
+            onPress={() => onChange(o.value)}
+            accessibilityState={{ selected: active }}
+            className={`rounded-2xl px-3.5 py-2 ${active ? 'bg-primary' : 'bg-background'}`}
+          >
+            <Text className={`text-sm font-semibold capitalize ${active ? 'text-white' : 'text-foreground'}`}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }

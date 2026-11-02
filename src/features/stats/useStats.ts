@@ -98,14 +98,14 @@ export function useStats(selectedMonth?: string) {
     const cur = aggByMonth.get(activeMonth) ?? emptyAgg();
     const collectionRate = cur.due > 0 ? (cur.collected / cur.due) * 100 : 0;
 
-    // Bir önceki aya göre kıyas (tahsilat tutarı).
+    // Önceki ayla kıyas: TUTAR değil TAHSİLAT ORANI (o ayın tahakkukunun yüzde
+    // kaçı tahsil edildi). Tahakkuk ile tahsilat karıştırılmaz; yarım ay tam ayla
+    // tutar olarak kıyaslanmaz. Ay devam ediyorsa arayüz bunu ayrıca belirtir.
     const prevMonth = monthKey(subMonths(parseISO(activeMonth), 1));
     const prev = aggByMonth.get(prevMonth);
-    const prevCollected = prev?.collected ?? 0;
-    const momDeltaPct =
-      prevCollected > 0
-        ? ((cur.collected - prevCollected) / prevCollected) * 100
-        : null;
+    const prevCollectionRate =
+      prev && prev.due > 0 ? (prev.collected / prev.due) * 100 : null;
+    const isCurrentMonth = activeMonth === thisMonth;
 
     // Bina bazlı ay detayı.
     const buildingMap = new Map<string, BuildingMonthStat>();
@@ -223,7 +223,9 @@ export function useStats(selectedMonth?: string) {
       collectionRate,
       paidContracts: cur.paid,
       totalContracts: cur.count,
-      momDeltaPct,
+      prevCollectionRate,
+      prevMonthLong: format(parseISO(prevMonth), 'MMMM', { locale: tr }),
+      isCurrentMonth,
       commissionThisMonth,
       commissionTotal,
       // Finansal özet (portföy geneli)
