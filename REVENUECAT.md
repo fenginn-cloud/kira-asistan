@@ -13,8 +13,8 @@ soyutlaması eklendi; sadece hesap açıp anahtarları girmen ve deploy etmen ye
 Her iki mağazada da **yıllık abonelik** ürünleri oluştur:
 | Ürün ID | Plan | Fiyat |
 |---------|------|-------|
-| `pro_yearly` | Pro | 1.799 TL/yıl |
-| `business_yearly` | Business | 9.599 TL/yıl |
+| `pro_yearly` | Pro | 3.999 TL/yıl |
+| `business_yearly` | Business | 11.999 TL/yıl |
 
 - App Store Connect → Subscriptions
 - Play Console → Monetize → Subscriptions
