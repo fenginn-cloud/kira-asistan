@@ -12,11 +12,7 @@
 1. **App Store Connect → Anlaşmalar, Vergi ve Bankacılık:** Ücretli Uygulamalar anlaşması imzalı, banka ve vergi bilgisi girili olmalı. Yoksa abonelik satılamaz.
 2. **Abonelik ürünleri:** Bir abonelik grubu altında `pro_yearly` (3.999 TL/yıl) ve `business_yearly` (11.999 TL/yıl). Her birine görünen ad, açıklama ve inceleme ekran görüntüsü.
 3. **RevenueCat:** App Store uygulamasını bağlayın (In-App Purchase anahtarı). Entitlement'lar `pro`, `business`; ürünleri bağlayın; varsayılan Offering oluşturun.
-4. **RevenueCat iOS anahtarı (`appl_...`):** Canlı derlemede tanımlı DEĞİL. Tanımlanmazsa mağaza sürümünde satın alma çalışmaz ve inceleme reddedilir:
-   ```bash
-   eas env:create --environment production --name EXPO_PUBLIC_RC_IOS_KEY --value appl_XXXX --visibility plaintext
-   ```
-   `preview` profilindeki `test_...` anahtarı mağaza için geçersizdir.
+4. **RevenueCat iOS anahtarı:** `eas.json` → `production` profiline eklendi (`EXPO_PUBLIC_RC_IOS_KEY`, `appl_...`). Bu herkese açık (public) SDK anahtarıdır; gizli `sk_...` anahtarı asla uygulamaya konmaz.
 5. **Webhook:** `revenuecat-webhook` Edge Function'ı deploy edin, `REVENUECAT_WEBHOOK_SECRET` tanımlayın, RevenueCat'te webhook URL'sini girin (bkz. REVENUECAT.md).
 6. **Uygulama sayfası:** ad, alt başlık, açıklama, anahtar kelimeler, destek URL'si, gizlilik politikası URL'si (`https://<alan-adı>/yasal/gizlilik`), kategori (İş / Finans), yaş derecelendirmesi.
 7. **App Privacy (gizlilik etiketleri):** E-posta, ad, telefon, satın alma geçmişi — "uygulama işlevi", kullanıcıya bağlı, takip yok. Kiracı/mülk sahibi bilgileri "Diğer kullanıcı içeriği" olarak beyan edilmeli.
