@@ -10,7 +10,7 @@
 
 ## Sizin yapmanız gerekenler (dış hesaplar)
 1. **App Store Connect → Anlaşmalar, Vergi ve Bankacılık:** Ücretli Uygulamalar anlaşması imzalı, banka ve vergi bilgisi girili olmalı. Yoksa abonelik satılamaz.
-2. **Abonelik ürünleri:** Bir abonelik grubu altında `pro_yearly` (1.799 TL/yıl) ve `business_yearly` (9.599 TL/yıl). Her birine görünen ad, açıklama ve inceleme ekran görüntüsü.
+2. **Abonelik ürünleri:** Bir abonelik grubu altında `pro_yearly` (3.999 TL/yıl) ve `business_yearly` (11.999 TL/yıl). Her birine görünen ad, açıklama ve inceleme ekran görüntüsü.
 3. **RevenueCat:** App Store uygulamasını bağlayın (In-App Purchase anahtarı). Entitlement'lar `pro`, `business`; ürünleri bağlayın; varsayılan Offering oluşturun.
 4. **RevenueCat iOS anahtarı (`appl_...`):** Canlı derlemede tanımlı DEĞİL. Tanımlanmazsa mağaza sürümünde satın alma çalışmaz ve inceleme reddedilir:
    ```bash
