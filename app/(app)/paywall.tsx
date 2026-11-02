@@ -274,6 +274,15 @@ export default function PaywallScreen() {
             istediğiniz zaman mağaza hesabınızdan iptal edebilirsiniz; erişiminiz dönem sonuna
             kadar devam eder.
           </Text>
+          {/* App Store 3.1.2: abonelik ekranında kullanım şartları ve gizlilik bağlantısı */}
+          <View className="mt-2 flex-row justify-center gap-4">
+            <Pressable onPress={() => router.push('/yasal/kullanim' as never)} hitSlop={8}>
+              <Text className="text-xs font-semibold text-primary-700">Kullanım Şartları (EULA)</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/yasal/gizlilik' as never)} hitSlop={8}>
+              <Text className="text-xs font-semibold text-primary-700">Gizlilik Politikası</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
