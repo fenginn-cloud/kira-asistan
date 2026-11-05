@@ -14,6 +14,7 @@ import { fgColor } from '@/lib/theme/useThemeColors';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
+import { SocialAuthButtons } from '@/features/auth/SocialAuthButtons';
 import {
   PORTFOLIO_OPTIONS,
   REFERRAL_OPTIONS,
@@ -190,6 +191,8 @@ export default function RegisterScreen() {
             <View className="mt-2">
               <Button label="Kayıt Ol" onPress={onSubmit} loading={loading} />
             </View>
+
+            <SocialAuthButtons />
 
             <View className="mt-2 flex-row items-center justify-center gap-1">
               <Text className="text-sm text-muted">Zaten hesabınız var mı?</Text>

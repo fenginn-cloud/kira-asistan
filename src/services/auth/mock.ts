@@ -4,6 +4,10 @@ import type { AuthProvider } from './types';
 
 /** Phase 1 mock auth: any password logs in as the matching (or first) user. */
 export const mockAuthProvider: AuthProvider = {
+  oauthAvailable: false,
+  async signInWithOAuth() {
+    throw new Error('Demo modunda sosyal giriş yok.');
+  },
   async signIn(email) {
     await new Promise((r) => setTimeout(r, 500));
     const matched =

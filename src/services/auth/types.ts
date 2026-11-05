@@ -11,7 +11,17 @@ export interface SignUpResult {
   email: string;
 }
 
+export type OAuthProviderId = 'google' | 'apple';
+
 export interface AuthProvider {
+  /**
+   * Google / Apple ile giriş (şimdilik yalnızca WEB). Tarayıcı sağlayıcının
+   * sayfasına yönlenir; dönüşte oturum `restore()` ile yakalanır ve ilk kez
+   * giren kullanıcı için şirket/profil otomatik oluşturulur.
+   */
+  signInWithOAuth(provider: OAuthProviderId): Promise<void>;
+  /** Bu ortamda sosyal giriş kullanılabilir mi (web + Supabase). */
+  oauthAvailable: boolean;
   signIn(email: string, password: string): Promise<AppUser>;
   signOut(): Promise<void>;
   /**

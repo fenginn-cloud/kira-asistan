@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
 import type { AppUser } from '@/types';
 import { fromUser, toUser } from '@/services/repositories/supabase/mappers';
+import { Platform } from 'react-native';
 import type { AuthProvider, SignUpResult } from './types';
 
 function db() {
@@ -18,7 +19,54 @@ async function loadProfile(userId: string): Promise<AppUser> {
   return toUser(data);
 }
 
+/**
+ * Oturum var ama profil yoksa (Google/Apple ile İLK giriş) hesabı kurar.
+ * bootstrap_self_service_account idempotenttir: profil varsa hiçbir şey
+ * oluşturmaz. Pasif kullanıcı uygulamaya alınmaz.
+ */
+async function profileForSession(userId: string): Promise<AppUser | null> {
+  let profile: AppUser | null = null;
+  try {
+    profile = await loadProfile(userId);
+  } catch {
+    const { error } = await db().rpc('bootstrap_self_service_account');
+    if (error) return null;
+    try {
+      profile = await loadProfile(userId);
+    } catch {
+      return null;
+    }
+  }
+  if (!profile.isActive) {
+    await db().auth.signOut();
+    return null;
+  }
+  return profile;
+}
+
 export const supabaseAuthProvider: AuthProvider = {
+  oauthAvailable: Platform.OS === 'web',
+
+  async signInWithOAuth(provider) {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') {
+      throw new Error('Bu giriş yöntemi şimdilik yalnızca web sürümünde.');
+    }
+    const { error } = await db().auth.signInWithOAuth({
+      provider,
+      options: {
+        // Dönüşte giriş ekranına gelinir; oturum yakalanınca uygulamaya geçilir.
+        redirectTo: `${window.location.origin}/login`,
+      },
+    });
+    if (error) {
+      throw new Error(
+        error.message?.toLowerCase().includes('not enabled')
+          ? 'Bu giriş yöntemi henüz etkin değil.'
+          : 'Giriş başlatılamadı.'
+      );
+    }
+  },
+
   async signIn(email, password) {
     const { data, error } = await db().auth.signInWithPassword({ email, password });
     if (error) throw new Error('E-posta veya şifre hatalı.');
@@ -113,12 +161,17 @@ export const supabaseAuthProvider: AuthProvider = {
     const sessionUser = data.session?.user;
     if (!sessionUser?.id) return null;
     // Guard: do not restore an unverified session into the protected app.
+    // (Google/Apple e-postayı doğrulanmış olarak getirir.)
     if (!sessionUser.email_confirmed_at) return null;
-    try {
-      return await loadProfile(sessionUser.id);
-    } catch {
-      return null;
+    const profile = await profileForSession(sessionUser.id);
+    if (profile) {
+      try {
+        await db().rpc('touch_last_login');
+      } catch {
+        // ignore
+      }
     }
+    return profile;
   },
 
   async persistProfile(patch) {
