@@ -13,6 +13,7 @@ import { Building2, Check } from 'lucide-react-native';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
+import { SocialAuthButtons } from '@/features/auth/SocialAuthButtons';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -105,6 +106,8 @@ export default function LoginScreen() {
             <View className="mt-2">
               <Button label="Giriş Yap" onPress={onSubmit} loading={isLoading} />
             </View>
+
+            <SocialAuthButtons />
 
             <View className="mt-2 flex-row items-center justify-center gap-1">
               <Text className="text-sm text-muted">Hesabınız yok mu?</Text>
