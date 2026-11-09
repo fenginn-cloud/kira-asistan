@@ -1,11 +1,22 @@
 name: Kira artış oranını güncelle
 
-# TÜİK enflasyonu her ayın 3'ünde açıklar; EVDS'ye geçmesi gecikebilir diye 3-6 arası her gün denenir.
-# Yeni ay zaten eklendiyse görev hiçbir şey yapmaz.
+# İki yol:
+#  1) ELLE (her zaman çalışır): Actions → bu görev → Run workflow → "oran" alanına
+#     TÜİK'in açıkladığı 12 aylık ortalama değişimi yaz (ör. 30,85). Ay boş bırakılırsa
+#     dosyadaki son aydan sonraki ay kabul edilir.
+#  2) OTOMATİK (isteğe bağlı): EVDS_API_KEY secret'ı tanımlıysa her ayın 3-6'sı
+#     TCMB EVDS'den hesaplanır. Secret yoksa zamanlanmış çalışma sessizce atlanır.
 on:
   schedule:
     - cron: '30 9 3-6 * *' # 12:30 TSİ
   workflow_dispatch:
+    inputs:
+      oran:
+        description: 'Kira artış oranı (%), ör. 30,85 — boş bırakılırsa EVDS denenir'
+        required: false
+      ay:
+        description: 'Yenileme ayı YYYY-AA (boş = sıradaki ay)'
+        required: false
 
 permissions:
   contents: write
@@ -27,12 +38,21 @@ jobs:
         with:
           node-version: 20
 
-      - name: EVDS'den yeni oranı hesapla
+      - name: Oranı ekle
         id: rates
         env:
+          ORAN: ${{ inputs.oran }}
+          AY: ${{ inputs.ay }}
           EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
           EVDS_SERIES: ${{ vars.EVDS_SERIES }}
-        run: node scripts/seo/update-rates.js
+        run: |
+          if [ -n "$ORAN" ]; then
+            node scripts/seo/add-rate.js "$ORAN" "$AY"
+          elif [ -n "$EVDS_API_KEY" ]; then
+            node scripts/seo/update-rates.js
+          else
+            echo "Oran girilmedi ve EVDS_API_KEY yok — yapılacak bir şey yok."
+          fi
 
       - name: Commit + siteyi yeniden yayınla
         if: steps.rates.outputs.added != ''
