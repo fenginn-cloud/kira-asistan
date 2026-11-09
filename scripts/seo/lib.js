@@ -126,6 +126,13 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 footer{text-align:center;font-size:13px;color:var(--muted);padding:24px 16px}footer a{color:var(--muted)}
 `;
 
+/** Cloudflare Web Analytics (çerezsiz). CF_BEACON_TOKEN yoksa hiçbir şey eklenmez. */
+function cfBeacon() {
+  const t = process.env.CF_BEACON_TOKEN;
+  if (!t || !/^[a-f0-9]{32}$/i.test(t)) return '';
+  return `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"${t}"}'></script>`;
+}
+
 /**
  * Tam HTML sayfası.
  * @param {{path:string,title:string,description:string,h1:string,crumbs:{name:string,path:string}[],
@@ -187,6 +194,7 @@ ${p.legal ? `<p class="disc">${DISCLAIMER}</p>` : ''}
 </main>
 <footer><a href="/">${BRAND}</a> · <a href="/kira-artis-hesaplama">Kira Artış Hesaplama</a> · <a href="/sablonlar/">Belge Şablonları</a> · <a href="/yasal/kvkk">KVKK</a> · <a href="/yasal/gizlilik">Gizlilik</a></footer>
 ${p.script ? `<script>${p.script}</script>` : ''}
+${cfBeacon()}
 </body>
 </html>
 `;
@@ -215,4 +223,4 @@ function readEnv(root) {
   return env;
 }
 
-module.exports = { SITE, BRAND, AYLAR, esc, tl, pct, monthInfo, prevMonthLabel, registerUrl, page, writePage, readEnv };
+module.exports = { cfBeacon, SITE, BRAND, AYLAR, esc, tl, pct, monthInfo, prevMonthLabel, registerUrl, page, writePage, readEnv };

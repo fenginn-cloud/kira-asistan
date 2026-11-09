@@ -19,6 +19,8 @@ if (!fs.existsSync(DIST)) {
 }
 
 const env = readEnv(ROOT);
+if (env.CF_BEACON_TOKEN) process.env.CF_BEACON_TOKEN = env.CF_BEACON_TOKEN;
+else console.warn('[seo] CF_BEACON_TOKEN yok — ziyaretçi ölçümü eklenmedi.');
 const supa =
   env.EXPO_PUBLIC_SUPABASE_URL && env.EXPO_PUBLIC_SUPABASE_ANON_KEY
     ? { url: env.EXPO_PUBLIC_SUPABASE_URL.replace(/\/$/, ''), key: env.EXPO_PUBLIC_SUPABASE_ANON_KEY }
@@ -39,6 +41,10 @@ ${paths.map((p) => `  <url><loc>${SITE}${p === '/' ? '/' : p}</loc><lastmod>${to
 </urlset>
 `
 );
+// Oran verisi herkese açık JSON olarak da yayınlanır (hatırlatma e-postası fonksiyonu buradan okur).
+fs.mkdirSync(path.join(DIST, 'data'), { recursive: true });
+fs.copyFileSync(path.join(ROOT, 'data', 'kira-artis-oranlari.json'), path.join(DIST, 'data', 'kira-artis-oranlari.json'));
+
 fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
 
 console.log(`[seo] ${paths.length - 2} SEO sayfası + sitemap.xml + robots.txt üretildi.`);
