@@ -1,0 +1,48 @@
+name: Kira artış oranını güncelle
+
+# TÜİK enflasyonu her ayın 3'ünde açıklar; EVDS'ye geçmesi gecikebilir diye 3-6 arası her gün denenir.
+# Yeni ay zaten eklendiyse görev hiçbir şey yapmaz.
+on:
+  schedule:
+    - cron: '30 9 3-6 * *' # 12:30 TSİ
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: kira-orani
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: EVDS'den yeni oranı hesapla
+        id: rates
+        env:
+          EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
+          EVDS_SERIES: ${{ vars.EVDS_SERIES }}
+        run: node scripts/seo/update-rates.js
+
+      - name: Commit + siteyi yeniden yayınla
+        if: steps.rates.outputs.added != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/kira-artis-oranlari.json
+          git commit -m "chore(seo): kira artış oranı eklendi (${{ steps.rates.outputs.added }})"
+          git push origin HEAD:main
+          # GITHUB_TOKEN ile yapılan push deploy'u tetiklemez; elle tetikle.
+          gh workflow run deploy.yml --ref main
