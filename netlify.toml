@@ -1,6 +1,6 @@
 # Netlify configuration for the Expo (web) export.
 [build]
-  command = "npx expo export --platform web && node scripts/pwa-postbuild.js"
+  command = "npx expo export --platform web && node scripts/pwa-postbuild.js && node scripts/seo/build.js"
   publish = "dist"
 
 # SPA fallback — Expo Router (output: single) handles routing client-side.
