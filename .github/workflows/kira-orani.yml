@@ -1,0 +1,68 @@
+name: Kira artış oranını güncelle
+
+# İki yol:
+#  1) ELLE (her zaman çalışır): Actions → bu görev → Run workflow → "oran" alanına
+#     TÜİK'in açıkladığı 12 aylık ortalama değişimi yaz (ör. 30,85). Ay boş bırakılırsa
+#     dosyadaki son aydan sonraki ay kabul edilir.
+#  2) OTOMATİK (isteğe bağlı): EVDS_API_KEY secret'ı tanımlıysa her ayın 3-6'sı
+#     TCMB EVDS'den hesaplanır. Secret yoksa zamanlanmış çalışma sessizce atlanır.
+on:
+  schedule:
+    - cron: '30 9 3-6 * *' # 12:30 TSİ
+  workflow_dispatch:
+    inputs:
+      oran:
+        description: 'Kira artış oranı (%), ör. 30,85 — boş bırakılırsa EVDS denenir'
+        required: false
+      ay:
+        description: 'Yenileme ayı YYYY-AA (boş = sıradaki ay)'
+        required: false
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: kira-orani
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Oranı ekle
+        id: rates
+        env:
+          ORAN: ${{ inputs.oran }}
+          AY: ${{ inputs.ay }}
+          EVDS_API_KEY: ${{ secrets.EVDS_API_KEY }}
+          EVDS_SERIES: ${{ vars.EVDS_SERIES }}
+        run: |
+          if [ -n "$ORAN" ]; then
+            node scripts/seo/add-rate.js "$ORAN" "$AY"
+          elif [ -n "$EVDS_API_KEY" ]; then
+            node scripts/seo/update-rates.js
+          else
+            echo "Oran girilmedi ve EVDS_API_KEY yok — yapılacak bir şey yok."
+          fi
+
+      - name: Commit + siteyi yeniden yayınla
+        if: steps.rates.outputs.added != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/kira-artis-oranlari.json
+          git commit -m "chore(seo): kira artış oranı eklendi (${{ steps.rates.outputs.added }})"
+          git push origin HEAD:main
+          # GITHUB_TOKEN ile yapılan push deploy'u tetiklemez; elle tetikle.
+          gh workflow run deploy.yml --ref main
