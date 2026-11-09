@@ -30,7 +30,10 @@ http
       res.end('forbidden');
       return;
     }
-    if (!fs.existsSync(fp) || fs.statSync(fp).isDirectory()) {
+    // GitHub Pages gibi: /foo → foo.html (SEO statik sayfaları)
+    if ((!fs.existsSync(fp) || fs.statSync(fp).isDirectory()) && fs.existsSync(fp + '.html')) {
+      fp = fp + '.html';
+    } else if (!fs.existsSync(fp) || fs.statSync(fp).isDirectory()) {
       fp = path.join(dir, 'index.html'); // SPA fallback
     }
     fs.readFile(fp, (err, data) => {
