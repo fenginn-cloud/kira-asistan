@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { SITE, readEnv } = require('./lib');
 const kiraArtis = require('./kira-artis');
+const sablonlar = require('./sablonlar');
 
 const ROOT = path.join(__dirname, '..', '..');
 const DIST = path.join(ROOT, 'dist');
@@ -26,7 +27,8 @@ if (!supa) console.warn('[seo] Supabase env yok — hatırlatma formu gizlenecek
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'kira-artis-oranlari.json'), 'utf8'));
 
-const paths = ['/', '/ozellikler', ...kiraArtis.build(DIST, data, supa)];
+(async () => {
+const paths = ['/', '/ozellikler', ...kiraArtis.build(DIST, data, supa), ...(await sablonlar.build(DIST))];
 
 const today = new Date().toISOString().slice(0, 10);
 fs.writeFileSync(
@@ -40,3 +42,7 @@ ${paths.map((p) => `  <url><loc>${SITE}${p === '/' ? '/' : p}</loc><lastmod>${to
 fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
 
 console.log(`[seo] ${paths.length - 2} SEO sayfası + sitemap.xml + robots.txt üretildi.`);
+})().catch((e) => {
+  console.error('[seo] HATA:', e);
+  process.exit(1);
+});

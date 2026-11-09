@@ -33,6 +33,8 @@ http
     // GitHub Pages gibi: /foo → foo.html (SEO statik sayfaları)
     if ((!fs.existsSync(fp) || fs.statSync(fp).isDirectory()) && fs.existsSync(fp + '.html')) {
       fp = fp + '.html';
+    } else if (fs.existsSync(fp) && fs.statSync(fp).isDirectory() && fs.existsSync(path.join(fp, 'index.html'))) {
+      fp = path.join(fp, 'index.html');
     } else if (!fs.existsSync(fp) || fs.statSync(fp).isDirectory()) {
       fp = path.join(dir, 'index.html'); // SPA fallback
     }

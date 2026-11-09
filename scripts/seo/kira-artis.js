@@ -128,6 +128,13 @@ ${exampleTable(latest[1])}
 ${known.length ? `<h2>Aylara göre kira artış oranları</h2><ul class="links">${known
     .map(([k, v]) => `<li><a href="/kira-artis-orani/${monthInfo(k).slug}">${monthInfo(k).label} kira artış oranı: ${pct(v)}</a></li>`)
     .join('')}</ul>` : ''}
+
+<h2>Ücretsiz kira belgesi şablonları</h2>
+<ul class="links">
+<li><a href="/sablonlar/kira-sozlesmesi-ornegi">Kira sözleşmesi örneği (Word / PDF)</a></li>
+<li><a href="/sablonlar/kira-odeme-ihtarnamesi-ornegi">Kira ödeme ihtarnamesi örneği</a></li>
+<li><a href="/sablonlar/">Tüm belge şablonları</a></li>
+</ul>
 `;
 
   return page({

@@ -116,6 +116,12 @@ td.n{text-align:right;font-variant-numeric:tabular-nums}
 .chk input{margin-top:3px;width:18px;height:18px;flex:none}
 .links{display:grid;gap:8px;padding:0;list-style:none}
 .links a{display:block;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;text-decoration:none;font-weight:600}
+.dl{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.btn.alt{background:var(--surface);color:var(--brand);border:1.5px solid var(--brand)}
+.doc{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px;font-size:14px;line-height:1.6;max-height:520px;overflow:auto}
+.doc h3{text-align:center;font-size:16px;margin:0 0 12px}.doc h4{font-size:14px;margin:14px 0 4px}.doc p{margin:0 0 8px}
+.doc .fl{border-bottom:1px dotted #94A3B8;padding:4px 0;color:#475569}.doc .sg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;text-align:center;font-weight:700}
+.doc .sg div{border-top:1px solid #94A3B8;padding-top:6px;margin-top:36px}
+.after{display:none}.after.on{display:block}
 .disc{margin-top:32px;font-size:13px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px}
 footer{text-align:center;font-size:13px;color:var(--muted);padding:24px 16px}footer a{color:var(--muted)}
 `;
@@ -176,10 +182,10 @@ ${breadcrumbHtml(p.crumbs)}
 <h1>${esc(p.h1)}</h1>
 ${p.body}
 ${faqSection(p.faqs)}
-${cta(p.slug)}
+${cta(p.slug, p.ctaText)}
 ${p.legal ? `<p class="disc">${DISCLAIMER}</p>` : ''}
 </main>
-<footer><a href="/">${BRAND}</a> · <a href="/kira-artis-hesaplama">Kira Artış Hesaplama</a> · <a href="/yasal/kvkk">KVKK</a> · <a href="/yasal/gizlilik">Gizlilik</a></footer>
+<footer><a href="/">${BRAND}</a> · <a href="/kira-artis-hesaplama">Kira Artış Hesaplama</a> · <a href="/sablonlar/">Belge Şablonları</a> · <a href="/yasal/kvkk">KVKK</a> · <a href="/yasal/gizlilik">Gizlilik</a></footer>
 ${p.script ? `<script>${p.script}</script>` : ''}
 </body>
 </html>
@@ -188,7 +194,9 @@ ${p.script ? `<script>${p.script}</script>` : ''}
 
 /** dist/<path>.html olarak yazar (GitHub Pages /foo → foo.html çözer; slash'sız temiz URL). */
 function writePage(distDir, urlPath, html) {
-  const file = path.join(distDir, urlPath.replace(/^\//, '') + '.html');
+  // "/klasor/" → klasor/index.html (alt sayfaları olan hub'lar için)
+  const rel = urlPath.endsWith('/') ? urlPath + 'index.html' : urlPath + '.html';
+  const file = path.join(distDir, rel.replace(/^\//, ''));
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, html);
   return file;
