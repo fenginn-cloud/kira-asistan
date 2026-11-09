@@ -4,13 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowDownUp, BarChart3, FileSearch, Plus, Search, SlidersHorizontal } from 'lucide-react-native';
 import { ContractCard } from '@/features/contracts/components/ContractCard';
-import { MarkReceivedSheet } from '@/features/payments/components/MarkReceivedSheet';
+import { useCollectFlow } from '@/features/payments/useCollectFlow';
 import { useContracts } from '@/features/contracts/hooks';
 import { useContractGate } from '@/features/subscription/useContractGate';
-import { useAllPayments, useMarkReceived } from '@/features/payments/hooks';
-import { notifyTeamPaymentReceived } from '@/services/notifyTeam';
-import { useToast } from '@/components/ui/Toast';
-import { errorMessage } from '@/lib/utils/error';
+import { useAllPayments } from '@/features/payments/hooks';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { ActionSheet, type ActionSheetItem } from '@/components/ui/ActionSheet';
@@ -19,9 +16,15 @@ import { useAuthStore } from '@/store/authStore';
 import { useScrollToTop } from '@/lib/scrollToTop';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
-import { formatCurrencyTRY, getContractBalance, type ContractBalance } from '@/lib/ledger/ledger';
+import {
+  formatCompactTRY,
+  formatCurrencyTRY,
+  getContractBalance,
+  type ContractBalance,
+} from '@/lib/ledger/ledger';
 import { daysUntilEnd } from '@/lib/utils/contractExpiry';
 import { buildingName, foldSearch } from '@/lib/utils/property';
+import { blockKey, normalizeBlock } from '@/lib/utils/block';
 import { conflictingContractIds } from '@/features/contracts/duplicates';
 import { useDesktopShell } from '@/lib/useDesktopShell';
 import {
@@ -43,6 +46,8 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'partial_month', label: 'Bu Ay Eksik' },
   { key: 'unpaid_month', label: 'Bu Ay Ödemeyenler' },
   { key: 'expiring', label: 'Bitişi Yaklaşan' },
+  { key: 'expired', label: 'Süresi Geçmiş' },
+  { key: 'terminated', label: 'Sonlandırılmış (Arşiv)' },
   { key: 'conflicts', label: 'Çakışan' },
 ];
 
@@ -110,9 +115,9 @@ export default function ContractsScreen() {
   const [block, setBlock] = useState('all');
   const [sortOpen, setSortOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [receiveTarget, setReceiveTarget] = useState<Contract | null>(null);
-  const toast = useToast();
-  const markReceived = useMarkReceived();
+  // "Tahsilat Gir" = ana sayfadaki "Alındı" ile AYNI akış (en eski açık ay
+  // varsayılan, ay ve tutar seçilebilir).
+  const collectFlow = useCollectFlow(payments);
   const role = useAuthStore((s) => s.user?.role);
   // Cari hesap (bakiye/borç) yalnızca yöneticide; personel sade checklist görür.
   const canSeeLedger = role === 'admin' || role === 'super_admin';
@@ -123,30 +128,6 @@ export default function ContractsScreen() {
 
   const { status, property, sort, setStatus, setProperty, setSort } =
     useContractsViewStore();
-
-  const confirmReceived = (note: string | null) => {
-    const contract = receiveTarget;
-    if (!contract) return;
-    markReceived.mutate(
-      { contract, note },
-      {
-        onSuccess: () => {
-          setReceiveTarget(null);
-          toast.success('Kira alındı olarak işaretlendi');
-          void notifyTeamPaymentReceived(contract.id, note).then((r) => {
-            if (r.ok && r.sent > 0) {
-              toast.info(`${r.sent} kişiye bildirim gönderildi`);
-            } else if (r.ok && r.sent === 0) {
-              toast.info('Bildirim alacak (izin vermiş) başka kullanıcı yok');
-            } else if (r.error) {
-              toast.error(`Bildirim gönderilemedi: ${r.error}`);
-            }
-          });
-        },
-        onError: (e) => toast.error(errorMessage(e, 'İşaretlenemedi')),
-      }
-    );
-  };
 
   // Bina bazlı otomatik mülk filtreleri (EGE İREM, ELİZE APT, Dream Rezidans…).
   const propertyOptions = useMemo(() => {
@@ -160,15 +141,17 @@ export default function ContractsScreen() {
   // Seçili mülkün blokları (blok filtresi yalnızca legacy'de gösterilir).
   const blockOptions = useMemo(() => {
     if (property === 'all') return [] as string[];
-    const blocks = [
-      ...new Set(
-        contracts
-          .filter((c) => buildingName(c.propertyName) === property)
-          .map((c) => (c.block ?? '').trim())
-          .filter(Boolean)
-      ),
-    ];
-    blocks.sort((a, b) => a.localeCompare(b, 'tr'));
+    // Yazıma duyarsız benzersiz blok listesi: "b Blok" ile "B Blok" tek seçenek.
+    const byKey = new Map<string, string>(); // blockKey -> kanonik etiket
+    for (const c of contracts) {
+      if (buildingName(c.propertyName) !== property) continue;
+      const key = blockKey(c.block);
+      if (!key) continue;
+      if (!byKey.has(key)) byKey.set(key, normalizeBlock(c.block));
+    }
+    const blocks = [...byKey.values()].sort((a, b) =>
+      a.localeCompare(b, 'tr', { numeric: true })
+    );
     return blocks.length ? ['all', ...blocks] : [];
   }, [contracts, property]);
 
@@ -230,8 +213,8 @@ export default function ContractsScreen() {
       }
       // Bina filtresi (mülk adının bina kısmına göre)
       if (property !== 'all' && buildingName(c.propertyName) !== property) return false;
-      // Blok filtresi (bir mülk seçiliyken; filtre sheet'inden)
-      if (property !== 'all' && block !== 'all' && (c.block ?? '').trim() !== block)
+      // Blok filtresi (bir mülk seçiliyken; filtre sheet'inden) — yazıma duyarsız.
+      if (property !== 'all' && block !== 'all' && blockKey(c.block) !== blockKey(block))
         return false;
 
       // Status / cari hesap filter
@@ -254,9 +237,16 @@ export default function ContractsScreen() {
         case 'unpaid_month':
           return bal?.currentMonth.status === 'pending' || bal?.currentMonth.status === 'overdue';
         case 'expiring': {
+          // Yalnızca YAKLAŞAN bitişler; süresi geçmişler ayrı filtrede.
           const d = daysUntilEnd(c);
-          return d !== null && d <= 30;
+          return c.status === 'active' && d !== null && d >= 0 && d <= 30;
         }
+        case 'expired': {
+          const d = daysUntilEnd(c);
+          return c.status === 'active' && d !== null && d < 0;
+        }
+        case 'terminated':
+          return c.status === 'terminated';
         case 'conflicts':
           return conflictIds.has(c.id);
         default:
@@ -323,8 +313,15 @@ export default function ContractsScreen() {
               <Text className="text-[11px] font-semibold uppercase tracking-wide text-white/50">
                 Aylık Hacim
               </Text>
-              <Text className="mt-1 text-lg font-extrabold text-white" numberOfLines={1}>
-                {formatCurrencyTRY(headerStats.monthlyVolume)}
+              <Text
+                // Web'de adjustsFontSizeToFit çalışmaz: uzun tutarda yazıyı küçült.
+                className={`mt-1 font-extrabold text-white ${formatCompactTRY(headerStats.monthlyVolume).length > 8 ? 'text-sm' : 'text-lg'}`}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+                accessibilityLabel={formatCurrencyTRY(headerStats.monthlyVolume)}
+              >
+                {formatCompactTRY(headerStats.monthlyVolume)}
               </Text>
             </View>
             <View className="mx-3 w-px bg-white/10" />
@@ -332,8 +329,15 @@ export default function ContractsScreen() {
               <Text className="text-[11px] font-semibold uppercase tracking-wide text-white/50">
                 Geciken
               </Text>
-              <Text className="mt-1 text-lg font-extrabold text-danger" numberOfLines={1}>
-                {formatCurrencyTRY(headerStats.overdueAmount)}
+              <Text
+                // Web'de adjustsFontSizeToFit çalışmaz: uzun tutarda yazıyı küçült.
+                className={`mt-1 font-extrabold text-danger ${formatCompactTRY(headerStats.overdueAmount).length > 8 ? 'text-sm' : 'text-lg'}`}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+                accessibilityLabel={formatCurrencyTRY(headerStats.overdueAmount)}
+              >
+                {formatCompactTRY(headerStats.overdueAmount)}
               </Text>
               <Text className="text-[11px] text-white/50">{headerStats.overdueCount} sözleşme</Text>
             </View>
@@ -437,7 +441,7 @@ export default function ContractsScreen() {
                 balance={balances.get(item.id)}
                 showLedger={canSeeLedger}
                 onPress={() => router.push(`/(app)/contracts/${item.id}`)}
-                onMarkReceived={canSeeLedger ? () => setReceiveTarget(item) : undefined}
+                onMarkReceived={canSeeLedger ? () => collectFlow.open(item) : undefined}
               />
             );
             // Izgarada her hücre eşit genişlik kaplasın.
@@ -472,12 +476,7 @@ export default function ContractsScreen() {
         onClear={clearFilters}
       />
 
-      <MarkReceivedSheet
-        contract={receiveTarget}
-        submitting={markReceived.isPending}
-        onClose={() => setReceiveTarget(null)}
-        onConfirm={confirmReceived}
-      />
+      {collectFlow.element}
     </SafeAreaView>
   );
 }

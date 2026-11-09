@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { repositories } from '@/services';
 import { queryKeys } from '@/lib/query';
-import type { Contract, Payment, PaymentMethod, TenantClaim } from '@/types';
+import type { Contract, TenantClaim } from '@/types';
+import type { CollectInput } from '@/services/repositories/types';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 export function usePaymentsByContract(contractId: string) {
@@ -16,18 +17,6 @@ export function useAllPayments() {
   return useQuery({
     queryKey: queryKeys.paymentsAll,
     queryFn: () => repositories.payments.listAll(),
-  });
-}
-
-export function useEnsureRecentPayments(contractId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (contract: import('@/types').Contract) =>
-      repositories.payments.ensureRecentPayments(contract),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contractId) });
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
-    },
   });
 }
 
@@ -77,44 +66,12 @@ export function useDeleteTransaction(contractId: string) {
   });
 }
 
-/** One-tap "Alındı": mark current month received + notify the team. */
-export function useMarkReceived() {
+/** Bir ayın tüm tahsilatlarını sil ("ödenmedi"ye döndür). */
+export function useResetMonth(contractId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ contract, note }: { contract: Contract; note: string | null }) =>
-      repositories.payments.markCurrentMonthReceived(contract, note),
-    onSuccess: (_data, { contract }) => {
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contract.id) });
-      qc.invalidateQueries({ queryKey: ['transactions', 'contract', contract.id] });
-    },
-  });
-}
-
-/** One-tap "Alındı" on the dashboard: settle the exact payment shown. */
-export function useSettlePayment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ payment, note }: { payment: Payment; note: string | null }) =>
-      repositories.payments.settlePayment(payment.id, note),
-    onSuccess: (_data, { payment }) => {
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(payment.contractId) });
-      qc.invalidateQueries({ queryKey: ['transactions', 'contract', payment.contractId] });
-    },
-  });
-}
-
-export function useSetMonthlyPaid(contractId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ paymentId, amountPaid }: { paymentId: string; amountPaid: number }) =>
-      repositories.payments.setMonthlyPaid(paymentId, amountPaid),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contractId) });
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
-      qc.invalidateQueries({ queryKey: ['transactions', 'contract', contractId] });
-    },
+    mutationFn: (paymentId: string) => repositories.payments.resetMonth(paymentId),
+    onSuccess: () => invalidatePayments(qc, contractId),
   });
 }
 
@@ -126,21 +83,48 @@ export function useContractTransactions(contractId: string) {
   });
 }
 
-export function useAddTransaction(contractId: string) {
+export type CollectVariables = Omit<CollectInput, 'clientRef'> & {
+  contractId: string;
+  /** Pencere açıldığında üretilen tekrar-koruma anahtarı. */
+  clientRef: string;
+};
+
+/**
+ * TEK tahsilat yolu — "Alındı", "Tahsilat Gir" ve "Ödeme Ekle" aynı mantığı
+ * kullanır: seçilen ay + girilen tutar birebir kaydedilir. Aynı clientRef ile
+ * tekrar gelen istek ikinci kayıt oluşturmaz.
+ */
+export function useCollectPayment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: {
-      paymentId: string;
-      amount: number;
-      paidAt: string;
-      method: PaymentMethod | null;
-      description: string | null;
-      receiptUrl: string | null;
-    }) => repositories.payments.addTransaction(input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contractId) });
-      qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
-      qc.invalidateQueries({ queryKey: ['transactions', 'contract', contractId] });
-    },
+    mutationFn: ({ contractId: _c, ...input }: CollectVariables) =>
+      repositories.payments.collect(input),
+    onSuccess: (_d, { contractId }) => invalidatePayments(qc, contractId),
   });
+}
+
+/** Tahsilatı geri al (tek kayıt silinir; cari hesap yeniden hesaplanır). */
+export function useUndoCollection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ transactionId }: { transactionId: string; contractId: string }) =>
+      repositories.payments.deleteTransaction(transactionId),
+    onSuccess: (_d, { contractId }) => invalidatePayments(qc, contractId),
+  });
+}
+
+/** Çakışmasız, tahmin edilemez işlem anahtarı (uuid v4 biçiminde). */
+export function newClientRef(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+function invalidatePayments(qc: ReturnType<typeof useQueryClient>, contractId: string) {
+  qc.invalidateQueries({ queryKey: queryKeys.paymentsByContract(contractId) });
+  qc.invalidateQueries({ queryKey: queryKeys.paymentsAll });
+  qc.invalidateQueries({ queryKey: ['transactions', 'contract', contractId] });
 }

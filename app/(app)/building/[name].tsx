@@ -14,6 +14,7 @@ import { vacancyLabel } from '@/features/units/vacancy';
 import { mergeUnitsWithContracts } from '@/features/units/occupancy';
 import { getContractBalance, formatCurrencyTRY, type LedgerStatus } from '@/lib/ledger/ledger';
 import { buildingName, foldSearch } from '@/lib/utils/property';
+import { blockKey, normalizeBlock } from '@/lib/utils/block';
 import { formatCurrency, getInitials } from '@/lib/utils/format';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
@@ -100,17 +101,18 @@ export default function BuildingDetailScreen() {
       else counts.pending += 1;
     }
 
-    // Bloklara göre grupla (blok yoksa "Genel").
-    const byBlock = new Map<string, Contract[]>();
+    // Bloklara göre grupla (yazıma duyarsız; blok yoksa "Genel").
+    const byBlock = new Map<string, { label: string; list: Contract[] }>();
     for (const c of active) {
-      const b = (c.block ?? '').trim() || 'Genel';
-      const arr = byBlock.get(b);
-      if (arr) arr.push(c);
-      else byBlock.set(b, [c]);
+      const label = normalizeBlock(c.block) || 'Genel';
+      const key = blockKey(c.block) || 'genel';
+      const g = byBlock.get(key);
+      if (g) g.list.push(c);
+      else byBlock.set(key, { label, list: [c] });
     }
-    const blocks = [...byBlock.entries()]
-      .map(([block, list]) => ({
-        block,
+    const blocks = [...byBlock.values()]
+      .map(({ label, list }) => ({
+        block: label,
         list: list.sort((a, b) => (a.unit ?? '').localeCompare(b.unit ?? '', 'tr', { numeric: true })),
       }))
       .sort((a, b) => a.block.localeCompare(b.block, 'tr'));

@@ -1,9 +1,9 @@
 import { Text, View } from 'react-native';
 import { Card } from '@/components/ui/Card';
 import { LedgerBadge } from '@/components/ui/StatusBadge';
-import { formatCurrency, formatMonth, formatShortDate } from '@/lib/utils/format';
+import { formatCurrency, formatShortDate } from '@/lib/utils/format';
 import { remainingDebt } from '@/lib/utils/payments';
-import { getPaymentStatus } from '@/lib/ledger/ledger';
+import { getPaymentStatus, periodLabel } from '@/lib/ledger/ledger';
 import type { Payment } from '@/types';
 
 interface PaymentItemProps {
@@ -26,7 +26,7 @@ export function PaymentItem({ payment, onPress }: PaymentItemProps) {
       <View className="flex-row items-center justify-between">
         <View>
           <Text className="text-base font-semibold capitalize text-foreground">
-            {formatMonth(payment.periodMonth)}
+            {periodLabel(payment)}
           </Text>
           <Text className="mt-0.5 text-xs text-muted">
             Son ödeme: {formatShortDate(payment.dueDate)}

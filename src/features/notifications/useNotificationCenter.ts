@@ -41,10 +41,11 @@ export function useNotificationCenter(): NotificationCenter {
 
     const openByContract = [...upcoming.in7, ...upcoming.in3, ...upcoming.in1, ...overdue];
     const pendingCollections = openByContract.reduce(
-      (sum, i) => sum + remainingDebt(i.payment),
+      (sum, i) => sum + (i.debt.total > 0 ? i.debt.total : remainingDebt(i.payment)),
       0
     );
-    const overdueCollections = overdue.reduce((sum, i) => sum + remainingDebt(i.payment), 0);
+    // Kiracı başına TÜM vadesi geçmiş borç (yalnızca en eski ay değil).
+    const overdueCollections = overdue.reduce((sum, i) => sum + i.debt.total, 0);
 
     return {
       isLoading: lc || lp,

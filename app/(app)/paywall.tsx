@@ -1,4 +1,8 @@
-import { Text, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { Text, View, ScrollView, Pressable, ActivityIndicator, Linking } from 'react-native';
+import { APP_STORE_URL, GOOGLE_PLAY_URL } from '@/features/landing/config';
+import { SUPPORT_EMAIL } from '@/content/legal';
+
+const hasStoreApp = !!(APP_STORE_URL || GOOGLE_PLAY_URL);
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -142,13 +146,46 @@ export default function PaywallScreen() {
         </View>
 
         {/* Web / satın alma kapalı bilgilendirmesi */}
+        {/* Web'de ödeme altyapısı (RevenueCat Web Billing) henüz kurulu değil.
+            Sahte "satın al" göstermek yerine çalışan yolları açıkça söyle. */}
         {!purchasesAvailable ? (
           <View className="mt-6 rounded-2xl border border-border bg-surface p-4">
-            <Text className="text-center text-sm text-muted">
-              Planınızı <Text className="font-semibold text-foreground">mobil uygulama</Text>{' '}
-              üzerinden yükseltebilirsiniz. Satın aldığınız plan bu hesapla web dahil her yerde
-              geçerli olur.
+            <Text className="text-center text-sm text-foreground">
+              Web üzerinden ödeme henüz açık değil.
             </Text>
+            <Text className="mt-1 text-center text-sm text-muted">
+              {hasStoreApp
+                ? 'Planınızı mobil uygulamadan yükseltebilirsiniz; aldığınız plan bu hesapla web dahil her yerde geçerli olur.'
+                : 'Planınızı yükseltmek için bize yazın; hesabınızda planı biz açalım.'}
+            </Text>
+            <View className="mt-3 flex-row flex-wrap justify-center gap-2">
+              {APP_STORE_URL ? (
+                <Pressable
+                  onPress={() => Linking.openURL(APP_STORE_URL)}
+                  className="rounded-2xl bg-primary px-4 py-2.5 active:opacity-80"
+                >
+                  <Text className="text-sm font-semibold text-white">App Store</Text>
+                </Pressable>
+              ) : null}
+              {GOOGLE_PLAY_URL ? (
+                <Pressable
+                  onPress={() => Linking.openURL(GOOGLE_PLAY_URL)}
+                  className="rounded-2xl bg-primary px-4 py-2.5 active:opacity-80"
+                >
+                  <Text className="text-sm font-semibold text-white">Google Play</Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                onPress={() =>
+                  Linking.openURL(
+                    `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Plan yükseltme talebi')}`
+                  )
+                }
+                className="rounded-2xl border border-primary px-4 py-2.5 active:opacity-80"
+              >
+                <Text className="text-sm font-semibold text-primary-700">{SUPPORT_EMAIL}</Text>
+              </Pressable>
+            </View>
           </View>
         ) : null}
 
@@ -237,6 +274,15 @@ export default function PaywallScreen() {
             istediğiniz zaman mağaza hesabınızdan iptal edebilirsiniz; erişiminiz dönem sonuna
             kadar devam eder.
           </Text>
+          {/* App Store 3.1.2: abonelik ekranında kullanım şartları ve gizlilik bağlantısı */}
+          <View className="mt-2 flex-row justify-center gap-4">
+            <Pressable onPress={() => router.push('/yasal/kullanim' as never)} hitSlop={8}>
+              <Text className="text-xs font-semibold text-primary-700">Kullanım Şartları (EULA)</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/yasal/gizlilik' as never)} hitSlop={8}>
+              <Text className="text-xs font-semibold text-primary-700">Gizlilik Politikası</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -357,7 +403,7 @@ function PlanCard({
                     }`}
                   >
                     {!purchasesAvailable
-                      ? 'Mobil uygulamadan yükseltin'
+                      ? 'Web’de ödeme yakında'
                       : !storePkg
                         ? 'Yakında'
                         : `${plan.name}'a Yükselt`}

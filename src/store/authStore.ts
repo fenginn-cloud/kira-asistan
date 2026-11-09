@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { authProvider } from '@/services/auth';
 import { purchases } from '@/services/purchases';
 import type { AppUser } from '@/types';
+import type { OAuthProviderId } from '@/services/auth/types';
 
 /**
  * RevenueCat App User ID'yi Supabase auth UUID ile eşitle. Web'de no-op.
@@ -23,6 +24,8 @@ interface AuthState {
   rememberMe: boolean;
   restore: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  /** Google / Apple ile giriş (web): sağlayıcı sayfasına yönlendirir. */
+  signInWithOAuth: (provider: OAuthProviderId) => Promise<void>;
   signOut: () => void;
   setRememberMe: (value: boolean) => void;
   updateProfile: (patch: Partial<AppUser>) => void;
@@ -70,6 +73,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
       throw e;
     }
+  },
+
+  signInWithOAuth: async (provider) => {
+    await authProvider.signInWithOAuth(provider);
   },
 
   signOut: () => {

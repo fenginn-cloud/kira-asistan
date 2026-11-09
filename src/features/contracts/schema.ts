@@ -33,6 +33,15 @@ export const contractFormSchema = z.object({
   notes: z.string().trim().optional().default(''),
   status: z.enum(['active', 'passive', 'terminated']).default('active'),
 
+  /** Takip başlangıç ayı (YYYY-MM-01). Boş → başlangıç ayı. */
+  trackingStart: z.string().trim().optional().default(''),
+  /** Bitişte aynı koşullarla takibe devam. */
+  autoRenew: z.boolean().default(true),
+  /** Yalnızca yeni sözleşmede: takip öncesinden devreden borç. */
+  openingBalance: z.coerce.number().min(0, 'Geçerli bir tutar girin').default(0),
+  /** Düzenlemede kira değişirse: yeni tutarın geçerli olacağı ay. */
+  rentEffectiveMonth: z.string().trim().optional().default(''),
+
   notifyOwner: z.boolean().default(true),
   notifyTenant: z.boolean().default(false),
   notifyStaff: z.boolean().default(true),

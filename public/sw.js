@@ -1,5 +1,5 @@
 /* Kira Asistan — Service Worker (offline shell + push-ready) */
-const CACHE = 'kira-asistan-v38';
+const CACHE = 'kira-asistan-v39';
 const APP_SHELL = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -25,6 +25,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   // Never cache cross-origin (e.g. Supabase API) — always go to network.
   if (url.origin !== self.location.origin) return;
+
+  // Videos are streamed with Range requests (Safari requires proper 206
+  // responses); a cache-first full response would break playback, so let the
+  // browser handle them directly.
+  if (req.headers.has('range') || url.pathname.startsWith('/videos/')) return;
 
   // App navigations: always fetch the freshest index.html (bypass HTTP cache),
   // fall back to the cached shell only when offline. This guarantees users get

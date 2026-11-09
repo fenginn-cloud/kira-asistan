@@ -9,6 +9,9 @@
     --foreground: 11 18 32; /* #0B1220 */
     --muted: 107 114 128; /* #6B7280 */
     --border: 229 231 235; /* #E5E7EB */
+    --success-soft: 220 252 231; /* #DCFCE7 */
+    --warning-soft: 254 243 199; /* #FEF3C7 */
+    --danger-soft: 254 226 226; /* #FEE2E2 */
   }
 
   .dark:root {
@@ -17,6 +20,9 @@
     --foreground: 248 250 252; /* #F8FAFC */
     --muted: 148 163 184; /* #94A3B8 */
     --border: 35 43 62; /* #232B3E */
+    --success-soft: 18 52 35; /* #123423 */
+    --warning-soft: 61 43 10; /* #3D2B0A */
+    --danger-soft: 66 22 26; /* #42161A */
   }
 }
 

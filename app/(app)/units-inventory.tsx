@@ -9,7 +9,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useToast } from '@/components/ui/Toast';
 import { useContracts } from '@/features/contracts/hooks';
-import { useUnits, useUpsertUnit, useUpdateUnitDetails, useDeleteUnit } from '@/features/units/hooks';
+import { useUnits, useUpsertUnit, useUpdateUnitDetails, useDeleteUnit, useLinkContractUnit } from '@/features/units/hooks';
+import { decideUnitLink } from '@/features/units/linking';
+import { errorMessage } from '@/lib/utils/error';
 import { useAuthStore } from '@/store/authStore';
 import { buildingName, foldSearch } from '@/lib/utils/property';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
@@ -21,6 +23,7 @@ import {
   buildingNameMap,
   type EffectiveUnit,
 } from '@/features/units/occupancy';
+import { blockKey, normalizeBlock } from '@/lib/utils/block';
 
 type Filter = 'all' | 'occupied' | 'vacant';
 
@@ -110,8 +113,45 @@ export default function UnitsInventoryScreen() {
     const byId = new Map(contracts.map((c) => [c.id, c]));
     return merged
       .filter((u) => u.synthesized)
-      .map((u) => ({ u, tenant: (u.contractId && byId.get(u.contractId)?.tenantName) || 'Kiracı' }));
-  }, [merged, contracts]);
+      .map((u) => {
+        const contract = u.contractId ? byId.get(u.contractId) : undefined;
+        return {
+          u,
+          contract,
+          tenant: contract?.tenantName || 'Kiracı',
+          decision: contract ? decideUnitLink(units, contract) : null,
+        };
+      });
+  }, [merged, contracts, units]);
+  const linkUnit = useLinkContractUnit();
+  const [linking, setLinking] = useState(false);
+
+  // Kesin olanları (tek aday / aday yok) bağla; belirsizleri kullanıcıya bırak.
+  const linkAllUnmatched = async () => {
+    setLinking(true);
+    let done = 0;
+    let ambiguous = 0;
+    try {
+      for (const item of unmatched) {
+        if (!item.contract || !item.decision) continue;
+        if (item.decision.kind === 'ambiguous') {
+          ambiguous += 1;
+          continue;
+        }
+        if (item.decision.kind === 'none') continue;
+        await linkUnit.mutateAsync({ contract: item.contract });
+        done += 1;
+      }
+      toast.success(
+        `${done} sözleşme envantere bağlandı` +
+          (ambiguous ? ` · ${ambiguous} tanesinde daireyi siz seçin` : '')
+      );
+    } catch (e) {
+      toast.error(errorMessage(e, 'Bağlanamadı'));
+    } finally {
+      setLinking(false);
+    }
+  };
 
   // Bina → blok gruplama (filtre uygulanmış).
   const grouped = useMemo(() => {
@@ -131,16 +171,17 @@ export default function UnitsInventoryScreen() {
     return [...byBuilding.values()]
       .map(({ display, list }) => {
         const name = display;
-        const byBlock = new Map<string, EffectiveUnit[]>();
+        // Yazıma duyarsız grup: "b Blok" ile "B Blok" aynı bloğa iner.
+        const byBlock = new Map<string, { label: string; list: EffectiveUnit[] }>();
         for (const u of list) {
-          const b = u.block || '';
-          const arr = byBlock.get(b);
-          if (arr) arr.push(u);
-          else byBlock.set(b, [u]);
+          const key = blockKey(u.block);
+          const g = byBlock.get(key);
+          if (g) g.list.push(u);
+          else byBlock.set(key, { label: normalizeBlock(u.block), list: [u] });
         }
-        const blocks = [...byBlock.entries()]
-          .map(([b, l]) => ({
-            block: b,
+        const blocks = [...byBlock.values()]
+          .map(({ label, list: l }) => ({
+            block: label,
             list: l.sort((x, y) => x.unitLabel.localeCompare(y.unitLabel, 'tr', { numeric: true })),
           }))
           .sort((a, b) => a.block.localeCompare(b.block, 'tr', { numeric: true }));
@@ -175,7 +216,7 @@ export default function UnitsInventoryScreen() {
     setSaving(true);
     try {
       for (const label of list) {
-        await upsert.mutateAsync({ building: b, block: block.trim(), unitLabel: label });
+        await upsert.mutateAsync({ building: b, block: normalizeBlock(block), unitLabel: label });
       }
       toast.success(`${list.length} daire eklendi`);
       setLabels('');
@@ -380,21 +421,60 @@ export default function UnitsInventoryScreen() {
               {'Bu sözleşmelerin daire no\'su envanterdeki bir daireyle eşleşmiyor. Sözleşmenin daire/blok bilgisini düzeltin ya da daireyi envantere ekleyin.'}
             </Text>
             <View className="mt-2 gap-1.5">
-              {unmatched.slice(0, 8).map(({ u, tenant }) => (
-                <View key={u.id} className="flex-row items-center justify-between">
-                  <Text className="flex-1 pr-2 text-xs font-semibold text-foreground" numberOfLines={1}>
-                    {u.building}
-                    {u.block ? ` · ${u.block}` : ''} · {u.unitLabel || '—'}
-                  </Text>
-                  <Text className="text-xs text-muted" numberOfLines={1}>
-                    {tenant}
-                  </Text>
+              {unmatched.slice(0, 8).map(({ u, tenant, contract, decision }) => (
+                <View key={u.id}>
+                  <View className="flex-row items-center justify-between">
+                    <Text className="flex-1 pr-2 text-xs font-semibold text-foreground" numberOfLines={1}>
+                      {u.building}
+                      {u.block ? ` · ${u.block}` : ''} · {u.unitLabel || '—'}
+                    </Text>
+                    <Text className="text-xs text-muted" numberOfLines={1}>
+                      {tenant}
+                    </Text>
+                  </View>
+                  {/* Belirsiz: birden fazla aday daire → kullanıcı seçer. */}
+                  {decision?.kind === 'ambiguous' && contract ? (
+                    <View className="mt-1 flex-row flex-wrap gap-1.5">
+                      <Text className="text-[11px] text-muted">Hangisi?</Text>
+                      {decision.candidates.map((cand) => (
+                        <Pressable
+                          key={cand.id}
+                          disabled={linkUnit.isPending}
+                          onPress={() =>
+                            linkUnit.mutate(
+                              { contract, unitId: cand.id },
+                              {
+                                onSuccess: () => toast.success('Daire bağlandı'),
+                                onError: (e) => toast.error(errorMessage(e, 'Bağlanamadı')),
+                              }
+                            )
+                          }
+                          className="rounded-full bg-surface px-2.5 py-1 active:opacity-80"
+                        >
+                          <Text className="text-[11px] font-semibold text-primary-700">
+                            {[cand.building, cand.block, cand.unitLabel].filter(Boolean).join(' · ')}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
               ))}
               {unmatched.length > 8 ? (
                 <Text className="text-xs text-muted">+{unmatched.length - 8} daha…</Text>
               ) : null}
             </View>
+            {isAdmin && unmatched.some((x) => x.decision && (x.decision.kind === 'link' || x.decision.kind === 'create')) ? (
+              <Pressable
+                onPress={linkAllUnmatched}
+                disabled={linking}
+                className="mt-3 items-center rounded-2xl bg-primary py-2.5 active:opacity-80"
+              >
+                <Text className="text-sm font-semibold text-white">
+                  {linking ? 'Bağlanıyor…' : 'Eşleşmeyenleri envantere ekle / bağla'}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 

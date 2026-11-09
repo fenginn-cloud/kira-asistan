@@ -1,16 +1,23 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { CalendarX2 } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { formatCurrency, formatShortDate } from '@/lib/utils/format';
 import { expiryLabel, type ExpiringContract } from '@/lib/utils/contractExpiry';
 import { palette } from '@/lib/theme/colors';
 
+import { CONTRACT_PHASE_LABEL, contractPhase } from '@/lib/ledger/accrual';
+
 interface Props {
   item: ExpiringContract;
   onPress: () => void;
+  /** "Uzat" — uzatma penceresini açar. */
+  onRenew?: () => void;
+  /** "Çıkış" — kiracı çıkışı penceresini açar. */
+  onExit?: () => void;
 }
 
-export function ContractExpiryRow({ item, onPress }: Props) {
+export function ContractExpiryRow({ item, onPress, onRenew, onExit }: Props) {
+  const phase = contractPhase(item.contract);
   const { contract, daysLeft } = item;
   const location = [contract.block, contract.unit].filter(Boolean).join(' ');
   const tone = daysLeft < 0 ? 'text-danger' : daysLeft <= 15 ? 'text-warning' : 'text-primary-700';
@@ -31,6 +38,7 @@ export function ContractExpiryRow({ item, onPress }: Props) {
             </Text>
             <Text className={`mt-1 text-xs font-medium ${tone}`}>
               {expiryLabel(daysLeft)}
+              {daysLeft < 0 ? ` · ${CONTRACT_PHASE_LABEL[phase]}` : ''}
             </Text>
           </View>
         </View>
@@ -38,6 +46,26 @@ export function ContractExpiryRow({ item, onPress }: Props) {
           {formatCurrency(contract.rentAmount)}
         </Text>
       </View>
+      {onRenew || onExit ? (
+        <View className="mt-3 flex-row gap-2 border-t border-border/60 pt-3">
+          {onRenew ? (
+            <Pressable
+              onPress={onRenew}
+              className="flex-1 items-center rounded-2xl bg-primary-50 py-2.5 active:opacity-80"
+            >
+              <Text className="text-sm font-semibold text-primary-700">Uzat</Text>
+            </Pressable>
+          ) : null}
+          {onExit ? (
+            <Pressable
+              onPress={onExit}
+              className="flex-1 items-center rounded-2xl bg-background py-2.5 active:opacity-80"
+            >
+              <Text className="text-sm font-semibold text-foreground">Kiracı Çıkışı</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </Card>
   );
 }

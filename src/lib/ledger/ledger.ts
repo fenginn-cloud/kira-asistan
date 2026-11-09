@@ -31,6 +31,11 @@ export function formatMonthTR(iso: string): string {
   return format(parseISO(iso), 'MMMM yyyy', { locale: tr });
 }
 
+/** Dönem etiketi: başlangıç bakiyesi satırı ay adıyla gösterilmez. */
+export function periodLabel(p: Pick<Payment, 'periodMonth' | 'kind'>): string {
+  return p.kind === 'opening' ? 'Başlangıç bakiyesi' : formatMonthTR(p.periodMonth);
+}
+
 /** Türk Lirası: -2000 -> "-2.000 ₺", 15000 -> "15.000 ₺" */
 export function formatCurrencyTRY(amount: number): string {
   const rounded = Math.round(amount);
@@ -42,6 +47,20 @@ export function formatCurrencyTRY(amount: number): string {
     ) +
     ' ₺'
   );
+}
+
+/**
+ * Dar alanlar için kısa tutar: 98.500 ₺ → "98.500 ₺", 328.000 ₺ → "328 bin ₺",
+ * 1.250.000 ₺ → "1,25 mn ₺". Tam tutar erişilebilirlik etiketinde verilmeli.
+ */
+export function formatCompactTRY(amount: number): string {
+  const sign = amount < 0 ? '-' : '';
+  const a = Math.abs(Math.round(amount));
+  if (a < 100_000) return formatCurrencyTRY(amount);
+  if (a < 1_000_000) {
+    return `${sign}${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(a / 1000)} bin ₺`;
+  }
+  return `${sign}${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(a / 1_000_000)} mn ₺`;
 }
 
 // ---------------------------------------------------------------------------
@@ -177,7 +196,7 @@ export function generateLedgerRows(
       paymentId: p.id,
       periodMonth: p.periodMonth,
       monthKey: getMonthKey(p.periodMonth),
-      monthLabel: formatMonthTR(p.periodMonth),
+      monthLabel: periodLabel(p),
       dueDate: p.dueDate,
       due: p.amountDue,
       paid: p.amountPaid,
@@ -343,8 +362,3 @@ export function getDashboardFinancialSummary(
   return out;
 }
 
-// ---------------------------------------------------------------------------
-// Tahakkuk üretimi (re-export — tek giriş noktası)
-// ---------------------------------------------------------------------------
-
-export { recentPaymentPeriods as generateMonthlyCharges } from '../utils/paymentPeriods';
