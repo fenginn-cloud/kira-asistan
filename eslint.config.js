@@ -7,4 +7,9 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*', 'node_modules/*', '.expo/*'],
   },
+  {
+    // Build/CI betikleri Node'da çalışır (sablon-pdf.js ayrıca tarayıcıda da yüklenir).
+    files: ['scripts/**/*.js'],
+    languageOptions: { globals: { ...require('globals').node, self: 'readonly' } },
+  },
 ]);
