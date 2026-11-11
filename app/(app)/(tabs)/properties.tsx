@@ -15,6 +15,7 @@ import { buildingName } from '@/lib/utils/property';
 import { formatCurrencyTRY } from '@/lib/ledger/ledger';
 import { getInitials } from '@/lib/utils/format';
 import { palette } from '@/lib/theme/colors';
+import { useAuthStore } from '@/store/authStore';
 
 interface BlockRow {
   block: string;
@@ -44,6 +45,10 @@ export default function PropertiesScreen() {
   const { data: contracts = [], isLoading } = useContracts();
   const { data: overrides = [] } = useBuildingUnits();
   const { data: units = [] } = useUnits();
+  // Personel yalnızca doluluğu görür: gelir/kira tutarları ve yönetim
+  // (envanter düzenleme, daire sayıları) yöneticide kalır.
+  const role = useAuthStore((s) => s.user?.role);
+  const isAdmin = role === 'admin' || role === 'super_admin';
 
   // Envanterden gerçek doluluk (varsa building_units tahminini geçersiz kılar).
   const inv = useMemo(() => computeInventoryStats(units, contracts), [units, contracts]);
@@ -141,6 +146,7 @@ export default function PropertiesScreen() {
             </Text>
           ) : null}
         </View>
+        {isAdmin ? (
         <View className="flex-row items-center gap-2">
           <Pressable
             onPress={() => router.push('/(app)/units-inventory')}
@@ -156,6 +162,7 @@ export default function PropertiesScreen() {
             <Sliders size={16} color={palette.primary} />
           </Pressable>
         </View>
+        ) : null}
       </View>
 
       {isLoading ? (
@@ -178,10 +185,11 @@ export default function PropertiesScreen() {
           keyExtractor={(r) => r.name}
           contentContainerClassName="px-5 pb-10 pt-4 gap-3"
           showsVerticalScrollIndicator={false}
-          ListHeaderComponent={<PortfolioHero totals={totals} />}
+          ListHeaderComponent={<PortfolioHero totals={totals} showIncome={isAdmin} />}
           renderItem={({ item }) => (
             <BuildingCard
               row={item}
+              showIncome={isAdmin}
               onPress={() =>
                 router.push(`/(app)/building/${encodeURIComponent(item.name)}` as Href)
               }
@@ -196,7 +204,9 @@ export default function PropertiesScreen() {
 /** Mavi portföy hero (Stitch) — aylık gelir + doluluk + boş birim. */
 function PortfolioHero({
   totals,
+  showIncome,
 }: {
+  showIncome: boolean;
   totals: {
     income: number;
     rate: number;
@@ -217,15 +227,27 @@ function PortfolioHero({
       }}
     >
       <View className="flex-row items-start justify-between">
-        <View className="flex-1 pr-3">
-          <Text className="text-xs font-medium uppercase tracking-wide text-white/70">
-            Aylık Beklenen Toplam Gelir
-          </Text>
-          <Text className="mt-0.5 text-2xl font-extrabold text-white" numberOfLines={1}>
-            {formatCurrencyTRY(totals.income)}
-            <Text className="text-xs font-medium text-white/60"> / ay</Text>
-          </Text>
-        </View>
+        {showIncome ? (
+          <View className="flex-1 pr-3">
+            <Text className="text-xs font-medium uppercase tracking-wide text-white/70">
+              Aylık Beklenen Toplam Gelir
+            </Text>
+            <Text className="mt-0.5 text-2xl font-extrabold text-white" numberOfLines={1}>
+              {formatCurrencyTRY(totals.income)}
+              <Text className="text-xs font-medium text-white/60"> / ay</Text>
+            </Text>
+          </View>
+        ) : (
+          <View className="flex-1 pr-3">
+            <Text className="text-xs font-medium uppercase tracking-wide text-white/70">
+              Portföy Doluluğu
+            </Text>
+            <Text className="mt-0.5 text-2xl font-extrabold text-white" numberOfLines={1}>
+              {totals.occupied} / {totals.total}
+              <Text className="text-xs font-medium text-white/60"> daire dolu</Text>
+            </Text>
+          </View>
+        )}
         <View className="flex-row items-center gap-1.5 rounded-full bg-success/25 px-2.5 py-1">
           <TrendingUp size={12} color="#4ADE80" />
           <Text className="text-[11px] font-semibold text-white">%{totals.rate} Dolu</Text>
@@ -264,7 +286,15 @@ function PortfolioHero({
 const AV_TONES = ['bg-primary-50', 'bg-success-soft', 'bg-warning-soft'] as const;
 const AV_TEXT = ['text-primary-700', 'text-success', 'text-warning'] as const;
 
-function BuildingCard({ row, onPress }: { row: BuildingRow; onPress: () => void }) {
+function BuildingCard({
+  row,
+  onPress,
+  showIncome,
+}: {
+  row: BuildingRow;
+  onPress: () => void;
+  showIncome: boolean;
+}) {
   const hasTotal = row.total != null && row.total > 0;
   const total = row.total ?? 0;
   const vacant = Math.max(0, total - row.occupied);
@@ -305,13 +335,15 @@ function BuildingCard({ row, onPress }: { row: BuildingRow; onPress: () => void 
 
       {/* Gelir + doluluk */}
       <View className="mt-3.5 flex-row gap-3 border-t border-border/60 pt-3.5">
-        <View className="flex-1">
-          <Text className="text-[11px] font-medium text-muted">Aylık Gelir</Text>
-          <Text className="text-sm font-bold text-foreground" numberOfLines={1}>
-            {formatCurrencyTRY(row.income)}
-            <Text className="text-[10px] font-normal text-muted"> / ay</Text>
-          </Text>
-        </View>
+        {showIncome ? (
+          <View className="flex-1">
+            <Text className="text-[11px] font-medium text-muted">Aylık Gelir</Text>
+            <Text className="text-sm font-bold text-foreground" numberOfLines={1}>
+              {formatCurrencyTRY(row.income)}
+              <Text className="text-[10px] font-normal text-muted"> / ay</Text>
+            </Text>
+          </View>
+        ) : null}
         {hasTotal ? (
           <View className="flex-1">
             <View className="flex-row items-center justify-between">

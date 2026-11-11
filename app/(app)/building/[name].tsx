@@ -18,6 +18,7 @@ import { blockKey, normalizeBlock } from '@/lib/utils/block';
 import { formatCurrency, getInitials } from '@/lib/utils/format';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
+import { useAuthStore } from '@/store/authStore';
 import type { Contract, Payment } from '@/types';
 
 const PILL_DEFAULT: { tone: PillTone; label: string } = { tone: 'info', label: 'Bekliyor' };
@@ -55,6 +56,9 @@ export default function BuildingDetailScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const building = (name ?? '').toString();
   const router = useRouter();
+  // Personel: doluluk + daireler görünür; tutarlar ve rapor yöneticide.
+  const role = useAuthStore((s) => s.user?.role);
+  const isAdmin = role === 'admin' || role === 'super_admin';
   const { data: contracts = [] } = useContracts();
   const { data: payments = [] } = useAllPayments();
   const { data: overrides = [] } = useBuildingUnits();
@@ -140,12 +144,14 @@ export default function BuildingDetailScreen() {
         <Text className="flex-1 text-xl font-bold text-foreground" numberOfLines={1}>
           {building}
         </Text>
-        <Pressable
-          onPress={() => router.push(`/(app)/property-report?name=${encodeURIComponent(building)}` as Href)}
-          className="h-9 w-9 items-center justify-center rounded-2xl bg-primary-50 active:opacity-80"
-        >
-          <BarChart3 size={18} color={palette.primary} />
-        </Pressable>
+        {isAdmin ? (
+          <Pressable
+            onPress={() => router.push(`/(app)/property-report?name=${encodeURIComponent(building)}` as Href)}
+            className="h-9 w-9 items-center justify-center rounded-2xl bg-primary-50 active:opacity-80"
+          >
+            <BarChart3 size={18} color={palette.primary} />
+          </Pressable>
+        ) : null}
       </View>
 
       <ScrollView contentContainerClassName="px-5 pb-10 pt-3" showsVerticalScrollIndicator={false}>
@@ -173,10 +179,12 @@ export default function BuildingDetailScreen() {
           <View className="mt-4 h-2 overflow-hidden rounded-full bg-white/20">
             <View className="h-2 rounded-full bg-white" style={{ width: `${Math.min(data.rate, 100)}%` }} />
           </View>
-          <View className="mt-4 flex-row items-center justify-between border-t border-white/15 pt-3">
-            <Text className="text-xs text-white/70">Aylık tahsilat hacmi</Text>
-            <Text className="text-base font-bold text-white">{formatCurrencyTRY(data.monthly)}</Text>
-          </View>
+          {isAdmin ? (
+            <View className="mt-4 flex-row items-center justify-between border-t border-white/15 pt-3">
+              <Text className="text-xs text-white/70">Aylık tahsilat hacmi</Text>
+              <Text className="text-base font-bold text-white">{formatCurrencyTRY(data.monthly)}</Text>
+            </View>
+          ) : null}
         </View>
 
         {/* Portföy sağlığı */}
@@ -217,7 +225,9 @@ export default function BuildingDetailScreen() {
                           <Text className="text-sm font-bold text-foreground" numberOfLines={1}>
                             {c.unit ? `D:${c.unit}` : c.propertyName} · {c.tenantName}
                           </Text>
-                          <Text className="text-xs text-muted">{formatCurrency(c.rentAmount)} / ay</Text>
+                          {isAdmin ? (
+                            <Text className="text-xs text-muted">{formatCurrency(c.rentAmount)} / ay</Text>
+                          ) : null}
                         </View>
                         <StatusPill tone={p.tone} label={p.label} />
                       </View>
