@@ -71,6 +71,15 @@ if (!html.includes("serviceWorker.register('/sw.js')")) {
   html = html.replace('</body>', `${SW_SCRIPT}\n  </body>`);
 }
 
+// Cloudflare Web Analytics (çerezsiz) — yalnızca CF_BEACON_TOKEN tanımlıysa.
+const cfToken = process.env.CF_BEACON_TOKEN;
+if (cfToken && /^[a-f0-9]{32}$/i.test(cfToken) && !html.includes('cloudflareinsights')) {
+  html = html.replace(
+    '</body>',
+    `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"${cfToken}"}'></script>\n  </body>`
+  );
+}
+
 fs.writeFileSync(indexPath, html);
 console.log('[pwa] Injected manifest, Apple meta tags and service worker into dist/index.html');
 

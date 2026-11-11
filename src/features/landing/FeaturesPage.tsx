@@ -29,6 +29,7 @@ import {
   FooterCol,
   StoreBadges,
 } from './LandingPage';
+import { FREE_TOOL_LINKS } from './config';
 
 const rw = (o: object) => o as { [k: string]: unknown };
 const web = (o: object) => o as never;
@@ -311,6 +312,7 @@ export function FeaturesPage() {
               </View>
               <View className={isDesktop ? 'flex-row gap-16' : 'flex-row flex-wrap gap-12'}>
                 <FooterCol title="Ürün" links={[{ label: 'Ana Sayfa', on: goHome }, { label: 'Giriş Yap', on: goLogin }, { label: 'Kayıt Ol', on: goRegister }]} />
+                <FooterCol title="Ücretsiz Araçlar" links={FREE_TOOL_LINKS} />
                 <FooterCol title="Yasal" links={LEGAL_LINKS.map((l) => ({ label: l.title, on: () => router.push(`/yasal/${l.slug}` as never) }))} />
                 <FooterCol title="İletişim" links={[{ label: SUPPORT_EMAIL, on: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}`) }]} />
               </View>
