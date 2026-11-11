@@ -23,13 +23,17 @@ import { useEntitlement } from '@/features/subscription/useEntitlement';
 import { formatCurrency } from '@/lib/utils/format';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { palette } from '@/lib/theme/colors';
+import { useAuthStore } from '@/store/authStore';
 
 export default function PropertyReportScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ name?: string }>();
   const building = (params.name ?? '').toString();
   const entitlement = useEntitlement();
-  const allowed = entitlement.limits.stats;
+  // Finansal rapor yalnızca yöneticide (personel Mülkler'de sadece doluluğu görür).
+  const role = useAuthStore((s) => s.user?.role);
+  const isAdmin = role === 'admin' || role === 'super_admin';
+  const allowed = entitlement.limits.stats && isAdmin;
 
   const report = usePropertyReport(building, allowed);
   const [index, setIndex] = useState(0); // 0 = en yeni ay
@@ -39,6 +43,17 @@ export default function PropertyReportScreen() {
 
   // ↑ hooks her render'da çağrılmalı; erken return'ler bundan sonra.
   const historyRows = useMemo(() => months.slice(0, 12), [months]);
+
+  if (!isAdmin) {
+    return (
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <Header building={building} onBack={() => router.back()} />
+        <View className="flex-1 items-center justify-center p-6">
+          <EmptyState icon={Lock} title="Yetkiniz yok" description="Bu rapor yalnızca yöneticiler içindir." />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Free plan: kilitli tanıtım (hesap yapılmaz).
   if (!allowed) {

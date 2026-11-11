@@ -170,7 +170,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {showLimitStrip ? (
+        {showLimitStrip && canSeeLedger ? (
           <Pressable
             onPress={() => router.push('/(app)/paywall?reason=limit')}
             className="mt-4 flex-row items-center justify-between rounded-2xl border border-primary/30 bg-primary-50 px-4 py-3 active:opacity-80"

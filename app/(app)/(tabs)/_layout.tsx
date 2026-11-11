@@ -17,7 +17,7 @@ const reTap = (route: string) => ({ navigation }: { navigation: { isFocused: () 
 export default function TabsLayout() {
   const colors = useThemeColors();
   const role = useAuthStore((s) => s.user?.role);
-  // Personel sade akış görür: Mülkler ve Analiz (istatistik) gizlenir.
+  // Personel: Mülkler (yalnızca doluluk) açık; Analiz (istatistik) gizli.
   const isAdmin = role === 'admin' || role === 'super_admin';
   // Geniş ekran + yönetici: gezinme sol menüye taşınır, alt sekme gizlenir.
   const { enabled: desktopShell } = useDesktopShell();
@@ -64,13 +64,12 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <FileText size={size} color={color} />,
         }}
       />
-      {/* 3 — Mülkler (yönetici) */}
+      {/* 3 — Mülkler (yönetici + personel; personel yalnızca doluluğu görür) */}
       <Tabs.Screen
         name="properties"
         listeners={reTap('properties')}
         options={{
           title: 'Mülkler',
-          href: isAdmin ? undefined : null,
           tabBarIcon: ({ color, size }) => <Building2 size={size} color={color} />,
         }}
       />
