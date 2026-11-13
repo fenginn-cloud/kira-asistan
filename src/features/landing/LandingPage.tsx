@@ -611,11 +611,12 @@ export function FooterCol({ title, links }: { title: string; links: { label: str
   );
 }
 
-/** App Store + Google Play indirme rozetleri (linkler config'den; boşsa buton pasif). */
+/** App Store + Google Play indirme rozetleri (linkler config'den; boş olan gösterilmez). */
 export function StoreBadges({ center }: { center?: boolean }) {
   const open = (url: string) => { if (url) Linking.openURL(url); };
   return (
     <View className={`flex-row flex-wrap gap-3 ${center ? 'justify-center' : ''}`}>
+      {APP_STORE_URL ? (
       <Pressable onPress={() => open(APP_STORE_URL)} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-3 rounded-2xl bg-black px-5 py-3" style={{ boxShadow: '0 8px 20px rgba(0,0,0,.18)' } as never}>
         <Apple size={26} color="#fff" fill="#fff" />
         <View>
@@ -623,6 +624,8 @@ export function StoreBadges({ center }: { center?: boolean }) {
           <Text className="text-sm font-bold tracking-tight text-white">İndirin</Text>
         </View>
       </Pressable>
+      ) : null}
+      {GOOGLE_PLAY_URL ? (
       <Pressable onPress={() => open(GOOGLE_PLAY_URL)} {...rw({ dataSet: { cta: '' } })} className="flex-row items-center gap-3 rounded-2xl bg-black px-5 py-3" style={{ boxShadow: '0 8px 20px rgba(0,0,0,.18)' } as never}>
         <Play size={22} color="#fff" fill="#fff" />
         <View>
@@ -630,6 +633,7 @@ export function StoreBadges({ center }: { center?: boolean }) {
           <Text className="text-sm font-bold tracking-tight text-white">İndirin</Text>
         </View>
       </Pressable>
+      ) : null}
     </View>
   );
 }
