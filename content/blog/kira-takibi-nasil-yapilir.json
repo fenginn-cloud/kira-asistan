@@ -1,0 +1,100 @@
+{
+  "slug": "kira-takibi-nasil-yapilir",
+  "date": "2026-11-19",
+  "title": "Kira Takibi Nasıl Yapılır? Defter ve Excel'e Alternatif",
+  "description": "Kira takibi nasıl yapılır? Ev sahipleri ve emlak ofisleri için tahsilat, gecikme, sözleşme ve depozito takibini düzenli hale getiren adım adım rehber.",
+  "h1": "Kira Takibi Nasıl Yapılır: Defter ve Excel Yerine Düzenli Bir Sistem",
+  "intro": "Bir ya da iki daireniz varken kirayı akılda tutmak kolaydır. Daire sayısı arttıkça, kiracılar farklı günlerde ödeme yaptıkça ve bazıları kısmi ödeme göndermeye başladıkça işler karışır. Kimin ne kadar borcu kaldığı, hangi sözleşmenin ne zaman yenileneceği ve kimden depozito alındığı sorularına hızlıca cevap veremiyorsanız, kira takibinizi bir sisteme bağlamanın zamanı gelmiştir. Bu rehberde **kira takibi** için gereken temel kayıtları, adım adım bir düzeni ve sık yapılan hataları anlatıyoruz.",
+  "sections": [
+    {
+      "h2": "Kira takibinde hangi bilgiler kayıt altında olmalı?",
+      "paragraphs": [
+        "İyi bir kira takibinin temeli, her kiracı için aynı bilgilerin eksiksiz tutulmasıdır. Bilgiler farklı yerlere dağıldığında (bir kısmı telefonda, bir kısmı defterde, bir kısmı banka uygulamasında) hata yapma ihtimali artar.",
+        "Her sözleşme için en azından şu bilgileri tek bir yerde tutmanızı öneririz:"
+      ],
+      "list": [
+        "Kiracının adı ve iletişim bilgisi",
+        "Mülkün adresi, bina ve daire bilgisi",
+        "Sözleşme başlangıç tarihi ve süresi",
+        "Aylık kira tutarı ve ödeme günü",
+        "Alınan depozito tutarı ve teslim tarihi",
+        "Her ay yapılan ödemeler: tarih, tutar ve ödeme şekli",
+        "Kira artış tarihi ve uygulanan yeni tutar"
+      ]
+    },
+    {
+      "h2": "Adım adım düzenli bir kira takip sistemi kurmak",
+      "paragraphs": [
+        "**1. Tüm sözleşmeleri tek listeye toplayın.** Elinizdeki kâğıt sözleşmeleri, mesajlaşma geçmişini ve banka dökümlerini gözden geçirerek her kiracı için yukarıdaki bilgileri doldurun. Eksik bilgi varsa kiracıdan teyit edin.",
+        "**2. Her ay için beklenen tahsilatı belirleyin.** Her sözleşmenin o ayki kira tutarı ve ödeme günü belli olmalı. Böylece ay başında ne kadar tahsilat beklediğinizi bilirsiniz.",
+        "**3. Ödemeleri geldiği gün işleyin.** Banka hesabınıza para geldiğinde ya da elden ödeme aldığınızda kaydı hemen girin. Birkaç gün biriktirilen kayıtlar en çok hata yapılan kayıtlardır.",
+        "**4. Kısmi ödemeleri ayrı takip edin.** Kiracı kiranın bir kısmını gönderdiyse ayı ödenmiş saymayın; kalan borcu açıkça görün. Kalan tutar bir sonraki aya devrediyorsa bunu da not edin.",
+        "**5. Geciken ödemeleri haftalık kontrol edin.** Haftada bir kez, ödeme günü geçmiş ama tahsil edilmemiş kiraları listeleyin ve kiracıya nazik bir hatırlatma yapın. Hatırlatmayı yazılı (mesaj ya da e-posta) yapmak, ileride bir anlaşmazlık olursa kayıt sağlar.",
+        "**6. Sözleşme ve artış tarihlerini önceden görün.** Yenileme tarihi yaklaşan sözleşmeleri bir ay önceden fark ederseniz kira artışını ve yeni dönemi kiracıyla zamanında konuşabilirsiniz. Artış tutarını hesaplamak için [Kira Artış Hesaplama](/kira-artis-hesaplama) aracını kullanabilirsiniz."
+      ]
+    },
+    {
+      "h2": "Defter, Excel ya da kira takip uygulaması: hangisi?",
+      "paragraphs": [
+        "**Defter** basittir ama arama yapamaz, hesap yapmaz ve kaybolabilir. Bir kiracının geçmiş bir yıldaki ödemelerini bulmak için sayfa sayfa geri gitmeniz gerekir.",
+        "**Excel** esneklik sağlar; ancak formüller bozulabilir, dosyanın farklı kopyaları oluşabilir ve telefondan güncellemek zahmetlidir. Birden fazla kişi aynı dosyada çalıştığında hangi sürümün doğru olduğu karışır.",
+        "**Kira takip uygulaması** ise geciken ve yaklaşan ödemeleri kendisi gösterir, kısmi ödemelerde kalan borcu hesaplar ve sözleşme bitiş tarihlerini hatırlatır. Örneğin Kira Asistan ile tahsilatı tek dokunuşla işleyebilir, her kiracının cari hesabını görebilir ve kiracıya göndermek için hazır bir WhatsApp hatırlatma mesajı oluşturabilirsiniz. Mevcut Excel listenizi de aktarabilirsiniz.",
+        "Hangi yöntemi seçerseniz seçin, önemli olan tek bir doğru kaynağın olması ve kayıtların düzenli tutulmasıdır."
+      ]
+    },
+    {
+      "h2": "Kira takibinde sık yapılan hatalar",
+      "paragraphs": [
+        "Düzenli bir sistem kurarken aşağıdaki hatalardan kaçınmak, size ileride çok zaman kazandırır."
+      ],
+      "list": [
+        "Elden alınan ödemeleri kaydetmemek ya da makbuz vermemek",
+        "Kısmi ödemeyi tam ödeme gibi işaretlemek",
+        "Depozitoyu kira geliriyle karıştırmak ve ayrıca not etmemek",
+        "Sözleşme yenileme tarihini kaçırıp artışı geç konuşmak",
+        "Kiracıyla yapılan sözlü anlaşmaları yazıya dökmemek",
+        "Bilgileri birden fazla dosyada, birbirinden farklı şekilde tutmak"
+      ]
+    },
+    {
+      "h2": "Ay sonu kontrolü: 15 dakikalık bir alışkanlık",
+      "paragraphs": [
+        "Her ayın sonunda kısa bir kontrol yapmak, küçük hataların birikmesini önler. Beklediğiniz toplam tahsilatı gerçekte gelenle karşılaştırın; fark varsa hangi kiracıdan kaynaklandığını bulun.",
+        "Ardından önümüzdeki ay sona erecek sözleşmelere ve artış dönemine giren kiracılara bakın. Banka dökümünüzdeki her kira ödemesinin kayıtlarınızda karşılığı olduğundan emin olun. Bu kontrolü düzenli yaptığınızda, yıl sonunda kira gelirinizi toparlamak da çok daha kolay olur."
+      ]
+    },
+    {
+      "h2": "Kiracı çıkışında kayıtlarınızı kapatın",
+      "paragraphs": [
+        "Kiracı evi boşalttığında takip bitmiş sayılmaz. Son ayın kirası, varsa kalan borç ve depozito iadesi netleşmeden kaydı kapatmayın. Dairenin durumunu bir [daire teslim tutanağı](/sablonlar/daire-teslim-tutanagi) ile, depozito iadesini ise bir [depozito tutanağı](/sablonlar/depozito-teslim-iade-tutanagi) ile belgelemek, iki taraf için de netlik sağlar.",
+        "Yeni kiracıyla başlarken de aynı düzeni baştan kurun: imzalı sözleşme (gerekirse [kira sözleşmesi örneği](/sablonlar/kira-sozlesmesi-ornegi) üzerinden hazırlayabilirsiniz), alınan depozito ve ilk ödeme günü kayda geçsin."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Kira takibi için en basit yöntem nedir?",
+      "a": "Her kiracı için kira tutarını, ödeme gününü ve yapılan ödemeleri tek bir yerde tutmaktır. Az sayıda daire için bir tablo yeterli olabilir; daire sayısı arttıkça bir kira takip uygulaması işi kolaylaştırır."
+    },
+    {
+      "q": "Kısmi ödeme yapan kiracıyı nasıl takip etmeliyim?",
+      "a": "Ödenen tutarı kaydedin ve ayı ödenmiş saymayın. Kalan borcu ayrıca görün ve kiracıyla kalan tutarın ne zaman ödeneceğini yazılı olarak netleştirin."
+    },
+    {
+      "q": "Geciken kira için ne zaman hatırlatma yapmalıyım?",
+      "a": "Ödeme günü geçtikten kısa süre sonra nazik ve yazılı bir hatırlatma yapmak iyi bir uygulamadır. Gecikme sürerse daha resmi adımlar için bir avukata danışabilirsiniz."
+    },
+    {
+      "q": "Depozitoyu kira geliriyle birlikte mi takip etmeliyim?",
+      "a": "Hayır. Depozito kiracıya ait bir güvencedir ve çıkışta iade edilmesi gerekebilir. Tutarını ve teslim tarihini kira ödemelerinden ayrı kaydedin."
+    },
+    {
+      "q": "Excel'deki kira listemi uygulamaya aktarabilir miyim?",
+      "a": "Kira Asistan'da Excel'den aktarma özelliği Pro planda bulunur. Böylece mevcut kiracı ve sözleşme bilgilerinizi tek tek girmeden aktarabilirsiniz."
+    },
+    {
+      "q": "Kira artışını nasıl hesaplarım?",
+      "a": "Konut kiralarında yenileme döneminde uygulanacak artış için güncel oranı ve hesaplamayı Kira Artış Hesaplama sayfamızda bulabilirsiniz."
+    }
+  ]
+}

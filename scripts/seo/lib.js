@@ -185,7 +185,7 @@ ${faqSection(p.faqs)}
 ${cta(p.slug, p.ctaText)}
 ${p.legal ? `<p class="disc">${DISCLAIMER}</p>` : ''}
 </main>
-<footer><a href="/">${BRAND}</a> · <a href="/kira-artis-hesaplama">Kira Artış Hesaplama</a> · <a href="/sablonlar/">Belge Şablonları</a> · <a href="/yasal/kvkk">KVKK</a> · <a href="/yasal/gizlilik">Gizlilik</a></footer>
+<footer><a href="/">${BRAND}</a> · <a href="/kira-artis-hesaplama">Kira Artış Hesaplama</a> · <a href="/sablonlar/">Belge Şablonları</a> · <a href="/blog/">Blog</a> · <a href="/yasal/kvkk">KVKK</a> · <a href="/yasal/gizlilik">Gizlilik</a></footer>
 ${p.script ? `<script>${p.script}</script>` : ''}
 </body>
 </html>

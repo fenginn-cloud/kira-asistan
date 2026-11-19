@@ -9,6 +9,7 @@ const path = require('path');
 const { SITE, readEnv } = require('./lib');
 const kiraArtis = require('./kira-artis');
 const sablonlar = require('./sablonlar');
+const blog = require('./blog');
 
 const ROOT = path.join(__dirname, '..', '..');
 const DIST = path.join(ROOT, 'dist');
@@ -28,7 +29,7 @@ if (!supa) console.warn('[seo] Supabase env yok — hatırlatma formu gizlenecek
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'kira-artis-oranlari.json'), 'utf8'));
 
 (async () => {
-const paths = ['/', '/ozellikler', ...kiraArtis.build(DIST, data, supa), ...(await sablonlar.build(DIST))];
+const paths = ['/', '/ozellikler', ...kiraArtis.build(DIST, data, supa), ...(await sablonlar.build(DIST)), ...blog.build(DIST)];
 
 const today = new Date().toISOString().slice(0, 10);
 fs.writeFileSync(
