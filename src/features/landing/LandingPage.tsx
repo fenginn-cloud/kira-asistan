@@ -32,7 +32,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { PLANS } from '@/features/subscription/plans';
 import { LEGAL_LINKS, SUPPORT_EMAIL } from '@/content/legal';
-import { APP_STORE_URL, GOOGLE_PLAY_URL } from './config';
+import { APP_STORE_URL, FREE_TOOL_LINKS, GOOGLE_PLAY_URL } from './config';
 import { HowItWorksVideo } from './HowItWorksVideo';
 
 const NAV = [
@@ -505,6 +505,7 @@ export function LandingPage() {
               </View>
               <View className={isDesktop ? 'flex-row gap-16' : 'flex-row flex-wrap gap-12'}>
                 <FooterCol title="Ürün" links={[{ label: 'Özellikler', on: () => scrollTo('features') }, { label: 'Fiyatlandırma', on: () => scrollTo('pricing') }, { label: 'Nasıl Çalışır?', on: () => scrollTo('how') }, { label: 'Kimler İçin?', on: () => scrollTo('who') }]} />
+                <FooterCol title="Ücretsiz Araçlar" links={FREE_TOOL_LINKS} />
                 <FooterCol title="Hesap" links={[{ label: 'Giriş Yap', on: goLogin }, { label: 'Kayıt Ol', on: goRegister }]} />
                 <FooterCol title="Yasal" links={LEGAL_LINKS.map((l) => ({ label: l.title, on: () => router.push(`/yasal/${l.slug}` as never) }))} />
               </View>
@@ -598,15 +599,24 @@ export function Accordion({ q, a }: { q: string; a: string }) {
   );
 }
 
-export function FooterCol({ title, links }: { title: string; links: { label: string; on: () => void }[] }) {
+type FooterLink = { label: string; on: () => void } | { label: string; href: string };
+
+export function FooterCol({ title, links }: { title: string; links: FooterLink[] }) {
   return (
     <View className="gap-2.5">
       <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</Text>
-      {links.map((l) => (
-        <Pressable key={l.label} onPress={l.on}>
-          <Text className="text-sm font-medium text-slate-600">{l.label}</Text>
-        </Pressable>
-      ))}
+      {links.map((l) =>
+        'href' in l ? (
+          // Statik SEO sayfaları expo-router'da değil: gerçek <a href> (tam sayfa geçişi, taranabilir link).
+          <Text key={l.label} className="text-sm font-medium text-slate-600" {...({ href: l.href } as object)}>
+            {l.label}
+          </Text>
+        ) : (
+          <Pressable key={l.label} onPress={l.on}>
+            <Text className="text-sm font-medium text-slate-600">{l.label}</Text>
+          </Pressable>
+        )
+      )}
     </View>
   );
 }

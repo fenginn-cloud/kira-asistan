@@ -80,7 +80,7 @@ fm.addEventListener('submit',function(e){e.preventDefault();var em=fm.email.valu
  b.disabled=true;msg.textContent='Kaydediliyor…';
  fetch(SUPA.url+'/rest/v1/seo_leads',{method:'POST',headers:{'apikey':SUPA.key,'Authorization':'Bearer '+SUPA.key,'Content-Type':'application/json','Prefer':'return=minimal'},
   body:JSON.stringify({email:em,renewal_month:mon.value,source:'${CALC_SLUG}',kvkk_consent:true})})
- .then(function(r){if(!r.ok)throw 0;var p=mon.value.split('-');msg.textContent='Tamam! '+AY[+p[1]-1]+' '+(+p[0]+1)+' kira artışından önce sana e-posta göndereceğiz.';fm.reset()})
+ .then(function(r){if(!r.ok)throw 0;var p=mon.value.split('-'),d=new Date(),cur=d.getFullYear()*12+d.getMonth(),y=+p[0];while(y*12+(+p[1]-1)<=cur)y++;msg.textContent='Tamam! '+AY[+p[1]-1]+' '+y+' kira artış oranı açıklandığında sana e-posta göndereceğiz.';fm.reset()})
  .catch(function(){msg.textContent='Bir sorun oluştu, lütfen tekrar deneyin.';b.disabled=false});
 });
 })();`;

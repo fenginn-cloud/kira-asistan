@@ -1,0 +1,30 @@
+name: SEO kira artış hatırlatma e-postaları
+
+# Her gün seo-reminders Edge Function'ını çağırır. Fonksiyon yalnızca o ay yenilemesi olan
+# ve henüz hatırlatılmamış kayıtlara e-posta yollar; diğer günlerde hiçbir şey yapmaz.
+# Gerekli secrets: EXPO_PUBLIC_SUPABASE_URL (zaten var), CRON_SECRET (Supabase'deki ile aynı).
+on:
+  schedule:
+    - cron: '0 7 * * *' # 10:00 TSİ
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'Deneme (kimseye göndermeden kaç kişiye gideceğini göster)'
+        type: boolean
+        default: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: seo-reminders çağır
+        env:
+          URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry && '1' || '0' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "CRON_SECRET tanımlı değil — atlandı."; exit 0; fi
+          q=""; [ "$DRY" = "1" ] && q="?dry=1"
+          code=$(curl -s -o out.json -w '%{http_code}' -X POST "${URL%/}/functions/v1/seo-reminders$q" -H "x-cron-secret: $CRON_SECRET")
+          cat out.json; echo
+          [ "$code" = "200" ] || { echo "HTTP $code"; exit 1; }
