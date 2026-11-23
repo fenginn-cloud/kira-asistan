@@ -5,7 +5,7 @@ Liste azalınca (5 konudan az kalınca) aynı alanda yeni konular ekler. Konular
 
 - [x] Kira takibi nasıl yapılır: Excel ve defter yerine düzenli bir sistem (kira-takibi-nasil-yapilir)
 - [x] Kiracı kirayı geç ödüyor: ev sahibi adım adım ne yapmalı (kiraci-kirayi-gec-oduyor-ne-yapmali)
-- [ ] Kira artışı nasıl hesaplanır: TÜFE ortalaması ve örnek hesaplama
+- [x] Kira artışı nasıl hesaplanır: TÜFE ortalaması ve örnek hesaplama (kira-artisi-nasil-hesaplanir)
 - [ ] Depozito ne zaman ve nasıl iade edilir: kesinti yapılabilecek durumlar
 - [ ] Kiracı kısmi ödeme yaptığında kalan borç nasıl takip edilir
 - [ ] Kira sözleşmesi süresi dolunca ne olur: uzama, yenileme ve kira artışı
