@@ -1,0 +1,109 @@
+{
+  "slug": "kira-artisi-nasil-hesaplanir",
+  "date": "2026-11-23",
+  "title": "Kira Artışı Nasıl Hesaplanır? TÜFE ve Örnek Hesap",
+  "description": "Kira artışı nasıl hesaplanır? TÜFE 12 aylık ortalaması, hangi ayın verisinin esas alındığı ve adım adım örnek hesaplama ile ev sahipleri için rehber.",
+  "h1": "Kira Artışı Nasıl Hesaplanır: TÜFE Ortalaması ve Örnek Hesaplama",
+  "intro": "Kira sözleşmesinin yenilenme tarihi yaklaştığında ev sahiplerinin aklına ilk gelen soru, yeni kiranın ne kadar olacağıdır. Hesap aslında birkaç adımdan oluşur; ancak hangi ayın verisinin kullanılacağı ya da oranın nasıl uygulanacağı karıştırıldığında hem siz hem kiracınız için gereksiz bir tartışma doğabilir. Bu rehberde **kira artışı nasıl hesaplanır** sorusunu, TÜFE 12 aylık ortalamasının ne anlama geldiğini ve örnek bir hesaplamayı adım adım anlatıyoruz.",
+  "sections": [
+    {
+      "h2": "Kira artışında esas alınan oran nedir?",
+      "paragraphs": [
+        "Konut ve çatılı işyeri kiralarında, yenilenen kira dönemindeki artış oranı bir önceki kira yılında TÜİK tarafından açıklanan **TÜFE 12 aylık ortalamalara göre değişim oranını** geçemez. Bu kural Türk Borçlar Kanunu'nun 344. maddesinde yer alır.",
+        "Burada dikkat edilmesi gereken nokta, bu oranın bir **üst sınır** olmasıdır. Taraflar daha düşük bir artış üzerinde anlaşabilir; ancak sözleşmeye bu sınırı aşan bir oran yazılması, sınırın üzerindeki kısmı geçerli kılmaz. Sözleşmenizdeki artış maddesinin nasıl yorumlanacağı konusunda tereddüdünüz varsa bir avukata danışmanız en doğrusudur.",
+        "Sık karıştırılan bir nokta da yıllık enflasyon ile 12 aylık ortalama arasındaki farktır. TÜİK her ay birkaç farklı değişim oranı açıklar; kira artışında kullanılan, **12 aylık ortalamalara göre değişim** oranıdır. Haberlerde öne çıkan yıllık enflasyon rakamı bu orandan farklı olabilir.",
+        "Bu nedenle artışı hesaplamadan önce hangi oranı kullandığınızdan emin olun. Yanlış oranla yapılan bir hesap, kiracınız kontrol ettiğinde güven kaybına neden olabilir ve fark küçük olsa bile tartışma konusu hâline gelebilir."
+      ]
+    },
+    {
+      "h2": "Hangi ayın verisi kullanılır?",
+      "paragraphs": [
+        "Kullanılacak oran, kira sözleşmesinin **yenilendiği aydan bir önceki aya** aittir. Örneğin sözleşmeniz Kasım ayında yenileniyorsa, TÜİK'in Ekim ayı için açıkladığı TÜFE 12 aylık ortalama değişim oranı esas alınır.",
+        "Yenileme ayını belirlemek için sözleşmenin başlangıç tarihine bakın. Sözleşme 15 Kasım'da başladıysa, her yıl Kasım ayı yenileme ayınızdır. Kiracının taşındığı tarih ya da ilk ödemenin yapıldığı gün değil, sözleşmedeki başlangıç tarihi önemlidir.",
+        "Birden fazla daireniz varsa her sözleşmenin yenileme ayı farklı olabilir. Bu durumda her birini ayrı ayrı not edin ve her daire için kendi yenileme ayına ait oranı kullanın; tek bir oranı bütün dairelere uygulamak hatalı sonuç verir.",
+        "Güncel veriye göre **Kasım 2026** ayında yenilenen sözleşmelerde uygulanabilecek yasal azami artış oranı **%31,23**'tür. Diğer ayların oranlarını ve ayrıntıları [Kasım 2026 kira artış oranı](/kira-artis-orani/2026-kasim) sayfasında ve [Kira Artış Hesaplama](/kira-artis-hesaplama) aracında bulabilirsiniz."
+      ]
+    },
+    {
+      "h2": "Adım adım kira artışı hesaplama",
+      "paragraphs": [
+        "Hesaplama için yalnızca iki bilgiye ihtiyacınız var: mevcut aylık kira ve yenileme ayına ait oran. Aşağıdaki adımları izleyin:"
+      ],
+      "list": [
+        "Sözleşmenin yenileme ayını belirleyin (sözleşme başlangıç tarihinin ayı).",
+        "Yenileme ayından bir önceki ayın TÜFE 12 aylık ortalama değişim oranını bulun.",
+        "Mevcut aylık kirayı bu oranla çarpın ve 100'e bölün; çıkan sonuç azami artış tutarıdır.",
+        "Artış tutarını mevcut kiraya ekleyin; bu, uygulanabilecek en yüksek yeni kiradır.",
+        "Kiracıyla anlaştığınız yeni tutarı yazılı olarak teyit edin ve kayıtlarınıza işleyin."
+      ]
+    },
+    {
+      "h2": "Örnek hesaplama",
+      "paragraphs": [
+        "Sözleşmesi Kasım 2026'da yenilenen ve aylık kirası **20.000 TL** olan bir daire düşünelim. Kasım 2026 yenilemeleri için oran %31,23'tür.",
+        "**Artış tutarı:** 20.000 × 31,23 / 100 = **6.246 TL**. **Yeni kira (azami):** 20.000 + 6.246 = **26.246 TL**.",
+        "Hesabı kontrol etmenin pratik bir yolu da mevcut kirayı 1,3123 ile çarpmaktır: 20.000 × 1,3123 = 26.246 TL. İki yöntem de aynı sonucu verir; hangisi size kolay geliyorsa onu kullanabilirsiniz.",
+        "Aynı ayda yenilenen, kirası **15.000 TL** olan başka bir daire için hesap şöyle olur: 15.000 × 31,23 / 100 = 4.684,50 TL artış; yeni kira en fazla 19.684,50 TL.",
+        "Bu tutarlar bir üst sınırdır. Kiracınızla daha düşük bir artışta anlaşabilir ya da tutarı yuvarlayarak aşağı çekebilirsiniz. Tutarı yukarı yuvarlamak ise sınırın aşılması anlamına gelir; bundan kaçının."
+      ]
+    },
+    {
+      "h2": "TÜFE verisi ne zaman belli olur?",
+      "paragraphs": [
+        "TÜİK enflasyon verilerini her ayın başında açıklar ve TÜFE 12 aylık ortalama değişim oranı da bu açıklamayla birlikte belli olur. Yani yenileme ayınıza ait oran, genellikle o ayın ilk günlerinde netleşir.",
+        "Sözleşmeniz ayın ilk günlerinde yenileniyorsa ve veri henüz açıklanmadıysa, kiracınıza artışın veri açıklandıktan sonra hesaplanacağını önceden söylemeniz iyi olur. Böylece eski tutar üzerinden ödeme yapıldıysa aradaki farkın nasıl tamamlanacağını baştan konuşmuş olursunuz.",
+        "Oranı tahmin ederek ya da geçmiş ayların verisine bakarak hesap yapmayın. Tahmini bir oran üzerinden bildirilen tutar, gerçek veri açıklandığında değişirse kiracıyla gereksiz bir yazışmaya yol açar."
+      ]
+    },
+    {
+      "h2": "Sık yapılan hatalar",
+      "paragraphs": [
+        "Kira artışında yaşanan anlaşmazlıkların çoğu basit hesap hatalarından kaynaklanır. Aşağıdaki noktalara dikkat etmek, kiracınızla konuşmayı kolaylaştırır."
+      ],
+      "list": [
+        "Yıllık enflasyon oranını 12 aylık ortalama ile karıştırmak",
+        "Yenileme ayının kendi verisini kullanmak (bir önceki ayın verisi kullanılmalı)",
+        "Artışı geçen yılın ilk kirası yerine güncel kira üzerinden yapmamak",
+        "Artış tutarını yukarı yuvarlayıp sınırı aşmak",
+        "Yeni tutarı kiracıya yazılı olarak bildirmemek",
+        "Yenileme tarihini kaçırıp artışı aylar sonra gündeme getirmek"
+      ]
+    },
+    {
+      "h2": "Artışı zamanında konuşmak ve kaydetmek",
+      "paragraphs": [
+        "Yenileme ayından birkaç hafta önce kiracınıza yeni tutarı ve nasıl hesaplandığını kısa bir mesajla bildirmek, sürprizleri önler. Hesabı açıkça göstermek, kiracının tutarı kendisinin de kontrol edebilmesini sağlar ve güven oluşturur.",
+        "Bildirimde mevcut kirayı, kullandığınız oranı ve bu oranın hangi aya ait olduğunu, artış tutarını ve yeni kirayı ayrı satırlarda yazmanız yeterlidir. Kiracı bu bilgilerle hesabı birkaç dakikada doğrulayabilir.",
+        "Artış uygulandıktan sonra yeni tutarı kayıtlarınıza işlemeyi unutmayın; aksi halde sonraki aylarda eski tutar üzerinden tahsilat bekleyebilirsiniz. Kira Asistan gibi bir kira takip uygulamasında sözleşme uzatma ve kira artışı kaydedildiğinde, sonraki aylarda yeni tutar esas alınır.",
+        "Sözleşmenin süresi doluyor ve yeniden düzenlemek istiyorsanız [kira sözleşmesi örneği](/sablonlar/kira-sozlesmesi-ornegi) şablonumuza göz atabilirsiniz. Genel bir takip düzeni kurmak için de [kira takibi nasıl yapılır](/blog/kira-takibi-nasil-yapilir) yazımızı okuyabilirsiniz."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Kira artışında hangi oran kullanılır?",
+      "a": "Konut ve çatılı işyeri kiralarında, yenileme ayından bir önceki ayın TÜFE 12 aylık ortalama değişim oranı üst sınır olarak kullanılır. Güncel oranı Kira Artış Hesaplama sayfamızda görebilirsiniz."
+    },
+    {
+      "q": "Kasım 2026 kira artış oranı nedir?",
+      "a": "Kasım 2026'da yenilenen sözleşmeler için yasal azami artış oranı %31,23'tür. Bu oran Ekim 2026 TÜFE 12 aylık ortalama değişim oranıdır."
+    },
+    {
+      "q": "Ev sahibi oranın altında artış yapabilir mi?",
+      "a": "Evet. TÜFE 12 aylık ortalaması bir üst sınırdır; taraflar daha düşük bir artış üzerinde anlaşabilir."
+    },
+    {
+      "q": "Sözleşmede daha yüksek bir artış oranı yazıyorsa ne olur?",
+      "a": "Yasal sınırı aşan kısım geçerli kabul edilmez. Sözleşmenizdeki maddenin somut olarak nasıl değerlendirileceği için bir avukata danışmanızı öneririz."
+    },
+    {
+      "q": "Kiracı artışı kabul etmezse ne yapılır?",
+      "a": "Önce hesabı kiracıyla açıkça paylaşıp uzlaşmaya çalışın. Anlaşma sağlanamazsa izlenecek yol için bir avukattan destek almanız en doğrusudur."
+    },
+    {
+      "q": "Beş yılı aşan kira sözleşmelerinde hesap aynı mı?",
+      "a": "Beş yıldan uzun süreli veya beş yıldan sonra yenilenen sözleşmelerde kira bedelinin belirlenmesi farklı kurallara tabi olabilir. Bu durumda bir avukata danışmanız gerekir."
+    }
+  ],
+  "legal": true
+}
