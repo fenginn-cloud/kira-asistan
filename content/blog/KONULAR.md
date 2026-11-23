@@ -4,7 +4,7 @@ Yazar ajan her çalıştığında **işaretlenmemiş ilk konuyu** yazar ve yazd�
 Liste azalınca (5 konudan az kalınca) aynı alanda yeni konular ekler. Konuları kullanıcı da elle ekleyebilir.
 
 - [x] Kira takibi nasıl yapılır: Excel ve defter yerine düzenli bir sistem (kira-takibi-nasil-yapilir)
-- [ ] Kiracı kirayı geç ödüyor: ev sahibi adım adım ne yapmalı
+- [x] Kiracı kirayı geç ödüyor: ev sahibi adım adım ne yapmalı (kiraci-kirayi-gec-oduyor-ne-yapmali)
 - [ ] Kira artışı nasıl hesaplanır: TÜFE ortalaması ve örnek hesaplama
 - [ ] Depozito ne zaman ve nasıl iade edilir: kesinti yapılabilecek durumlar
 - [ ] Kiracı kısmi ödeme yaptığında kalan borç nasıl takip edilir
