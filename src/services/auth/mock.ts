@@ -5,6 +5,7 @@ import type { AuthProvider } from './types';
 /** Phase 1 mock auth: any password logs in as the matching (or first) user. */
 export const mockAuthProvider: AuthProvider = {
   oauthAvailable: false,
+  oauthProviders: [],
   async signInWithOAuth() {
     throw new Error('Demo modunda sosyal giriş yok.');
   },
@@ -47,7 +48,8 @@ export const mockAuthProvider: AuthProvider = {
   async resetPassword(_email, code, newPassword) {
     await new Promise((r) => setTimeout(r, 400));
     if (code.trim().length < 6) throw new Error('Doğrulama kodunu eksiksiz girin.');
-    if (newPassword.trim().length < 6) throw new Error('Yeni şifre en az 6 karakter olmalı.');
+    if (newPassword.trim().length < 6)
+      throw new Error('Yeni şifre en az 6 karakter olmalı.');
   },
   async deleteAccount() {
     await new Promise((r) => setTimeout(r, 400));

@@ -19,9 +19,15 @@ export interface AuthProvider {
    * sayfasına yönlenir; dönüşte oturum `restore()` ile yakalanır ve ilk kez
    * giren kullanıcı için şirket/profil otomatik oluşturulur.
    */
-  signInWithOAuth(provider: OAuthProviderId): Promise<void>;
+  signInWithOAuth(provider: OAuthProviderId): Promise<AppUser | void>;
   /** Bu ortamda sosyal giriş kullanılabilir mi (web + Supabase). */
   oauthAvailable: boolean;
+  /**
+   * Bu ortamda gösterilecek sağlayıcılar. Web: Google + Apple (yönlendirme).
+   * iOS: yalnızca Apple (telefonun kendi penceresi); oturum hemen açılır ve
+   * signInWithOAuth kullanıcıyı döndürür.
+   */
+  oauthProviders: OAuthProviderId[];
   signIn(email: string, password: string): Promise<AppUser>;
   signOut(): Promise<void>;
   /**

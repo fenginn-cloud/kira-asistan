@@ -44,12 +44,80 @@ async function profileForSession(userId: string): Promise<AppUser | null> {
   return profile;
 }
 
+/**
+ * iOS: Apple ile giriş telefonun kendi penceresiyle yapılır. Apple'dan gelen
+ * kimlik belirteci Supabase'e verilir (signInWithIdToken). Nonce: Apple'a
+ * SHA-256 özeti, Supabase'e ham değer gider.
+ * Supabase → Apple sağlayıcısının "Client IDs" alanında bundle ID
+ * (com.kiraasistan.app) da kayıtlı olmalıdır.
+ */
+async function signInWithAppleNative(): Promise<AppUser> {
+  const AppleAuthentication = await import('expo-apple-authentication');
+  const Crypto = await import('expo-crypto');
+
+  const rawNonce = Crypto.randomUUID();
+  const hashedNonce = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    rawNonce
+  );
+
+  let credential;
+  try {
+    credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+      nonce: hashedNonce,
+    });
+  } catch (e) {
+    const code = (e as { code?: string }).code;
+    if (code === 'ERR_REQUEST_CANCELED') throw new Error('Giriş iptal edildi.');
+    throw new Error('Apple ile giriş başlatılamadı.');
+  }
+  if (!credential.identityToken) throw new Error('Apple ile giriş tamamlanamadı.');
+
+  const { data, error } = await db().auth.signInWithIdToken({
+    provider: 'apple',
+    token: credential.identityToken,
+    nonce: rawNonce,
+  });
+  if (error || !data.user) throw new Error('Apple ile giriş tamamlanamadı.');
+
+  // Apple adı yalnızca İLK girişte verir; hesap kurulumu adı metadata'dan okur.
+  const given = credential.fullName?.givenName ?? '';
+  const family = credential.fullName?.familyName ?? '';
+  const fullName = `${given} ${family}`.trim();
+  if (fullName && !data.user.user_metadata?.full_name) {
+    try {
+      await db().auth.updateUser({ data: { full_name: fullName } });
+    } catch {
+      // ad sonradan profilden düzenlenebilir
+    }
+  }
+
+  const profile = await profileForSession(data.user.id);
+  if (!profile)
+    throw new Error('Hesabınız pasif ya da kurulamadı. Destekle iletişime geçin.');
+  try {
+    await db().rpc('touch_last_login');
+  } catch {
+    // ignore
+  }
+  return profile;
+}
+
 export const supabaseAuthProvider: AuthProvider = {
-  oauthAvailable: Platform.OS === 'web',
+  oauthAvailable: Platform.OS === 'web' || Platform.OS === 'ios',
+  oauthProviders:
+    Platform.OS === 'web' ? ['google', 'apple'] : Platform.OS === 'ios' ? ['apple'] : [],
 
   async signInWithOAuth(provider) {
+    if (Platform.OS === 'ios' && provider === 'apple') {
+      return signInWithAppleNative();
+    }
     if (Platform.OS !== 'web' || typeof window === 'undefined') {
-      throw new Error('Bu giriş yöntemi şimdilik yalnızca web sürümünde.');
+      throw new Error('Bu giriş yöntemi bu cihazda kullanılamıyor.');
     }
     const { error } = await db().auth.signInWithOAuth({
       provider,
@@ -207,9 +275,7 @@ export const supabaseAuthProvider: AuthProvider = {
   async requestPasswordReset(email) {
     // Sends the "Reset Password" e-mail. With the template using {{ .Token }}
     // the user receives a numeric recovery code (no deep link needed).
-    const { error } = await db().auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-    );
+    const { error } = await db().auth.resetPasswordForEmail(email.trim().toLowerCase());
     // Do not reveal whether the address exists — treat as success either way.
     if (error && !error.message?.toLowerCase().includes('rate limit')) {
       // Only surface hard failures (e.g. rate limiting) to the user.
