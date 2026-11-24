@@ -13,6 +13,7 @@ import { Building2, Check } from 'lucide-react-native';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
+import { authProvider } from '@/services/auth';
 import { SocialAuthButtons } from '@/features/auth/SocialAuthButtons';
 
 export default function LoginScreen() {
@@ -50,12 +51,8 @@ export default function LoginScreen() {
             <View className="h-20 w-20 items-center justify-center rounded-3xl bg-primary">
               <Building2 size={36} color="#FFFFFF" />
             </View>
-            <Text className="mt-5 text-3xl font-bold text-foreground">
-              Kira Asistan
-            </Text>
-            <Text className="mt-1 text-base text-muted">
-              Hesabınıza giriş yapın
-            </Text>
+            <Text className="mt-5 text-3xl font-bold text-foreground">Kira Asistan</Text>
+            <Text className="mt-1 text-base text-muted">Hesabınıza giriş yapın</Text>
           </View>
 
           <View className="gap-4">
@@ -75,9 +72,7 @@ export default function LoginScreen() {
               placeholder="••••••••"
             />
 
-            {error ? (
-              <Text className="text-sm text-danger">{error}</Text>
-            ) : null}
+            {error ? <Text className="text-sm text-danger">{error}</Text> : null}
 
             <View className="flex-row items-center justify-between">
               <Pressable
@@ -108,14 +103,18 @@ export default function LoginScreen() {
             </View>
 
             <SocialAuthButtons />
+            {authProvider.oauthAvailable ? (
+              <Text className="text-center text-xs leading-5 text-muted">
+                Google veya Apple ile ilk kez devam ettiğinizde Kullanım Şartları,
+                Gizlilik ve Çerez Politikası'nı kabul etmiş olursunuz.
+              </Text>
+            ) : null}
 
             <View className="mt-2 flex-row items-center justify-center gap-1">
               <Text className="text-sm text-muted">Hesabınız yok mu?</Text>
               <Link href="/(auth)/register" asChild>
                 <Pressable>
-                  <Text className="text-sm font-semibold text-primary-700">
-                    Kayıt Ol
-                  </Text>
+                  <Text className="text-sm font-semibold text-primary-700">Kayıt Ol</Text>
                 </Pressable>
               </Link>
             </View>

@@ -9,59 +9,57 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
-import { ArrowLeft, Building2 } from 'lucide-react-native';
+import { ArrowLeft, Building2, Check } from 'lucide-react-native';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 import { SocialAuthButtons } from '@/features/auth/SocialAuthButtons';
-import {
-  PORTFOLIO_OPTIONS,
-  REFERRAL_OPTIONS,
-  ROLE_OPTIONS,
-  useSignupSurveyStore,
-} from '@/features/onboarding/signupSurvey';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Tek seçimli küçük chip grubu (opsiyonel anket alanları için). */
-function ChipGroup({
-  label,
-  options,
-  value,
-  onChange,
+/** Kullanım şartları / gizlilik / çerez onayı (kayıt için zorunlu). */
+function ConsentCheckbox({
+  checked,
+  onToggle,
+  onOpen,
 }: {
-  label: string;
-  options: string[];
-  value: string | null;
-  onChange: (v: string) => void;
+  checked: boolean;
+  onToggle: () => void;
+  onOpen: (slug: string) => void;
 }) {
+  const link = (slug: string, label: string) => (
+    <Text
+      className="font-semibold text-primary-700"
+      onPress={() => onOpen(slug)}
+      suppressHighlighting
+    >
+      {label}
+    </Text>
+  );
   return (
-    <View className="gap-2">
-      <Text className="text-sm font-medium text-muted">{label}</Text>
-      <View className="flex-row flex-wrap gap-2">
-        {options.map((opt) => {
-          const active = value === opt;
-          return (
-            <Pressable
-              key={opt}
-              onPress={() => onChange(opt)}
-              className={`rounded-full px-3.5 py-2 ${
-                active ? 'bg-primary' : 'border border-border bg-surface'
-              }`}
-            >
-              <Text
-                className={`text-sm font-semibold ${active ? 'text-white' : 'text-muted'}`}
-              >
-                {opt}
-              </Text>
-            </Pressable>
-          );
-        })}
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      onPress={onToggle}
+      className="flex-row items-start gap-3"
+    >
+      <View
+        className={`mt-0.5 h-5 w-5 items-center justify-center rounded-md border-2 ${
+          checked ? 'border-primary bg-primary' : 'border-border bg-surface'
+        }`}
+      >
+        {checked ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
       </View>
-    </View>
+      <Text className="flex-1 text-sm leading-5 text-muted">
+        {link('kullanim', 'Kullanım Şartları')}'nı,{' '}
+        {link('gizlilik', 'Gizlilik Politikası')}'nı,{' '}
+        {link('kvkk', 'KVKK Aydınlatma Metni')}'ni ve {link('cerez', 'Çerez Politikası')}
+        'nı okudum, kabul ediyorum.
+      </Text>
+    </Pressable>
   );
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -70,11 +68,9 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [role, setRole] = useState<string | null>(null);
-  const [portfolio, setPortfolio] = useState<string | null>(null);
-  const [referral, setReferral] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
   const onSubmit = async () => {
     setError(null);
@@ -94,10 +90,12 @@ export default function RegisterScreen() {
       setError('Şifreler eşleşmiyor.');
       return;
     }
+    if (!accepted) {
+      setError('Kayıt olmak için Kullanım Şartları ve politikaları kabul edin.');
+      return;
+    }
     setLoading(true);
     try {
-      // Anketi taşınmak üzere sakla (hesap kurulunca yazılır).
-      useSignupSurveyStore.getState().set({ role, portfolioSize: portfolio, referral });
       const mail = email.trim().toLowerCase();
       await signUp(fullName, mail, password);
       router.push({ pathname: '/(auth)/verify-otp', params: { email: mail } });
@@ -127,12 +125,8 @@ export default function RegisterScreen() {
             <View className="h-20 w-20 items-center justify-center rounded-3xl bg-primary">
               <Building2 size={36} color="#FFFFFF" />
             </View>
-            <Text className="mt-5 text-3xl font-bold text-foreground">
-              Hesap Oluştur
-            </Text>
-            <Text className="mt-1 text-base text-muted">
-              Birkaç adımda başlayın
-            </Text>
+            <Text className="mt-5 text-3xl font-bold text-foreground">Hesap Oluştur</Text>
+            <Text className="mt-1 text-base text-muted">Birkaç adımda başlayın</Text>
           </View>
 
           <View className="gap-4">
@@ -166,33 +160,27 @@ export default function RegisterScreen() {
               placeholder="••••••••"
             />
 
-            {/* Kısa tanışma anketi (opsiyonel) */}
-            <View className="mt-1 gap-4 rounded-2xl border border-border/60 bg-surface p-4">
-              <Text className="text-xs text-muted">
-                Sizi daha iyi tanıyalım (opsiyonel)
-              </Text>
-              <ChipGroup label="Rolünüz" options={ROLE_OPTIONS} value={role} onChange={setRole} />
-              <ChipGroup
-                label="Kaç daire/sözleşme takip ediyorsunuz?"
-                options={PORTFOLIO_OPTIONS}
-                value={portfolio}
-                onChange={setPortfolio}
-              />
-              <ChipGroup
-                label="Bizi nereden duydunuz?"
-                options={REFERRAL_OPTIONS}
-                value={referral}
-                onChange={setReferral}
-              />
-            </View>
+            <ConsentCheckbox
+              checked={accepted}
+              onToggle={() => {
+                setAccepted((v) => !v);
+                setError(null);
+              }}
+              onOpen={(slug) => router.push(`/yasal/${slug}`)}
+            />
 
             {error ? <Text className="text-sm text-danger">{error}</Text> : null}
 
             <View className="mt-2">
-              <Button label="Kayıt Ol" onPress={onSubmit} loading={loading} />
+              <Button
+                label="Kayıt Ol"
+                onPress={onSubmit}
+                loading={loading}
+                disabled={!accepted}
+              />
             </View>
 
-            <SocialAuthButtons />
+            <SocialAuthButtons consentRequired consented={accepted} />
 
             <View className="mt-2 flex-row items-center justify-center gap-1">
               <Text className="text-sm text-muted">Zaten hesabınız var mı?</Text>
