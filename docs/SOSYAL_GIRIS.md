@@ -41,3 +41,13 @@ Supabase geri dönüş adresi (her iki sağlayıcıda da kullanılır):
 - iOS: `expo-apple-authentication` (telefonun kendi penceresi) + Google için ayrı
   iOS OAuth istemcisi; yeni derleme gerekir.
 - Apple kuralı 4.8: uygulamada Google varsa Apple ile giriş de zorunlu.
+
+## iOS 1.1 — Apple ile giriş (uygulama içi)
+- iPhone'da yalnızca **Apple ile devam et** görünür (telefonun kendi penceresi).
+  Google, izin ekranı yayınlanınca ayrıca eklenecek (Google varsa Apple zorunlu; tersi değil).
+- Akış: `expo-apple-authentication` → kimlik belirteci → `supabase.auth.signInWithIdToken`
+  → ilk girişte şirket + profil otomatik kurulur.
+- **Supabase → Authentication → Providers → Apple → Client IDs** alanına bundle ID
+  eklenmeli: `com.kiraasistan.web,com.kiraasistan.app` (virgülle, ikisi birden).
+- `app.json` → `ios.usesAppleSignIn: true`. Bu yetenek yeni olduğu için derlemede
+  provisioning profili yeniden oluşturulmalı (EAS soruyu sorduğunda "Yes").

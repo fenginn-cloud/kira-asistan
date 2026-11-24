@@ -76,7 +76,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithOAuth: async (provider) => {
-    await authProvider.signInWithOAuth(provider);
+    // Web: sayfa sağlayıcıya yönlenir (dönüşte restore). iOS Apple: kullanıcı hemen gelir.
+    const user = await authProvider.signInWithOAuth(provider);
+    if (user) {
+      identifyPurchases(user);
+      set({ user });
+    }
   },
 
   signOut: () => {
