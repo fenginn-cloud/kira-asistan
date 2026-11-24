@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BarChart3, Building2, FileText, Home, User } from 'lucide-react-native';
+import { BarChart3, Building2, FileText, Home, Settings } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { palette } from '@/lib/theme/colors';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
@@ -8,11 +8,13 @@ import { useAuthStore } from '@/store/authStore';
 import { useDesktopShell } from '@/lib/useDesktopShell';
 
 /** Re-tapping the active tab scrolls that screen back to the top. */
-const reTap = (route: string) => ({ navigation }: { navigation: { isFocused: () => boolean } }) => ({
-  tabPress: () => {
-    if (navigation.isFocused()) triggerScrollTop(route);
-  },
-});
+const reTap =
+  (route: string) =>
+  ({ navigation }: { navigation: { isFocused: () => boolean } }) => ({
+    tabPress: () => {
+      if (navigation.isFocused()) triggerScrollTop(route);
+    },
+  });
 
 export default function TabsLayout() {
   const colors = useThemeColors();
@@ -42,7 +44,12 @@ export default function TabsLayout() {
               borderTopColor: colors.border,
               backgroundColor: colors.surface,
             },
-        tabBarLabelStyle: { fontSize: 11, lineHeight: 15, fontWeight: '600', paddingBottom: 1 },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          lineHeight: 15,
+          fontWeight: '600',
+          paddingBottom: 1,
+        },
         tabBarItemStyle: { overflow: 'visible' },
       }}
     >
@@ -88,8 +95,8 @@ export default function TabsLayout() {
         name="settings"
         listeners={reTap('settings')}
         options={{
-          title: 'Profil',
-          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
+          title: 'Ayarlar',
+          tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
         }}
       />
       {/* Bağımsız AI Asistan sekmesi KALDIRILDI — route korunur ama gizli

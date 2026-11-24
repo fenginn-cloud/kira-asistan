@@ -58,6 +58,9 @@ export default function AppLayout() {
         <Stack.Screen name="property-report" />
         <Stack.Screen name="notification-settings" />
         <Stack.Screen name="sessions" />
+        <Stack.Screen name="plan" />
+        <Stack.Screen name="app-settings" />
+        <Stack.Screen name="support" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
       <WelcomeSurvey />
