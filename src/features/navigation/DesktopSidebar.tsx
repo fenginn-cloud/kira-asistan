@@ -6,7 +6,7 @@ import {
   FileText,
   Home,
   Plus,
-  User,
+  Settings,
 } from 'lucide-react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/store/authStore';
@@ -55,9 +55,9 @@ const NAV: NavItem[] = [
   },
   {
     key: 'settings',
-    label: 'Profil',
+    label: 'Ayarlar',
     href: '/settings',
-    icon: User,
+    icon: Settings,
     match: (p) => p.startsWith('/settings'),
   },
 ];
@@ -73,8 +73,7 @@ export function DesktopSidebar({ width }: { width: number }) {
   const user = useAuthStore((s) => s.user);
   const gate = useContractGate();
 
-  const roleLabel =
-    user?.role === 'super_admin' ? 'Süper Admin' : 'Yönetici';
+  const roleLabel = user?.role === 'super_admin' ? 'Süper Admin' : 'Yönetici';
 
   return (
     <View
@@ -110,7 +109,7 @@ export function DesktopSidebar({ width }: { width: number }) {
         <Pressable
           onPress={() =>
             router.push(
-              (gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall') as Href,
+              (gate.allowed ? '/(app)/contracts/new' : '/(app)/paywall') as Href
             )
           }
           className="mb-5 flex-row items-center justify-center gap-2 rounded-2xl bg-primary py-3 active:opacity-90"
@@ -132,10 +131,7 @@ export function DesktopSidebar({ width }: { width: number }) {
                   active ? 'bg-primary-50' : ''
                 }`}
               >
-                <Icon
-                  size={20}
-                  color={active ? palette.primary : palette.muted}
-                />
+                <Icon size={20} color={active ? palette.primary : palette.muted} />
                 <Text
                   className={`text-[15px] ${
                     active
