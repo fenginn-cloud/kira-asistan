@@ -85,6 +85,29 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
     ],
   },
 
+  cerez: {
+    slug: 'cerez',
+    title: 'Çerez Politikası',
+    updated: 'Kasım 2026',
+    sections: [
+      {
+        body: `Kira Asistan web sitesi ve uygulaması yalnızca hizmetin çalışması için gerekli çerezleri ve benzeri tarayıcı depolama alanlarını kullanır. Reklam, pazarlama veya üçüncü taraf takip çerezi kullanılmaz.`,
+      },
+      {
+        heading: 'Kullanılan zorunlu çerezler ve depolama',
+        body: `• Oturum bilgisi: giriş yaptığınızda oturumunuzun açık kalması için.\n• Tercihler: tema, "beni hatırla" ve bildirim ayarları gibi seçimleriniz için.\nBu kayıtlar cihazınızda tutulur ve hizmetin sunulması için zorunludur.`,
+      },
+      {
+        heading: 'Çerezleri yönetme',
+        body: `Tarayıcınızın ayarlarından çerezleri ve site verilerini silebilirsiniz. Zorunlu kayıtları silerseniz oturumunuz kapanır ve tercihleriniz sıfırlanır.`,
+      },
+      {
+        heading: 'İletişim',
+        body: `Sorularınız için ${CONTACT} adresine yazabilirsiniz.`,
+      },
+    ],
+  },
+
   kvkk: {
     slug: 'kvkk',
     title: 'KVKK Aydınlatma Metni',
@@ -183,6 +206,7 @@ export const LEGAL_LINKS: { slug: string; title: string }[] = [
   { slug: 'gizlilik', title: 'Gizlilik Politikası' },
   { slug: 'kullanim', title: 'Kullanım Şartları' },
   { slug: 'kvkk', title: 'KVKK Aydınlatma Metni' },
+  { slug: 'cerez', title: 'Çerez Politikası' },
   { slug: 'abonelik', title: 'Abonelik ve Mesafeli Satış Koşulları' },
   { slug: 'hesap-silme', title: 'Hesap ve Veri Silme' },
 ];

@@ -58,7 +58,14 @@ function oauthErrorFromUrl(): string | null {
  * Apple (telefonun kendi penceresi). Apple kuralı (4.8) gereği Google
  * sunulan her yerde Apple da sunulur.
  */
-export function SocialAuthButtons() {
+export function SocialAuthButtons({
+  consentRequired = false,
+  consented = true,
+}: {
+  /** Kayıt ekranı: sözleşmeler onaylanmadan sosyal girişe izin verme. */
+  consentRequired?: boolean;
+  consented?: boolean;
+} = {}) {
   const colors = useThemeColors();
   const signInWithOAuth = useAuthStore((s) => s.signInWithOAuth);
   const [busy, setBusy] = useState<OAuthProviderId | null>(null);
@@ -72,6 +79,10 @@ export function SocialAuthButtons() {
 
   const start = async (p: OAuthProviderId) => {
     setError(null);
+    if (consentRequired && !consented) {
+      setError('Devam etmek için Kullanım Şartları ve politikaları kabul edin.');
+      return;
+    }
     setBusy(p);
     try {
       await signInWithOAuth(p); // web: sayfa yönlenir · iOS: oturum hemen açılır

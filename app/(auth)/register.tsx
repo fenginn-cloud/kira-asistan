@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
-import { ArrowLeft, Building2 } from 'lucide-react-native';
+import { ArrowLeft, Building2, Check } from 'lucide-react-native';
 import { fgColor } from '@/lib/theme/useThemeColors';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -21,6 +21,49 @@ import {
   ROLE_OPTIONS,
   useSignupSurveyStore,
 } from '@/features/onboarding/signupSurvey';
+
+/** Kullanım şartları / gizlilik / çerez onayı (kayıt için zorunlu). */
+function ConsentCheckbox({
+  checked,
+  onToggle,
+  onOpen,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  onOpen: (slug: string) => void;
+}) {
+  const link = (slug: string, label: string) => (
+    <Text
+      className="font-semibold text-primary-700"
+      onPress={() => onOpen(slug)}
+      suppressHighlighting
+    >
+      {label}
+    </Text>
+  );
+  return (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      onPress={onToggle}
+      className="flex-row items-start gap-3"
+    >
+      <View
+        className={`mt-0.5 h-5 w-5 items-center justify-center rounded-md border-2 ${
+          checked ? 'border-primary bg-primary' : 'border-border bg-surface'
+        }`}
+      >
+        {checked ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
+      </View>
+      <Text className="flex-1 text-sm leading-5 text-muted">
+        {link('kullanim', 'Kullanım Şartları')}'nı,{' '}
+        {link('gizlilik', 'Gizlilik Politikası')}'nı,{' '}
+        {link('kvkk', 'KVKK Aydınlatma Metni')}'ni ve {link('cerez', 'Çerez Politikası')}
+        'nı okudum, kabul ediyorum.
+      </Text>
+    </Pressable>
+  );
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -75,6 +118,7 @@ export default function RegisterScreen() {
   const [referral, setReferral] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
   const onSubmit = async () => {
     setError(null);
@@ -92,6 +136,10 @@ export default function RegisterScreen() {
     }
     if (password !== confirm) {
       setError('Şifreler eşleşmiyor.');
+      return;
+    }
+    if (!accepted) {
+      setError('Kayıt olmak için Kullanım Şartları ve politikaları kabul edin.');
       return;
     }
     setLoading(true);
@@ -127,12 +175,8 @@ export default function RegisterScreen() {
             <View className="h-20 w-20 items-center justify-center rounded-3xl bg-primary">
               <Building2 size={36} color="#FFFFFF" />
             </View>
-            <Text className="mt-5 text-3xl font-bold text-foreground">
-              Hesap Oluştur
-            </Text>
-            <Text className="mt-1 text-base text-muted">
-              Birkaç adımda başlayın
-            </Text>
+            <Text className="mt-5 text-3xl font-bold text-foreground">Hesap Oluştur</Text>
+            <Text className="mt-1 text-base text-muted">Birkaç adımda başlayın</Text>
           </View>
 
           <View className="gap-4">
@@ -171,7 +215,12 @@ export default function RegisterScreen() {
               <Text className="text-xs text-muted">
                 Sizi daha iyi tanıyalım (opsiyonel)
               </Text>
-              <ChipGroup label="Rolünüz" options={ROLE_OPTIONS} value={role} onChange={setRole} />
+              <ChipGroup
+                label="Rolünüz"
+                options={ROLE_OPTIONS}
+                value={role}
+                onChange={setRole}
+              />
               <ChipGroup
                 label="Kaç daire/sözleşme takip ediyorsunuz?"
                 options={PORTFOLIO_OPTIONS}
@@ -186,13 +235,27 @@ export default function RegisterScreen() {
               />
             </View>
 
+            <ConsentCheckbox
+              checked={accepted}
+              onToggle={() => {
+                setAccepted((v) => !v);
+                setError(null);
+              }}
+              onOpen={(slug) => router.push(`/yasal/${slug}`)}
+            />
+
             {error ? <Text className="text-sm text-danger">{error}</Text> : null}
 
             <View className="mt-2">
-              <Button label="Kayıt Ol" onPress={onSubmit} loading={loading} />
+              <Button
+                label="Kayıt Ol"
+                onPress={onSubmit}
+                loading={loading}
+                disabled={!accepted}
+              />
             </View>
 
-            <SocialAuthButtons />
+            <SocialAuthButtons consentRequired consented={accepted} />
 
             <View className="mt-2 flex-row items-center justify-center gap-1">
               <Text className="text-sm text-muted">Zaten hesabınız var mı?</Text>
