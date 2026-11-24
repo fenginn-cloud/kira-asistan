@@ -5,6 +5,9 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/Button';
 import { PORTFOLIO_OPTIONS, REFERRAL_OPTIONS, ROLE_OPTIONS } from './signupSurvey';
 
+/** Bu tarihten önce oluşturulan hesaplara anket gösterilmez (ISO, UTC). */
+const SURVEY_START = '2026-11-24T00:00:00Z';
+
 /** Tek seçimli, eşit genişlikte seçenek ızgarası. Seçiliye tekrar dokununca kalkar. */
 function OptionGrid({
   label,
@@ -60,7 +63,7 @@ function OptionGrid({
 /**
  * Hesap doğrulandıktan sonra uygulama İLK açıldığında bir kez sorulan kısa
  * tanışma anketi (rol / portföy / nereden duydu). Google/Apple ile girenler
- * dahil herkese gelir; personel hesaplarına sorulmaz. Görüldü bilgisi kullanıcı
+ * dahil yeni kayıt olan herkese gelir (SURVEY_START sonrası); personel hesaplarına sorulmaz. Görüldü bilgisi kullanıcı
  * metadata'sında (`survey_seen`) tutulur, böylece her cihazda bir kez çıkar.
  */
 export function WelcomeSurvey() {
@@ -80,6 +83,9 @@ export function WelcomeSurvey() {
         const { data } = await supabase.auth.getUser();
         const authUser = data.user;
         if (!authUser || authUser.user_metadata?.survey_seen) return;
+        // Yalnızca bu özellik yayına girdikten SONRA kayıt olanlara sorulur;
+        // mevcut kullanıcılara hiç gösterilmez.
+        if (!authUser.created_at || authUser.created_at < SURVEY_START) return;
         // Eski sürümde kayıt ekranında yanıtlamış olanlara tekrar sorma.
         const { count } = await supabase
           .from('signup_surveys')
