@@ -7,6 +7,7 @@ import { useDeviceGuard } from '@/features/security/hooks';
 import { useDesktopShell } from '@/lib/useDesktopShell';
 import { DesktopSidebar } from '@/features/navigation/DesktopSidebar';
 import { useThemeColors } from '@/lib/theme/useThemeColors';
+import { WelcomeSurvey } from '@/features/onboarding/WelcomeSurvey';
 
 export default function AppLayout() {
   const user = useAuthStore((s) => s.user);
@@ -59,6 +60,7 @@ export default function AppLayout() {
         <Stack.Screen name="sessions" />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
+      <WelcomeSurvey />
       {enabled ? <DesktopSidebar width={sidebarWidth} /> : null}
     </>
   );
