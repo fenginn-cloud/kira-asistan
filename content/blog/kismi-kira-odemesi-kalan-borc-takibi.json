@@ -1,0 +1,129 @@
+{
+  "slug": "kismi-kira-odemesi-kalan-borc-takibi",
+  "date": "2026-11-26",
+  "title": "Kısmi Kira Ödemesi: Kalan Borç Nasıl Takip Edilir?",
+  "description": "Kiracı kiranın bir kısmını ödediğinde kalan borç nasıl takip edilir? Kayıt, yazılı teyit, cari hesap ve ay ay borç takibi için adım adım rehber.",
+  "h1": "Kiracı Kısmi Ödeme Yaptığında Kalan Borç Nasıl Takip Edilir?",
+  "intro": "Kiracınız bu ay kiranın tamamını değil, bir kısmını gönderdi ve kalanını \"birkaç gün içinde\" ödeyeceğini söyledi. İlk seferde bu küçük bir ayrıntı gibi görünür. Ancak kısmi ödemeler birkaç ay üst üste gelince hangi ayın kirasının ne kadarının ödendiği karışmaya başlar. Bu rehberde **kısmi kira ödemesi** geldiğinde kalan borcu nasıl kaydedeceğinizi ve takip edeceğinizi adım adım anlatıyoruz. Konunun hukuki yönleri için genel bilgi veriyoruz; kendi durumunuz için bir avukata danışın.",
+  "sections": [
+    {
+      "h2": "Kısmi ödeme neden ayrıca takip edilmeli?",
+      "paragraphs": [
+        "Kısmi ödemede asıl risk, ayın \"ödendi\" sayılmasıdır. Hesaba para geldiğini görünce ayı kapatırsanız, kalan tutar kayıtlarınızdan düşer ve bir süre sonra unutulur.",
+        "İkinci risk birikmedir. Kiracı her ay biraz eksik öderse, tek tek küçük görünen farklar birkaç ayda bir aylık kiraya yaklaşabilir. Bunu fark ettiğinizde hangi ayda ne kadar eksik kaldığını yeniden çıkarmak zorlaşır.",
+        "Üçüncüsü de iletişimdir. Kiracıyla konuşurken \"ne kadar borcunuz var\" sorusuna net bir rakamla cevap veremezseniz, konuşma tartışmaya döner. Düzenli bir kayıt, iki tarafın da aynı rakama bakmasını sağlar."
+      ]
+    },
+    {
+      "h2": "Adım 1: Gelen tutarı doğru aya kaydedin",
+      "paragraphs": [
+        "Kısmi ödeme geldiğinde önce hangi ayın kirası için yapıldığını netleştirin. Kiracının birikmiş borcu varsa, yeni gelen paranın eski aya mı yoksa bu aya mı sayılacağı sonradan anlaşmazlık konusu olabilir. Bunu kiracıya sorun ve cevabını yazılı alın.",
+        "Kaydı yaparken şu bilgileri not edin:"
+      ],
+      "list": [
+        "Ödemenin geldiği tarih",
+        "Gelen tutar",
+        "Ödemenin hangi ayın kirasına sayıldığı",
+        "Ödeme şekli (havale, EFT ya da elden)",
+        "O ay için kalan tutar"
+      ]
+    },
+    {
+      "h2": "Adım 2: Ayı açık bırakın, kalan tutarı ayrıca gösterin",
+      "paragraphs": [
+        "Kısmi ödeme alınan ay, kalan tutar gelene kadar \"kısmen ödendi\" olarak açık kalmalıdır. Defter ya da tabloda bunu ayrı bir sütunla göstermek işinizi kolaylaştırır: beklenen tutar, ödenen tutar ve kalan tutar yan yana dursun.",
+        "Örneğin beklenen kira tutarı ile gelen tutar arasındaki farkı her ay kalan sütununa yazın. Kalan sıfırlanmadan ayı kapatmayın. Kalan tutar sonradan birkaç parça halinde gelirse her parçayı ayrı satır olarak ekleyin; tek bir toplamla üzerine yazmayın.",
+        "Kira Asistan'da kısmi ödemeyi bu şekilde kaydedebilir, yanlış girilen bir tahsilatı geri alabilir ve kiracının cari hesabında toplam kalan borcu görebilirsiniz."
+      ]
+    },
+    {
+      "h2": "Adım 3: Kalan tutar için yazılı bir tarih alın",
+      "paragraphs": [
+        "Kiracı kalanı ne zaman ödeyeceğini sözlü söylediyse, bunu kısa bir mesajla teyit edin. Örneğin: \"Kasım kirasının kalan kısmını ayın 20'sine kadar göndereceğinizi not aldım, teşekkürler.\" Bu mesaj hem hatırlatma işlevi görür hem de ileride bir kayıt oluşturur.",
+        "Söz verilen tarihi takviminize ya da takip sisteminize yazın. Tarih geldiğinde ödeme yapılmadıysa, ilk gecikmede nasıl davrandıysanız aynı sakin yolu izleyin. Bu adımları [kiracı kirayı geç ödüyor](/blog/kiraci-kirayi-gec-oduyor-ne-yapmali) yazımızda ayrıntılı anlattık.",
+        "Hatırlatma mesajını her seferinde sıfırdan yazmak zorunda değilsiniz. Bazı kira takip uygulamaları kiracıya özel hazır bir WhatsApp mesajı oluşturur; mesajı siz kontrol edip kendiniz gönderirsiniz."
+      ]
+    },
+    {
+      "h2": "Adım 4: Biriken borcu cari hesap mantığıyla izleyin",
+      "paragraphs": [
+        "Kısmi ödemeler tekrarlıyorsa ay ay bakmak yetmez; kiracının toplam borcunu da görmeniz gerekir. Cari hesap mantığı burada işe yarar: her ay kira tutarı borç olarak, her ödeme alacak olarak yazılır. Aradaki fark kiracının güncel bakiyesidir.",
+        "Bu yöntemin faydası, \"hangi ay ne kadar eksik\" sorusuna da \"toplam ne kadar borç var\" sorusuna da aynı kayıttan cevap verebilmenizdir. Kiracıyla konuşurken bu dökümü paylaşmak, rakamlar üzerindeki tartışmayı büyük ölçüde azaltır.",
+        "Bakiyeyi her ay kontrol etmek için şu soruları kullanabilirsiniz:"
+      ],
+      "list": [
+        "Kiracının toplam kalan borcu geçen aya göre arttı mı, azaldı mı?",
+        "Kaç aydır üst üste eksik ödeme yapılıyor?",
+        "Söz verilen ödeme tarihlerinden kaçı tutuldu?",
+        "Kalan borç bir aylık kira tutarına yaklaştı mı?"
+      ]
+    },
+    {
+      "h2": "Defter ya da Excel ile basit bir takip tablosu",
+      "paragraphs": [
+        "Henüz bir uygulama kullanmıyorsanız, kısmi ödemeleri sade bir tabloyla da düzenli tutabilirsiniz. Önemli olan, her kiracı için aynı sütunları kullanmak ve tabloyu her ödeme geldiğinde hemen güncellemektir. Ay sonunda toplu güncelleme yapmak, küçük tutarların gözden kaçmasına yol açar.",
+        "Her kiracı için ayrı bir sayfa ya da sekme açın ve şu sütunları kullanın:"
+      ],
+      "list": [
+        "Ay (hangi dönemin kirası olduğu)",
+        "Beklenen kira tutarı",
+        "Ödeme tarihi",
+        "Ödenen tutar (her parça ayrı satırda)",
+        "O ay için kalan tutar",
+        "Toplam bakiye (önceki aylardan devreden dahil)",
+        "Not (söz verilen tarih, makbuz durumu, kiracıyla yapılan konuşma)"
+      ]
+    },
+    {
+      "h2": "Sık yapılan kayıt hataları",
+      "paragraphs": [
+        "Kısmi ödemelerde hatalar genellikle niyetten değil, acele ile yapılan kayıttan kaynaklanır. En sık karşılaşılan hata, kalan tutarın bir sonraki aya devredilmeden unutulmasıdır. Yeni ay başladığında önceki aydan kalan tutarı toplam bakiyeye eklediğinizden emin olun.",
+        "Bir diğer hata, kalan tutar geldiğinde eski satırın üzerine yazmaktır. Bu durumda ödemenin iki parça halinde geldiği bilgisi kaybolur ve ileride bir döküm hazırlamanız gerektiğinde tarihleri yeniden çıkaramazsınız. Her ödeme, ne kadar küçük olursa olsun, kendi tarihiyle ayrı bir kayıt olmalıdır.",
+        "Son olarak, yanlış girilen bir ödemeyi silmek yerine düzeltme kaydıyla geri almak daha sağlıklıdır. Böylece kayıtlarınızda neyin neden değiştiği görünür kalır."
+      ]
+    },
+    {
+      "h2": "Kısmi ödemeyi kabul ederken dikkat edilecekler",
+      "paragraphs": [
+        "Kısmi ödemeyi kabul etmek çoğu zaman ilişkiyi korumanın en pratik yoludur; hiç ödeme gelmemesinden iyidir. Yine de kabul ederken kalan borçtan vazgeçmediğinizi açıkça belirtmek önemlidir. Ödemeyi aldığınızı bildiren mesajınızda kalan tutarı da yazmanız bunu sağlar.",
+        "Kısmi ödemelerin hukuki sonuçları, sözleşmenize ve somut duruma göre değişebilir. Özellikle borç birikmeye başladıysa ya da resmi bir adım atmayı düşünüyorsanız, kısmi ödemeleri nasıl kabul edip kaydetmeniz gerektiğini önceden bir avukata danışın. Resmi süreçte kullanılan metinlere örnek görmek isterseniz [kira ödeme ihtarnamesi](/sablonlar/kira-odeme-ihtarnamesi-ornegi) şablonumuza bakabilirsiniz; göndermeden önce mutlaka avukatınızla gözden geçirin.",
+        "Elden alınan kısmi ödemeler için mutlaka imzalı bir makbuz ya da en azından yazılı bir teyit alın. Havale ile gelen ödemelerde ise açıklama kısmına hangi ay için ödeme yapıldığının yazılmasını kiracıdan rica edebilirsiniz."
+      ]
+    },
+    {
+      "h2": "Kısmi ödemeleri azaltmak için pratik öneriler",
+      "paragraphs": [
+        "Tekrarlayan kısmi ödemeler bazen kiracının maaş gününün kira gününe uymamasından kaynaklanır. Bu durumda sözleşme yenilenirken ödeme gününü konuşmak işe yarayabilir.",
+        "Kira yakın zamanda arttıysa, kiracı farkında olmadan eski tutarı göndermeye devam ediyor olabilir. Artış dönemlerinde yeni tutarı kiracıya yazılı bildirmek bu tür eksik ödemeleri önler. Yeni tutarı hesaplamak için [kira artış hesaplama](/kira-artis-hesaplama) sayfamızı kullanabilirsiniz.",
+        "Genel olarak ödemeleri düzenli bir sisteme işlemek, eksik ödemeyi geldiği gün fark etmenizi sağlar. Böyle bir düzeni nasıl kuracağınızı [kira takibi nasıl yapılır](/blog/kira-takibi-nasil-yapilir) yazımızda bulabilirsiniz."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Kiracı kiranın bir kısmını öderse o ayı ödendi saymalı mıyım?",
+      "a": "Hayır. Gelen tutarı kaydedin ama ayı kalan tutar ödenene kadar açık bırakın. Kalan tutarı ayrıca gösterin ki unutulmasın."
+    },
+    {
+      "q": "Kısmi ödemeyi kabul etmek zorunda mıyım?",
+      "a": "Bu konu sözleşmenize ve somut duruma göre değişebilir. Kısmi ödemeyi kabul edip etmeme ya da nasıl kabul edeceğiniz konusunda emin değilseniz bir avukata danışın."
+    },
+    {
+      "q": "Kiracının birikmiş borcu varsa yeni ödeme hangi aya sayılır?",
+      "a": "Bunu kiracıyla açıkça konuşup yazılı olarak netleştirmek en güvenli yoldur. Anlaşmazlık durumunda nasıl hareket edeceğinizi bir avukata danışın."
+    },
+    {
+      "q": "Kalan borcu kiracıya nasıl göstermeliyim?",
+      "a": "Ay ay beklenen tutarı, ödenen tutarı ve kalan tutarı gösteren basit bir döküm paylaşın. Cari hesap şeklinde tutulan kayıt bunu kolaylaştırır."
+    },
+    {
+      "q": "Elden alınan kısmi ödemeyi nasıl kayıt altına alırım?",
+      "a": "Tarih, tutar ve hangi ay için ödendiği yazılı bir makbuz hazırlayıp iki tarafın imzalamasını sağlayın ya da en azından mesajla yazılı teyit alın."
+    },
+    {
+      "q": "Kalan borç birikmeye başladıysa ne yapmalıyım?",
+      "a": "Toplam bakiyeyi kiracıyla paylaşın, kalan için yazılı bir ödeme planı isteyin. Borç büyümeye devam ediyorsa resmi bir adım atmadan önce bir avukata danışın."
+    }
+  ],
+  "legal": true
+}
