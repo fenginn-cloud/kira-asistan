@@ -9,7 +9,7 @@ Liste azalınca (5 konudan az kalınca) aynı alanda yeni konular ekler. Konular
 - [x] Depozito ne zaman ve nasıl iade edilir: kesinti yapılabilecek durumlar (depozito-iadesi-nasil-yapilir)
 - [x] Kiracı kısmi ödeme yaptığında kalan borç nasıl takip edilir (kismi-kira-odemesi-kalan-borc-takibi)
 - [x] Kira sözleşmesi süresi dolunca ne olur: uzama, yenileme ve kira artışı (kira-sozlesmesi-suresi-dolunca-ne-olur)
-- [ ] Emlak ofisleri için kira tahsilat takibi: ekip içinde iş bölümü
+- [x] Emlak ofisleri için kira tahsilat takibi: ekip içinde iş bölümü (emlak-ofisi-kira-tahsilat-takibi)
 - [ ] Kiracıya kira hatırlatma mesajı nasıl yazılır: örnek metinler
 - [ ] Kiracı çıkışında yapılacaklar kontrol listesi: daire teslimi ve depozito
 - [ ] Birden fazla dairesi olan ev sahipleri için kira geliri takibi
