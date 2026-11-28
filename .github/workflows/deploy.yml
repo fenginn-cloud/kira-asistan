@@ -32,6 +32,8 @@ jobs:
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          # Cloudflare Web Analytics token'ı (herkese açık; HTML'e yazılır). Boşsa ölçüm eklenmez.
+          CF_BEACON_TOKEN: ${{ vars.CF_BEACON_TOKEN }}
         run: npm run build:web
 
       - uses: actions/configure-pages@v5
